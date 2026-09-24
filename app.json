@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "dicta",
+    "name": "Dicta",
     "slug": "dicta",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -8,11 +8,17 @@
     "scheme": "dicta",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "bundleIdentifier": "com.leoudev.dicta",
+      "supportsTablet": false,
+      "usesAppleSignIn": true,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
+      "package": "com.leoudev.dicta",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#F4EEE3",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -28,9 +34,22 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76
+          "backgroundColor": "#F7F3EC",
+          "image": "./assets/images/emblem.png",
+          "imageWidth": 120,
+          "dark": {
+            "backgroundColor": "#121110",
+            "image": "./assets/images/emblem.png"
+          }
+        }
+      ],
+      "expo-sqlite",
+      "expo-apple-authentication",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Dicta uses your photo library so you can choose a profile photo and backgrounds for your quote cards.",
+          "cameraPermission": "Dicta uses the camera so you can take a profile photo."
         }
       ]
     ],
