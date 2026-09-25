@@ -53,6 +53,6 @@ PASS = exercised end to end this phase. NOT TESTED = not run this phase; the rea
 | Jest (app) | 222 / 222 in 22 suites, including the frozen 13-card render fingerprint |
 | Website (`cd web && npm test`) | 34 / 34 |
 | Seed (`npm run test:seed`) | 6 / 6 |
-| Database (`supabase/tests/push.sql`) | Passed against the live schema in a rolled-back transaction before the migration was applied |
-| Database (`supabase/tests/social.sql`) | Not re-run this phase. Please run `npm run test:db`. |
+| Database (`supabase/tests/push.sql`, `welcome.sql`) | Passed on the live database (2026-09-26), in rolled-back transactions |
+| Database (`supabase/tests/social.sql`) | Passed on the live database (2026-09-26) |
 | TypeScript / ESLint / expo-doctor | Clean / 0 errors (2 old warnings) / 21 of 21 checks |

@@ -68,16 +68,9 @@ Links keep Supabase's `{{ .ConfirmationURL }}`: Supabase verifies the token and 
 
 - **The app** uses only the Supabase URL and the publishable key (`sb_publishable_…`). No secret is bundled, committed, or in git history (checked all commits).
 - **The website** uses the anon key to read posts (so row-level security decides what's visible) and the service-role key, server-side only, for card images and pushes.
-- **Vercel:** `SUPABASE_SECRET_KEY` (unused) was removed on 2026-09-25. Still there and unused, safe for you to remove:
-  ```bash
-  cd web
-  for name in SUPABASE_JWT_SECRET POSTGRES_URL POSTGRES_PRISMA_URL POSTGRES_URL_NON_POOLING POSTGRES_PASSWORD; do
-    vercel env rm $name production --scope dicta2 --project dicta -y
-  done
-  ```
-  The Supabase integration may add them back when it re-syncs; you can turn those off in its settings. The `NEXT_PUBLIC_*` and `EXPO_PUBLIC_*` variables hold only public values and aren't exposed by this project.
+- **Vercel:** the unused privileged variables are gone (`SUPABASE_SECRET_KEY` on 2026-09-25; `SUPABASE_JWT_SECRET` and the `POSTGRES_URL`, `POSTGRES_PRISMA_URL`, `POSTGRES_URL_NON_POOLING` and `POSTGRES_PASSWORD` credentials on 2026-09-26). The server-only secrets left are `SUPABASE_SERVICE_ROLE_KEY` and `RESEND_API_KEY`; the rest are public values or harmless labels (`POSTGRES_HOST`, `POSTGRES_USER`, `POSTGRES_DATABASE`). The Supabase integration may add the removed ones back when it re-syncs; turn that off in its settings if it does. The `NEXT_PUBLIC_*` and `EXPO_PUBLIC_*` variables hold only public values and aren't exposed by this project.
 - **Database:** all 16 public tables have row-level security; every `SECURITY DEFINER` function pins `search_path`; anon has no write grants. Supabase's advisors flag three definer functions callable by signed-in users, all intentional (`delete_my_account`, `record_share`, `register_push_token`), and leaked-password protection, which needs the Pro plan.
 - **Storage:** `avatars` and `post-images` are public (published content), `generated-cards` is private; people can only write to their own folder.
 - **Open endpoints:** `/api/card` draws only posts the anon key can see; `/api/purge` only purges posts that are gone; `/api/push` only sends a queued push once.
 
-`npm run test:db` runs `supabase/tests/social.sql` and `supabase/tests/push.sql` against the linked project in rolled-back transactions.
+`npm run test:db` runs `supabase/tests/social.sql`, `push.sql` and `welcome.sql` against the linked project in rolled-back transactions, each checking only its own test people. All three passed on the live database on 2026-09-26.
