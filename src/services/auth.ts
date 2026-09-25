@@ -19,6 +19,11 @@ export async function signUpWithEmail(email: string, password: string): Promise<
     options: { emailRedirectTo: Linking.createURL('/auth-callback') },
   });
   if (error) throw error;
+  // With email confirmation on, Supabase answers an address that already has an
+  // account with a stand-in user (no identities) and sends no email.
+  if (data.user?.identities?.length === 0) {
+    throw Object.assign(new Error('User already registered'), { code: 'user_already_exists' });
+  }
   return { needsConfirmation: !data.session };
 }
 
