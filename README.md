@@ -12,7 +12,7 @@ Built with Expo SDK 57 (React Native 0.86, New Architecture, React Compiler), Ex
 | 2–3 | Quote card engine (Skia), 18 templates, visual editor with live preview, drafts, publish, image export (9:16, 4:5, 1:1, original), feed + profile gallery | ✅ Done |
 | 4 | Social: likes (double-tap), threaded comments, follows, saves, Activity with realtime badge, Discover (trending, creators, topics, hashtags), debounced search, post view, other profiles, share sheet (save image, copy link, share counts), settings (edit profile, log out, delete account), report + block | ✅ Done |
 | 5 | Website with shared quote pages and universal links, App Store pages | ✅ Done |
-| 6 | Seed data, push notifications, App Store submission | Next |
+| 6 | Production and private beta: phone-drawn card images, any-script text, instant deletion from the web, push notifications, live timestamps, dev seed, security audit, App Store prep | ✅ Done, see [docs/production.md](docs/production.md) and [docs/app-store-checklist.md](docs/app-store-checklist.md) |
 
 ## Getting started
 
@@ -43,8 +43,9 @@ Before running `npx supabase config push`, run `npx supabase config diff` first.
 ### Manual configuration still required
 
 1. **Apple Developer team**: `ios.appleTeamId` in `app.json` is set to `Z5643XKUTZ`, so the generated Xcode project signs with that team. For device builds, either add your Apple ID in *Xcode → Settings → Accounts* (Xcode then creates the certificate and profile and registers `com.leoudev.dicta` with the *Sign in with Apple* capability), or build with EAS, which manages credentials and syncs capabilities. Supabase's Apple provider already uses that bundle ID as its client ID; native sign-in needs no secret.
-2. **Email delivery**: Supabase's built-in mailer only sends to your team's addresses and is heavily rate limited. Configure custom SMTP (Resend, Postmark, SES…) under *Authentication → Emails* before inviting testers. Email confirmation is on.
+2. **Email delivery**: Supabase's built-in mailer only sends to your team's addresses and is heavily rate limited. Set up custom SMTP before inviting testers; the steps are in [docs/production.md](docs/production.md#email). Email confirmation is on, and the templates live in `supabase/templates`.
 3. **Redirect URLs**: `dicta://**` and `exp+dicta://**` are already allowed (email confirmation and password reset open the app).
+4. **Push notifications**: Expo needs an Apple push key for `com.leoudev.dicta` (`npx eas-cli@latest credentials -p ios`). See [docs/production.md](docs/production.md#push-notifications).
 
 ## Scripts
 
@@ -53,7 +54,9 @@ npm test               # Jest (jest-expo), incl. real-Skia layout checks for eve
 npm run typecheck      # tsc --noEmit
 npm run lint           # expo lint (ESLint + React Compiler rules)
 npm run render:cards   # renders every template × format × sample text to .renders/*.png (slow, CPU)
-npm run test:db        # backend tests (supabase/tests/social.sql) against the linked project, in one rolled-back transaction
+npm run test:db        # backend tests (supabase/tests/*.sql) against the linked project, each in one rolled-back transaction
+npm run seed           # regenerate supabase/seed.sql and load it into the LOCAL database (npx supabase start); never production
+npm run test:seed      # checks the seed data against the schema's rules
 ```
 
 `RENDER_ONLY=editorial,journal npm run render:cards` limits the templates; `RENDER_AVATAR=/path/to/photo.jpg` adds an avatar and `RENDER_PHOTO=/path/to/photo.jpg` a photo background.
@@ -157,23 +160,23 @@ Tables: `profiles`, `posts`, `post_designs` (the structured card design as JSONB
 
 ## Website
 
-`web/` is deployed by the Vercel project `dicta2/dicta` (root directory `web`) on every push to `main`, at https://dicta-orcin.vercel.app. It needs `SUPABASE_URL`, `SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY` (server only, for storing card images) in the project's environment variables.
+`web/` is deployed by the Vercel project `dicta2/dicta` (root directory `web`, region icn1 next to the database) on every push to `main`, at https://dicta-orcin.vercel.app. It needs `SUPABASE_URL`, `SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY` (server only, for card images and pushes) in the project's environment variables; `EXPO_ACCESS_TOKEN` is optional.
 
 - **Shared links:** Copy link in the app produces `https://dicta-orcin.vercel.app/post/<id>`. With Dicta installed, iOS opens it in the app (universal links via `ios.associatedDomains` and the `apple-app-site-association` file). Otherwise the page shows the post's artwork with an Open in Dicta button.
 - **One renderer.** The website doesn't restyle cards. `web/card/build.mjs` bundles the app's own card engine (`src/features/quote-card`: layout, Skia canvas, textures, fonts) for Node, where it draws on CanvasKit, React Native Skia's web build. Vercel builds it on every deploy (the install step runs `npm ci` at the repo root), so the website always draws with the renderer from the same commit as the app. A server render of a card matches the iOS export to within about 1.4/255 per pixel.
-- **Card images, drawn once:** `/card/<id>.jpg` (the card, 1080 wide) and `/card/<id>/og.jpg` (1200 × 630 link preview: the card on the app's paper color) are drawn on first request and stored in the `generated-cards` bucket as `<author>/<post>-<key>.jpg`; `posts.card_image_path` points at the current card. The key hashes everything drawn (renderer build, text, design, the author's name, handle, photo and badge), so a change is redrawn automatically; until then the page shows the previous drawing. The app asks for the drawing right after publishing (`/api/card?id=…&warm=1`), deleting a post or the account removes the images, and older versions are removed a day after a redraw.
-- **Draw times:** most templates draw in under 4 s on CPU; Paper, Mottle, Concrete and Canvas textures take about 15–25 s at 1080 px, so the link preview is drawn first at its own, smaller size (about 3 s).
+- **Card images:** the phone draws `/card/<id>.jpg` (the card, 1080 wide) and `/card/<id>/og.jpg` (1200 × 630 link preview) on its GPU right after publishing and stores them in the private `generated-cards` bucket; the website serves them from there, drawing only what's missing (CPU, so Paper-like textures take close to a minute; the preview goes first). Keys hash everything drawn, so an edited profile or design redraws automatically. Details, timings and the cache table: [docs/production.md](docs/production.md).
+- **Deletion:** every page and image is tagged with its post, and a database trigger purges them from Vercel's cache the moment a post is deleted, hidden or removed (`/api/purge`).
+- **Push:** `/api/push` sends one queued notification through Expo (see docs/production.md).
 - **App Store Connect:** use `/privacy` for the privacy policy URL and `/support` for the support URL.
-- **Tests:** `cd web && npm test` builds the renderer, draws all 18 templates in all 4 formats, and checks the card endpoint and post page against an in-memory Supabase.
+- **Tests:** `cd web && npm test` builds the renderer, draws all 18 templates in all 4 formats and six scripts, and checks the card, post, purge and push endpoints against an in-memory Supabase.
 
 ## Building for iOS
 
 ```bash
 npx eas-cli@latest login
-npx eas-cli@latest build:configure
 npx eas-cli@latest build --platform ios --profile development   # dev client for devices
 npx eas-cli@latest build --platform ios --profile production    # App Store build
 npx eas-cli@latest submit --platform ios
 ```
 
-Set `EXPO_PUBLIC_SUPABASE_URL` / `EXPO_PUBLIC_SUPABASE_ANON_KEY` as EAS environment variables for each environment.
+Set `EXPO_PUBLIC_SUPABASE_URL` / `EXPO_PUBLIC_SUPABASE_ANON_KEY` as EAS environment variables for each environment. The full TestFlight checklist is [docs/app-store-checklist.md](docs/app-store-checklist.md).
