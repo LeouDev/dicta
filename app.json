@@ -16,7 +16,11 @@
         "applinks:dicta-orcin.vercel.app"
       ],
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "LSApplicationQueriesSchemes": [
+          "instagram-stories",
+          "facebook-stories"
+        ]
       }
     },
     "android": {

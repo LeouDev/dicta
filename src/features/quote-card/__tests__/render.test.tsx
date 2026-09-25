@@ -13,6 +13,7 @@ import { ENGINE_VERSION } from '../card-key';
 import { contentInsets } from '../geometry';
 import type * as Layout from '../layout';
 import type * as Canvas from '../quote-canvas';
+import type * as Story from '../story';
 import { createDesign } from '../templates';
 import { FORMATS, TEMPLATE_IDS, type CardAuthor, type TemplateId } from '../types';
 
@@ -156,3 +157,27 @@ test('the drawing is frozen at ENGINE_VERSION', async () => {
   if (fingerprint !== FROZEN.fingerprint) console.warn(`card engine fingerprint: ${fingerprint}`);
   expect({ version: ENGINE_VERSION, fingerprint }).toEqual(FROZEN);
 }, 120_000);
+
+test('stories get the card as a sticker with clear margins, over a blurred 9:16 copy', async () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- deferred until CanvasKit exists
+  const { STORY_SIZE, StoryBackground, StorySticker, stickerSize } = require('../story') as typeof Story;
+  const alpha = (image: SkImage, x: number, y: number) => (image.readPixels() as Uint8Array)[(y * image.width() + x) * 4 + 3];
+
+  // RENDER_OUT writes every template's story for review; the check itself needs one.
+  for (const template of outDir ? templates : (['editorial'] as const)) {
+    const design = createDesign(template);
+    const layout = layoutCard({ text: TEXTS.short, design, author, width: 1080, format: 'original', fonts });
+    const card = await draw(layout.width, layout.height, <QuoteCanvas layout={layout} avatar={avatar} backgroundImage={design.background.type === 'image' ? photo : null} />);
+    const size = stickerSize(card);
+    const sticker = await draw(size.width, size.height, <StorySticker card={card} radius={design.radius} />);
+    const background = await draw(STORY_SIZE.width, STORY_SIZE.height, <StoryBackground card={card} />);
+
+    expect(alpha(sticker, 0, 0)).toBe(0);
+    expect(alpha(sticker, size.width / 2, size.height / 2)).toBe(255);
+    expect(alpha(background, 0, 0)).toBe(255);
+    if (outDir) {
+      fs.writeFileSync(path.join(outDir, `${template}-story-sticker.png`), sticker.encodeToBytes());
+      fs.writeFileSync(path.join(outDir, `${template}-story-background.png`), background.encodeToBytes());
+    }
+  }
+}, 600_000);

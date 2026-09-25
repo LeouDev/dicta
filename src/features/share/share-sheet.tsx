@@ -1,25 +1,37 @@
 import { useMutation } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { create } from 'zustand';
 
 import { toast } from '@/components/toast';
 import { Button } from '@/components/ui/button';
-import { Icon, type IconName } from '@/components/ui/icon';
+import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { radius, spacing } from '@/constants/tokens';
 import { ToggleRow } from '@/features/composer/controls';
-import { EXPORT_OPTIONS, EXPORT_WIDTH, exportCardImage } from '@/features/quote-card/export';
+import { EXPORT_OPTIONS, EXPORT_WIDTH, exportCardImage, renderStoryImages } from '@/features/quote-card/export';
 import { formatRatio } from '@/features/quote-card/geometry';
 import { QuoteCard } from '@/features/quote-card/quote-card';
 import type { CardAuthor, Format, QuoteDesign } from '@/features/quote-card/types';
 import { useRecordShare } from '@/hooks/use-social';
 import { useTheme } from '@/hooks/use-theme';
 import { friendlyError } from '@/services/errors';
-import { PermissionError, copyPostLink, saveImageToPhotos, shareImage } from '@/services/share';
+import {
+  PermissionError,
+  canShareToStories,
+  copyPostLink,
+  saveImageToPhotos,
+  sharePostTo,
+  shareImage,
+  shareToStories,
+  type PostApp,
+  type StoriesApp,
+} from '@/services/share';
+
+import { BrandGlyph } from './brand-glyph';
 
 export interface ShareTarget {
   text: string;
@@ -50,6 +62,19 @@ export function ShareScreen() {
 
 const PREVIEW_HEIGHT = 360;
 
+const STORIES: Record<StoriesApp, string> = { instagram: 'Instagram', facebook: 'Facebook' };
+const POSTS: Record<PostApp, string> = { threads: 'Threads', x: 'X' };
+
+/** The Stories apps on this phone. */
+function useStoriesApps() {
+  const [apps, setApps] = useState<StoriesApp[]>([]);
+  useEffect(() => {
+    const all = Object.keys(STORIES) as StoriesApp[];
+    Promise.all(all.map(canShareToStories)).then((installed) => setApps(all.filter((_, i) => installed[i])));
+  }, []);
+  return apps;
+}
+
 /** Pick a format, preview exactly what will be exported, then save, share or copy a link. */
 function ShareSheet({ target, onClose }: { target: ShareTarget; onClose: () => void }) {
   const { text, design, author, postId } = target;
@@ -59,8 +84,11 @@ function ShareSheet({ target, onClose }: { target: ShareTarget; onClose: () => v
   const [format, setFormat] = useState<Format>('story');
   const [watermark, setWatermark] = useState(false);
   const recordShare = useRecordShare(postId ?? null);
+  const storiesApps = useStoriesApps();
+  // The preview takes the height left over by the controls, up to PREVIEW_HEIGHT.
+  const [previewHeight, setPreviewHeight] = useState(PREVIEW_HEIGHT);
   const ratio = formatRatio(format, design.canvas);
-  const previewWidth = Math.min(screenWidth - spacing.xl * 2, PREVIEW_HEIGHT * ratio);
+  const previewWidth = Math.min(screenWidth - spacing.xl * 2, previewHeight * ratio);
   const counted = () => postId && recordShare.mutate();
 
   const render = () => exportCardImage({ text, design, author, format, watermark });
@@ -79,6 +107,16 @@ function ShareSheet({ target, onClose }: { target: ShareTarget; onClose: () => v
       toast('Saved to Photos');
       counted();
     },
+    onError,
+  });
+  const story = useMutation({
+    mutationFn: async (app: StoriesApp) => shareToStories(app, await renderStoryImages({ text, design, author, watermark }), postId),
+    onSuccess: counted,
+    onError,
+  });
+  const post = useMutation({
+    mutationFn: (app: PostApp) => sharePostTo(app, postId!, text),
+    onSuccess: counted,
     onError,
   });
   const copyLink = useMutation({
@@ -109,7 +147,7 @@ function ShareSheet({ target, onClose }: { target: ShareTarget; onClose: () => v
         </Pressable>
       </View>
 
-      <View style={styles.preview}>
+      <View style={styles.preview} onLayout={(e) => setPreviewHeight(Math.min(PREVIEW_HEIGHT, e.nativeEvent.layout.height))}>
         <QuoteCard
           text={text}
           design={design}
@@ -119,10 +157,10 @@ function ShareSheet({ target, onClose }: { target: ShareTarget; onClose: () => v
           watermark={watermark}
           radius={radius.sm}
         />
-        <Text variant="caption" color="textTertiary" style={styles.size}>
-          {EXPORT_WIDTH} × {Math.round(EXPORT_WIDTH / ratio)} PNG
-        </Text>
       </View>
+      <Text variant="caption" color="textTertiary" align="center" style={styles.size}>
+        {EXPORT_WIDTH} × {Math.round(EXPORT_WIDTH / ratio)} PNG
+      </Text>
 
       <View style={styles.formats} accessibilityRole="radiogroup">
         {EXPORT_OPTIONS.map((option) => {
@@ -168,27 +206,60 @@ function ShareSheet({ target, onClose }: { target: ShareTarget; onClose: () => v
 
       <ToggleRow label="Add a small Dicta mark" value={watermark} onChange={setWatermark} />
 
-      <View style={styles.quickActions}>
-        <QuickAction icon="download" label="Save image" busy={save.isPending} onPress={() => save.mutate()} />
-        {postId && <QuickAction icon="link" label="Copy link" busy={copyLink.isPending} onPress={() => copyLink.mutate()} />}
+      {/* Stories get the card as designed, as a sticker; the format above is for images. */}
+      <View style={styles.targets}>
+        {storiesApps.map((app) => (
+          <Target
+            key={app}
+            label={STORIES[app]}
+            accessibilityLabel={`Share to your ${STORIES[app]} story`}
+            busy={story.isPending && story.variables === app}
+            onPress={() => story.mutate(app)}>
+            <BrandGlyph brand={app} size={22} color={theme.text} />
+          </Target>
+        ))}
+        {postId &&
+          (Object.keys(POSTS) as PostApp[]).map((app) => (
+            <Target key={app} label={POSTS[app]} accessibilityLabel={`Post on ${POSTS[app]}`} onPress={() => post.mutate(app)}>
+              <BrandGlyph brand={app} size={22} color={theme.text} />
+            </Target>
+          ))}
+        <Target label="Save" accessibilityLabel="Save image" busy={save.isPending} onPress={() => save.mutate()}>
+          <Icon name="download" size={24} color={theme.text} />
+        </Target>
+        {postId && (
+          <Target label="Copy link" busy={copyLink.isPending} onPress={() => copyLink.mutate()}>
+            <Icon name="link" size={24} color={theme.text} />
+          </Target>
+        )}
       </View>
       <Button label="Share…" icon="share" onPress={() => share.mutate()} loading={share.isPending} />
     </View>
   );
 }
 
-function QuickAction({ icon, label, busy, onPress }: { icon: IconName; label: string; busy: boolean; onPress: () => void }) {
+interface TargetProps {
+  label: string;
+  accessibilityLabel?: string;
+  busy?: boolean;
+  onPress: () => void;
+  children: ReactNode;
+}
+
+function Target({ label, accessibilityLabel = label, busy = false, onPress, children }: TargetProps) {
   const theme = useTheme();
   return (
     <Pressable
       onPress={onPress}
       disabled={busy}
       accessibilityRole="button"
-      accessibilityLabel={label}
+      accessibilityLabel={accessibilityLabel}
       accessibilityState={{ busy }}
-      style={[styles.quick, { backgroundColor: theme.surface, opacity: busy ? 0.5 : 1 }]}>
-      <Icon name={icon} size={18} color={theme.text} />
-      <Text variant="subhead">{label}</Text>
+      style={[styles.target, { opacity: busy ? 0.5 : 1 }]}>
+      <View style={[styles.targetIcon, { backgroundColor: theme.surface }]}>{children}</View>
+      <Text variant="caption" color="textSecondary" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+        {label}
+      </Text>
     </Pressable>
   );
 }
@@ -209,7 +280,6 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.sm,
   },
   size: { fontVariant: ['tabular-nums'] },
   formats: { flexDirection: 'row', gap: spacing.sm },
@@ -227,14 +297,13 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   silhouette: { borderWidth: 1.5, borderRadius: 4 },
-  quickActions: { flexDirection: 'row', gap: spacing.sm },
-  quick: {
-    flex: 1,
-    flexDirection: 'row',
+  targets: { flexDirection: 'row', justifyContent: 'center', gap: spacing.xs },
+  target: { flex: 1, maxWidth: 76, alignItems: 'center', gap: spacing.xs + 2 },
+  targetIcon: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.sm,
-    height: 46,
-    borderRadius: radius.pill,
   },
 });

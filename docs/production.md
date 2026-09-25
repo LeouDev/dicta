@@ -60,6 +60,13 @@ Links keep Supabase's `{{ .ConfirmationURL }}`: Supabase verifies the token and 
 
 **Then check on an iPhone:** sign up → the email arrives → the link opens Dicta signed in. Forgot password → the link opens the new-password screen → sign in with it. Change email → both addresses confirm. A link opened on another device shows "Link expired" (PKCE ties it to the phone that asked), and a used link does too.
 
+## Sharing
+
+- **Instagram and Facebook Stories**, the way Apple Music shares songs: the card as designed, with the feed's corners and shadow, becomes a sticker people can move and resize, over a blurred, dimmed copy of itself. It uses Meta's Sharing to Stories: the images go on the pasteboard for five minutes (`modules/pasteboard`, a small local Expo module) and the app opens with `instagram-stories://share?source_application=<app ID>` or `facebook-stories://share`. The app ID is Dicta's at developers.facebook.com (1083001631397605); it's public, and nothing else goes to Meta. The buttons show only when the app is installed.
+- **Links in stories:** tappable attribution links are for Meta's partners, so a post's link goes along as text, ready to paste into Instagram's Link sticker.
+- **Threads and X:** a new post with the quote (up to 200 characters) and the post's link, whose preview shows the card. Their app opens when installed, the website otherwise.
+- **If Instagram says "The app you shared from doesn't currently support sharing to Stories",** it didn't accept the app ID: check the Meta app (switching it to Live needs the privacy policy URL).
+
 ## Development seed
 
 `npx supabase start` (needs Docker) creates a local database and loads `supabase/seed.sql`: 25 fictional people, 77 original quotes (some in Chinese, Japanese, Korean, Arabic and Russian), follows, likes, comments, replies and saves. `npm run seed` regenerates the file and reloads it into the local database; `SEED_KEEP_USERS=1` keeps your own local accounts. It can't reach production: the CLI is only called with `--local`, and the SQL refuses to run on any database that has accounts outside `@seed.dicta.test`. Seed accounts have no password. Never run `supabase db reset --linked` or `db push --include-seed`.

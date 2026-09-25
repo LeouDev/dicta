@@ -7,6 +7,7 @@ import { loadSkImage } from './images';
 import { layoutCard } from './layout';
 import { LinkPreview, PREVIEW_SIZE } from './link-preview';
 import { QuoteCanvas } from './quote-canvas';
+import { STORY_SIZE, StoryBackground, StorySticker, stickerSize } from './story';
 import type { CardAuthor, Format, QuoteDesign } from './types';
 
 export const EXPORT_OPTIONS: { format: Format; label: string; detail: string }[] = [
@@ -50,6 +51,20 @@ export async function renderCardImages({ text, design, author }: Omit<ExportInpu
   const preview = await drawAsImage(<LinkPreview card={card} canvas={design.canvas} radius={design.radius} />, PREVIEW_SIZE);
   if (!preview) throw new Error('Couldn’t render the link preview.');
   return { card: card.encodeToBytes(ImageFormat.JPEG, 90), preview: preview.encodeToBytes(ImageFormat.JPEG, 86) };
+}
+
+/**
+ * Instagram and Facebook Stories (story.tsx): the card as designed, whatever
+ * format the share sheet shows, since it becomes a sticker people resize.
+ */
+export async function renderStoryImages({ text, design, author, watermark = false }: Omit<ExportInput, 'format'>) {
+  const card = await drawCard({ text, design, author, format: 'original', watermark });
+  const [sticker, background] = await Promise.all([
+    drawAsImage(<StorySticker card={card} radius={design.radius} />, stickerSize(card)),
+    drawAsImage(<StoryBackground card={card} />, STORY_SIZE),
+  ]);
+  if (!sticker || !background) throw new Error('Couldn’t render the story.');
+  return { sticker: sticker.encodeToBytes(ImageFormat.PNG, 100), background: background.encodeToBytes(ImageFormat.JPEG, 90) };
 }
 
 async function drawCard({ text, design, author, format, watermark = false }: ExportInput) {
