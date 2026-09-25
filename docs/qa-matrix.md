@@ -26,8 +26,9 @@ PASS = exercised end to end this phase. NOT TESTED = not run this phase; the rea
 | Sharing | PASS | Share screen opens with format choices. |
 | Save Image | PASS | Story (1080 × 1920) and Original (1080 × 1350) of the Arabic post saved to Photos; right-to-left order and joined letters correct. |
 | Copy Link | NOT TESTED | The link format (`/post/<id>`) was checked on the website; the button wasn't tapped. |
-| Instagram / Facebook Stories | NOT TESTED on a phone | 2026-09-26, simulator with the install check bypassed: the pasteboard held the sticker (PNG 1208 × 1478, transparent corners), the background (JPEG 1080 × 1920), the app ID and the post link. Opening Instagram needs the app: build 3 on your iPhone. |
-| Threads / X | PASS (simulator) | Threads opened its composer on threads.com in Safari (not signed in there). The URLs have a unit test; on a phone with the apps installed, they open instead. |
+| Instagram / Facebook Stories | PASS (Instagram) | 2026-09-26, TestFlight build 3 on your iPhone: Instagram's story editor opened with the card as a sticker over its blurred copy, and accepted the Meta app ID (you're the Meta app's admin; other people's accounts not tried yet). Facebook Stories and pasting the link into a Link sticker not tried yet. In the simulator the pasteboard held the sticker (PNG 1208 × 1478, transparent corners), background (JPEG 1080 × 1920), app ID and link. |
+| Threads / X | PASS (Threads) | 2026-09-26, build 3 on your iPhone: the Threads app opened a new thread with the quote and a link preview showing the card. X not tried on the phone yet; its URL has a unit test. |
+| Share sheet | PASS | Build 3 on your iPhone, dark mode: Instagram, Facebook, Threads, X, Save and Copy link all show, labels fit. |
 | Deep links | PASS | `dicta://user/…` opens the profile; a push opens the post and then its comments, from the foreground and from a cold start. Universal links were verified on your iPhone earlier. |
 | Website | PASS | Page, card and preview for every production post. The first post's new card finished in the background about 70 s later (Paper texture, CPU). |
 | Link preview | PASS | Preview images for all six scripts, without missing-glyph boxes. iMessage checked by you earlier; WhatsApp not checked. |
