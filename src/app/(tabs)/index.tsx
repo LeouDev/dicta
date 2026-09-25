@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, StyleSheet, View, useWindowDimensions } from 'react-native';
 
+import { useTabBarSpace } from '@/components/bottom-tab-bar';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Screen } from '@/components/ui/screen';
 import { ScreenHeader } from '@/components/ui/screen-header';
@@ -20,6 +21,7 @@ export default function HomeScreen() {
   const cardWidth = width - spacing.md * 2;
   const feed = useHomeFeed();
   const [pulling, setPulling] = useState(false);
+  const tabBarSpace = useTabBarSpace();
   const posts = feed.data?.pages.flat() ?? [];
 
   const refresh = async () => {
@@ -45,7 +47,7 @@ export default function HomeScreen() {
           // New posts arrive at the top: show them rather than hold the old first post in place.
           maintainVisibleContentPosition={{ disabled: true }}
           renderItem={({ item }) => <PostCard post={item} width={cardWidth} />}
-          contentContainerStyle={styles.list}
+          contentContainerStyle={{ ...styles.list, paddingBottom: tabBarSpace + spacing.lg }}
           onEndReached={() => {
             if (feed.hasNextPage && !feed.isFetchingNextPage) feed.fetchNextPage();
           }}

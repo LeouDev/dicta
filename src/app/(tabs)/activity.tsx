@@ -3,6 +3,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { memo, useCallback, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, Text as RNText, StyleSheet, View } from 'react-native';
 
+import { useTabBarSpace } from '@/components/bottom-tab-bar';
 import { PushPrompt } from '@/components/push-prompt';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Screen } from '@/components/ui/screen';
@@ -29,6 +30,7 @@ export default function ActivityScreen() {
   const unread = useUnreadCount().data ?? 0;
   const { mutate: markRead } = useMarkRead();
   const [pulling, setPulling] = useState(false);
+  const tabBarSpace = useTabBarSpace();
   const items = notifications.data?.pages.flat() ?? [];
 
   // Leaving Activity means you've seen it: clear the badge (rows stay tinted while you're here).
@@ -68,7 +70,7 @@ export default function ActivityScreen() {
         data={items}
         keyExtractor={(n) => n.id}
         renderItem={({ item }) => <NotificationRow item={item} onPress={open} />}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[styles.list, { paddingBottom: tabBarSpace + spacing.xxl }]}
         refreshing={pulling}
         onRefresh={async () => {
           setPulling(true);

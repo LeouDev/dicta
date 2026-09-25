@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { memo, useState, type ReactElement } from 'react';
 import { ActivityIndicator, StyleSheet, View, useWindowDimensions } from 'react-native';
 
+import { useTabBarSpace } from '@/components/bottom-tab-bar';
 import { EmptyState } from '@/components/ui/empty-state';
 import { PressableScale } from '@/components/ui/pressable-scale';
 import { radius, spacing } from '@/constants/tokens';
@@ -31,6 +32,7 @@ export function PostGrid({ query, header, empty }: PostGridProps) {
   const theme = useTheme();
   const { width } = useWindowDimensions();
   const [pulling, setPulling] = useState(false);
+  const tabBarSpace = useTabBarSpace();
   const items = dedupe(query.data?.pages.flat() ?? []);
   const tileWidth = (width - GRID_GUTTER * 2 - GRID_GAP) / 2;
 
@@ -44,7 +46,7 @@ export function PostGrid({ query, header, empty }: PostGridProps) {
       maintainVisibleContentPosition={{ disabled: true }}
       ListHeaderComponent={header}
       renderItem={({ item }) => <GridTile post={item} width={tileWidth} />}
-      contentContainerStyle={styles.list}
+      contentContainerStyle={{ ...styles.list, paddingBottom: tabBarSpace + spacing.xxl }}
       onEndReached={() => {
         if (query.hasNextPage && !query.isFetchingNextPage) query.fetchNextPage();
       }}
