@@ -11,7 +11,8 @@ Built with Expo SDK 57 (React Native 0.86, New Architecture, React Compiler), Ex
 | 1 | Expo + TypeScript + Router, Supabase, design tokens, navigation, auth, onboarding, profile setup, full DB schema + RLS | ✅ Done |
 | 2–3 | Quote card engine (Skia), 8 templates, visual editor with live preview, drafts, publish, image export (9:16, 4:5, 1:1, original), feed + profile gallery | ✅ Done |
 | 4 | Social: likes (double-tap), threaded comments, follows, saves, Activity with realtime badge, Discover (trending, creators, topics, hashtags), debounced search, post view, other profiles, share sheet (save image, copy link, share counts), settings (edit profile, log out, delete account), report + block | ✅ Done |
-| 5 | Seed data, push notifications, universal links (web domain) | Next |
+| 5 | Website with shared quote pages and universal links, App Store pages | ✅ Done |
+| 6 | Seed data, push notifications, App Store submission | Next |
 
 ## Getting started
 
@@ -80,6 +81,9 @@ src/
   store/          Zustand stores (auth session)
   types/          Generated Supabase types + app models
   utils/          Pure helpers (validation, formatting), unit tested
+web/              dicta-orcin.vercel.app (Vercel project root): shared quote pages, universal links, App Store pages
+  api/post.js     /post/<id>: server-rendered quote page with link-preview tags
+  public/         home, privacy, terms, support, 404, .well-known/apple-app-site-association
 supabase/
   migrations/     Schema, RLS, triggers, RPCs, storage buckets/policies
   tests/          SQL tests for the social layer (npm run test:db)
@@ -148,6 +152,13 @@ Tables: `profiles`, `posts`, `post_designs` (the structured card design as JSONB
 - **Social writes are optimistic.** Taps update every cached copy of a post, comment or profile at once (`lib/cache.ts`); requests for the same target run in order (mutation `scope`), so the last tap wins, and failures roll back with a quiet toast. Counts are owned by database triggers, never computed by the client.
 - **Share and Report are modal routes, not React Native `Modal`s.** An RN `Modal` presents from the root view controller and silently fails while the editor or the comments sheet is up; native-stack modals stack correctly. The toast renders in a `FullWindowOverlay` so it shows above sheets.
 - **Account deletion** runs through a `SECURITY DEFINER` RPC that deletes the auth user and cascades from there. The app removes the user's storage files first. No service-role key is ever needed on device.
+
+## Website
+
+`web/` is deployed by the Vercel project `dicta2/dicta` (root directory `web`) on every push to `main`, at https://dicta-orcin.vercel.app. It needs `SUPABASE_URL` and `SUPABASE_ANON_KEY` in the project's environment variables.
+
+- **Shared links:** Copy link in the app produces `https://dicta-orcin.vercel.app/post/<id>`. With Dicta installed, iOS opens it in the app (universal links via `ios.associatedDomains` and the `apple-app-site-association` file). Otherwise the page shows the quote with an Open in Dicta button, and link previews show the quote.
+- **App Store Connect:** use `/privacy` for the privacy policy URL and `/support` for the support URL.
 
 ## Building for iOS
 
