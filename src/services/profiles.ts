@@ -26,14 +26,16 @@ export async function isUsernameAvailable(username: string): Promise<boolean> {
   return count === 0;
 }
 
-/** Resizes to 512px, re-encodes as JPEG and uploads to avatars/<uid>/. Returns the public URL. */
-export async function uploadAvatar(userId: string, localUri: string): Promise<string> {
-  const rendered = await ImageManipulator.manipulate(localUri).resize({ width: 512 }).renderAsync();
+const WIDTHS = { avatar: 512, cover: 1500 };
+
+/** Resizes (a profile photo to 512px, a cover to 1500px), re-encodes as JPEG and uploads to avatars/<uid>/. Returns the public URL. */
+export async function uploadAvatar(userId: string, localUri: string, kind: keyof typeof WIDTHS = 'avatar'): Promise<string> {
+  const rendered = await ImageManipulator.manipulate(localUri).resize({ width: WIDTHS[kind] }).renderAsync();
   const saved = await rendered.saveAsync({ compress: 0.82, format: SaveFormat.JPEG });
   const bytes = await new File(saved.uri).arrayBuffer();
 
   // A fresh name per upload sidesteps CDN caching of the old photo.
-  const path = `${userId}/avatar-${Date.now()}.jpg`;
+  const path = `${userId}/${kind}-${Date.now()}.jpg`;
   const { error } = await supabase.storage.from('avatars').upload(path, bytes, {
     contentType: 'image/jpeg',
     upsert: false,
@@ -74,11 +76,15 @@ export interface ProfileChanges {
   bio: string;
   /** New photo to upload, `null` to remove the current one, undefined to keep it. */
   avatar?: string | null;
+  /** The cover photo, likewise. */
+  cover?: string | null;
 }
 
-/** Updates the profile; a replaced or removed photo is deleted from storage afterwards. */
+/** Updates the profile; a replaced or removed photo or cover is deleted from storage afterwards. */
 export async function updateProfile(profile: Profile, changes: ProfileChanges): Promise<Profile> {
-  const avatarUrl = changes.avatar === undefined ? undefined : changes.avatar ? await uploadAvatar(profile.id, changes.avatar) : null;
+  const upload = (photo: string | null | undefined, kind: 'avatar' | 'cover') =>
+    photo === undefined ? undefined : photo ? uploadAvatar(profile.id, photo, kind) : null;
+  const [avatarUrl, coverUrl] = await Promise.all([upload(changes.avatar, 'avatar'), upload(changes.cover, 'cover')]);
   const { data, error } = await supabase
     .from('profiles')
     .update({
@@ -86,13 +92,15 @@ export async function updateProfile(profile: Profile, changes: ProfileChanges): 
       display_name: changes.displayName.trim(),
       bio: changes.bio.trim(),
       ...(avatarUrl !== undefined ? { avatar_url: avatarUrl } : {}),
+      ...(coverUrl !== undefined ? { cover_url: coverUrl } : {}),
     })
     .eq('id', profile.id)
     .select('*')
     .single();
   if (error) throw error;
 
-  const oldPath = avatarUrl !== undefined ? storagePath('avatars', profile.avatar_url) : null;
-  if (oldPath) await supabase.storage.from('avatars').remove([oldPath]);
+  const replaced = [avatarUrl !== undefined && profile.avatar_url, coverUrl !== undefined && profile.cover_url];
+  const oldPaths = replaced.map((url) => (url ? storagePath('avatars', url) : null)).filter((path) => path !== null);
+  if (oldPaths.length) await supabase.storage.from('avatars').remove(oldPaths);
   return data;
 }

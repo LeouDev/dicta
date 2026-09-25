@@ -89,7 +89,7 @@ export default function UserScreen() {
       style={styles.action}
     />
   ) : (
-    <FollowButton profile={p} size="sm" />
+    <FollowButton profile={p} size="sm" style={styles.action} />
   );
   const header = (
     <View style={styles.header}>
@@ -124,6 +124,6 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   headerButton: { width: hitTarget, height: hitTarget, alignItems: 'center', justifyContent: 'center' },
   header: { paddingBottom: spacing.xl, paddingHorizontal: spacing.sm },
-  action: { minWidth: 132 },
+  action: { flex: 1 },
   blocked: { flexGrow: 1, paddingBottom: spacing.xxl },
 });

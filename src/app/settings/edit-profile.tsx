@@ -32,7 +32,7 @@ export default function EditProfileScreen() {
   return (
     <Screen scroll edges={['bottom']} contentStyle={{ paddingTop: 16 }}>
       <ProfileForm
-        initial={{ displayName: me.display_name, username: me.username, bio: me.bio, avatarUrl: me.avatar_url }}
+        initial={{ displayName: me.display_name, username: me.username, bio: me.bio, avatarUrl: me.avatar_url, coverUrl: me.cover_url }}
         currentUsername={me.username}
         submitLabel="Save"
         submitting={save.isPending}

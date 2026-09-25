@@ -48,6 +48,7 @@ export const profile = (overrides: Partial<ProfileView> = {}): ProfileView => ({
   display_name: 'Ben',
   bio: '',
   avatar_url: null,
+  cover_url: null,
   is_verified: false,
   followers_count: 0,
   following_count: 0,

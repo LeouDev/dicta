@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useRef, useState, type ReactNode } from 'react';
 import { ActivityIndicator, StyleSheet, View, type TextInput } from 'react-native';
@@ -27,10 +28,13 @@ export interface ProfileFormValues {
   bio: string;
   /** New local photo, `null` to remove, undefined to keep the current one. */
   avatar: string | null | undefined;
+  /** The cover photo, likewise. */
+  cover: string | null | undefined;
 }
 
 interface ProfileFormProps {
-  initial: { displayName: string; username: string; bio: string; avatarUrl: string | null };
+  /** `coverUrl` only when editing (null for none); without it there's no cover to pick. */
+  initial: { displayName: string; username: string; bio: string; avatarUrl: string | null; coverUrl?: string | null };
   /** Editing: your current handle counts as available. */
   currentUsername?: string;
   submitLabel: string;
@@ -44,6 +48,7 @@ interface ProfileFormProps {
 export function ProfileForm({ initial, currentUsername, submitLabel, submitting, error, onSubmit, footer }: ProfileFormProps) {
   const theme = useTheme();
   const [avatar, setAvatar] = useState<string | null | undefined>(undefined);
+  const [cover, setCover] = useState<string | null | undefined>(undefined);
   const [displayName, setDisplayName] = useState(initial.displayName);
   const [username, setUsername] = useState(initial.username);
   const [bio, setBio] = useState(initial.bio);
@@ -52,6 +57,7 @@ export function ProfileForm({ initial, currentUsername, submitLabel, submitting,
   const bioRef = useRef<TextInput>(null);
 
   const shownAvatar = avatar === undefined ? initial.avatarUrl : avatar;
+  const shownCover = cover === undefined ? initial.coverUrl : cover;
   const unchangedHandle = currentUsername !== undefined && username === currentUsername;
   const debouncedUsername = useDebouncedValue(username, 350);
   const formatError = username ? validateUsername(username) : 'Pick a username.';
@@ -88,16 +94,51 @@ export function ProfileForm({ initial, currentUsername, submitLabel, submitting,
     ]);
   };
 
+  const pickCover = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 1 });
+    if (!result.canceled && result.assets[0]) setCover(result.assets[0].uri);
+  };
+
+  const onCoverPress = () => {
+    if (!shownCover) return void pickCover();
+    showActions([
+      { label: 'Choose a different cover', onPress: pickCover },
+      { label: 'Remove cover', destructive: true, onPress: () => setCover(null) },
+    ]);
+  };
+
   const submit = () => {
     setSubmitted(true);
     if (validateDisplayName(displayName) || formatError || taken || checking) return;
-    onSubmit({ displayName, username, bio, avatar });
+    onSubmit({ displayName, username, bio, avatar, cover });
   };
 
   const previewName = displayName.trim() || 'Your name';
 
   return (
     <>
+      {initial.coverUrl !== undefined && (
+        <PressableScale
+          onPress={onCoverPress}
+          accessibilityLabel={shownCover ? 'Change cover photo' : 'Add a cover photo'}
+          style={[styles.cover, { backgroundColor: theme.accentSoft }]}>
+          {shownCover ? (
+            <>
+              <Image source={{ uri: shownCover }} style={StyleSheet.absoluteFill} contentFit="cover" />
+              <View style={styles.coverBadge}>
+                <Icon name="camera" size={15} color="#FFFFFF" />
+              </View>
+            </>
+          ) : (
+            <View style={styles.coverEmpty}>
+              <Icon name="photo" size={18} color={theme.accent} />
+              <Text variant="subhead" color="accent">
+                Add a cover photo
+              </Text>
+            </View>
+          )}
+        </PressableScale>
+      )}
       <View style={[styles.card, shadows.card, { backgroundColor: CARD.paper }]}>
         <View style={styles.cardHeader}>
           <PressableScale
@@ -190,6 +231,19 @@ export function ProfileForm({ initial, currentUsername, submitLabel, submitting,
 export const isUsernameTaken = (e: unknown) => typeof e === 'object' && e !== null && 'code' in e && e.code === '23505';
 
 const styles = StyleSheet.create({
+  cover: { height: 110, borderRadius: radius.lg, overflow: 'hidden', marginBottom: spacing.lg },
+  coverEmpty: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs },
+  coverBadge: {
+    position: 'absolute',
+    right: spacing.sm,
+    bottom: spacing.sm,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+  },
   card: { borderRadius: radius.lg, padding: spacing.lg, gap: spacing.lg },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   avatarButton: { borderRadius: radius.pill },

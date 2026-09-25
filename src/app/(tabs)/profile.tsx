@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
   topBar: { paddingHorizontal: spacing.lg },
   iconButton: { width: hitTarget, height: hitTarget, alignItems: 'flex-end', justifyContent: 'center' },
   profile: { paddingBottom: spacing.md, paddingHorizontal: spacing.sm },
-  edit: { minWidth: 132 },
+  edit: { flex: 1 },
   tabs: { flexDirection: 'row', marginTop: spacing.lg, borderBottomWidth: StyleSheet.hairlineWidth },
   tab: {
     flex: 1,

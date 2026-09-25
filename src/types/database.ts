@@ -410,6 +410,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           bio: string
+          cover_url: string | null
           created_at: string
           display_name: string
           followers_count: number
@@ -423,6 +424,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           bio?: string
+          cover_url?: string | null
           created_at?: string
           display_name: string
           followers_count?: number
@@ -436,6 +438,7 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           bio?: string
+          cover_url?: string | null
           created_at?: string
           display_name?: string
           followers_count?: number
@@ -673,12 +676,36 @@ export type Database = {
         }
         Relationships: []
       }
+      welcome_emails: {
+        Row: {
+          sent_at: string
+          user_id: string
+        }
+        Insert: {
+          sent_at?: string
+          user_id: string
+        }
+        Update: {
+          sent_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "welcome_emails_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
       claim_push: { Args: { p_id: string }; Returns: Json }
+      claim_welcome: { Args: { p_user: string }; Returns: Json }
       create_post: {
         Args: {
           p_background_image_path?: string
@@ -767,6 +794,7 @@ export type Database = {
         Returns: {
           avatar_url: string | null
           bio: string
+          cover_url: string | null
           created_at: string
           display_name: string
           followers_count: number
@@ -789,6 +817,7 @@ export type Database = {
         Returns: {
           avatar_url: string | null
           bio: string
+          cover_url: string | null
           created_at: string
           display_name: string
           followers_count: number
