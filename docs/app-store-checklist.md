@@ -23,7 +23,7 @@
 ## Before inviting testers
 
 - ⬜ Apple push key (docs/production.md, "Push notifications"). Without it no push reaches a phone.
-- ⬜ Custom SMTP (docs/production.md, "Email"). Without it email sign-up confirmations only reach your organization's members. Sign in with Apple works regardless.
+- ✅ Custom SMTP through Resend from air-rally.com, with DMARC, and the welcome email (docs/production.md, "Email"). Verified 2026-09-26.
 - ⬜ Run `npm run test:db` once: the push tests passed against the live schema before the migration was applied, but auto mode stopped me from running them against production afterwards.
 
 ## App Review requirements

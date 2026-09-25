@@ -8,8 +8,8 @@ PASS = exercised end to end this phase. NOT TESTED = not run this phase; the rea
 | --- | --- | --- |
 | Authentication | PASS | Session restored across cold starts. A fresh email sign-in wasn't re-run: the test account's password isn't known to me. |
 | Apple Sign In | NOT TESTED | Needs an Apple ID on a device. |
-| Email confirmation | NOT TESTED | Blocked on SMTP (docs/production.md). The app's handler (`dicta://auth-callback`, PKCE code exchange) is unchanged. |
-| Password reset | NOT TESTED | Blocked on SMTP. Handler `dicta://reset-password` unchanged. |
+| Email confirmation | NOT TESTED | SMTP now works (2026-09-26), but no one has signed up with a new address yet. The app's handler (`dicta://auth-callback`, PKCE code exchange) is unchanged. |
+| Password reset | PASS (email) | 2026-09-26: a reset email reached Gmail through Resend. Not yet started from "Forgot password?" on a phone, which is what makes the link work. |
 | Profile | PASS | Own and other profiles; post, follower and following counts updated after deleting posts, following, blocking and unblocking. |
 | Publishing | PASS | Six posts in six scripts across Editorial, Midnight, Typewriter and Minimal. Artwork stored 0.7–1.7 s after publishing; keys match the website's. |
 | Drafts | NOT TESTED | Not re-run this phase. |
@@ -44,6 +44,7 @@ PASS = exercised end to end this phase. NOT TESTED = not run this phase; the rea
 | Multilingual text | PASS | Six sentences checked in the iOS feed and composer, website card, link preview and export. Server check found zero missing glyphs. |
 | Deletion from the web | PASS | Five deletes: page, card and preview returned 404 within 2 s; pg_net logged 5 purges (204); stored files gone; no orphaned files. |
 | Seed | PASS | Generator tests (6/6). Not loaded into a database: Docker isn't installed here. |
+| Welcome email | PASS | 2026-09-26: arrived in Gmail's inbox from Dicta <hello@air-rally.com>, emblem and design intact. Sent once per person (database test). |
 
 ## Automated tests
 

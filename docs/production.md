@@ -42,7 +42,7 @@ Not done: Expo push receipts aren't checked, so credential errors only show in t
 
 ## Email
 
-Supabase's built-in mailer is still active: 2 emails an hour, delivered only to members of your Supabase organization. Beta testers can't confirm their accounts until custom SMTP is on.
+**Live since 2026-09-26.** Auth emails (sign-up confirmation, password reset, email change) go through Resend from `Dicta <no-reply@air-rally.com>`, and the welcome email from `Dicta <hello@air-rally.com>`. Both arrived in a Gmail inbox, not spam, on the first test. The setup below is for reference.
 
 Set it up in the Supabase dashboard, not with `supabase config push`: on 2026-09-25 `config diff` showed a push would also change unrelated live settings (database pool sizes, the Vercel redirect URLs, a Twilio flag).
 
