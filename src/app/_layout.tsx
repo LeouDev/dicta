@@ -90,6 +90,9 @@ function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.background } }}>
         <Stack.Protected guard={!signedIn}>
           <Stack.Screen name="(auth)" />
+          {/* The email-confirmation link. Signing in removes it, and the guards below
+              take the person on: to profile setup when new, to the feed otherwise. */}
+          <Stack.Screen name="auth-callback" />
         </Stack.Protected>
         <Stack.Protected guard={signedIn && !hasProfile}>
           <Stack.Screen name="create-profile" options={{ gestureEnabled: false }} />
@@ -118,8 +121,7 @@ function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
           <Stack.Screen name="share" options={{ presentation: 'modal' }} />
           <Stack.Screen name="report" options={{ presentation: 'modal' }} />
         </Stack.Protected>
-        {/* Email deep links: reachable in any auth state. */}
-        <Stack.Screen name="auth-callback" />
+        {/* The password-reset link signs the person in, then asks for the new password. */}
         <Stack.Screen name="reset-password" />
       </Stack>
       <Toaster />

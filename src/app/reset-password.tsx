@@ -9,9 +9,11 @@ import { FormError } from '@/components/ui/form-error';
 import { Screen } from '@/components/ui/screen';
 import { TextField } from '@/components/ui/text-field';
 import { AuthFormLayout } from '@/features/auth/auth-form-layout';
+import { useMyProfile } from '@/hooks/use-my-profile';
 import { useTheme } from '@/hooks/use-theme';
 import { exchangeAuthCode, updatePassword } from '@/services/auth';
 import { friendlyError } from '@/services/errors';
+import { useAuth } from '@/store/auth';
 import { PASSWORD_MIN, validatePassword } from '@/utils/validation';
 
 const EXPIRED = 'This reset link is invalid or has expired. Request a new one from the sign-in screen.';
@@ -26,6 +28,11 @@ export default function ResetPasswordScreen() {
   const [submitted, setSubmitted] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const started = useRef(false);
+  const signedIn = useAuth((st) => st.session !== null);
+  const hasProfile = Boolean(useMyProfile().data);
+  // This screen sits outside the root layout's guards, so it goes on to a route that's
+  // open in the current state (a guarded one would leave the person stuck here).
+  const next = () => router.replace(!signedIn ? '/sign-in' : hasProfile ? '/' : '/create-profile');
 
   useEffect(() => {
     if (phase !== 'verifying' || !code || started.current) return;
@@ -41,7 +48,7 @@ export default function ResetPasswordScreen() {
 
   const update = useMutation({
     mutationFn: () => updatePassword(password),
-    onSuccess: () => router.replace('/'),
+    onSuccess: next,
     onError: (e) => setFormError(friendlyError(e)),
   });
 
@@ -56,7 +63,7 @@ export default function ResetPasswordScreen() {
   if (phase === 'invalid') {
     return (
       <Screen>
-        <EmptyState title="Link expired" message={linkError} actionLabel="Continue" onAction={() => router.replace('/')} />
+        <EmptyState title="Link expired" message={linkError} actionLabel="Continue" onAction={next} />
       </Screen>
     );
   }
