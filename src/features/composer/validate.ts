@@ -5,7 +5,7 @@ export function validatePost(text: string, design: QuoteDesign): string | null {
   const trimmed = text.trim();
   if (!trimmed) return 'Write something first.';
   if (trimmed.length > TEXT_MAX_LENGTH) return `Keep it under ${TEXT_MAX_LENGTH} characters.`;
-  if (design.background.type === 'image' && !design.background.uri) {
+  if (design.background.type === 'image' && !design.background.image) {
     return 'Choose a photo for the background, or pick another template.';
   }
   return null;

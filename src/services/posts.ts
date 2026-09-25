@@ -138,13 +138,13 @@ export async function fetchPost(postId: string): Promise<FeedPost | null> {
 /** Uploads a local background photo to post-images/<uid>/ and returns the published design. */
 async function uploadBackground(userId: string, design: QuoteDesign): Promise<QuoteDesign> {
   const bg = design.background;
-  if (bg.type !== 'image' || !bg.uri?.startsWith('file://')) return design;
+  if (bg.type !== 'image' || !bg.image?.startsWith('file://')) return design;
   const path = `${userId}/${Crypto.randomUUID()}.jpg`;
-  const bytes = await new File(bg.uri).arrayBuffer();
+  const bytes = await new File(bg.image).arrayBuffer();
   const { error } = await supabase.storage.from('post-images').upload(path, bytes, { contentType: 'image/jpeg' });
   if (error) throw error;
-  const uri = supabase.storage.from('post-images').getPublicUrl(path).data.publicUrl;
-  return { ...design, background: { ...bg, uri, path } };
+  const image = supabase.storage.from('post-images').getPublicUrl(path).data.publicUrl;
+  return { ...design, background: { ...bg, image, path } };
 }
 
 interface NewPost {

@@ -2,5 +2,8 @@
   "name": "dicta-web",
   "private": true,
   "type": "module",
-  "description": "dicta-orcin.vercel.app: shared quote pages, universal links and App Store pages"
+  "description": "dicta-orcin.vercel.app: shared quote pages, universal links and App Store pages",
+  "scripts": {
+    "test": "node --test"
+  }
 }

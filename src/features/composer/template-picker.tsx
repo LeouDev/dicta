@@ -5,20 +5,20 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { radius, spacing } from '@/constants/tokens';
 import { QuoteCard } from '@/features/quote-card/quote-card';
-import { TEMPLATES, createDesign, suggestedFontSize } from '@/features/quote-card/templates';
+import { TEMPLATES, createDesign } from '@/features/quote-card/templates';
 import { TEMPLATE_IDS, type CardAuthor, type TemplateId } from '@/features/quote-card/types';
 import { useTheme } from '@/hooks/use-theme';
 
 import { useComposer } from './store';
 
 const THUMB_WIDTH = 84;
-const SAMPLE = 'Your words, beautifully yours.';
 
-/** Live thumbnails: every template renders the person's own words. */
+/** Live thumbnails: every template renders the person's own words (or its sample before they write). */
 export function TemplatePicker({ author }: { author: CardAuthor }) {
-  const text = useComposer((s) => s.text.trim()) || SAMPLE;
+  const text = useComposer((s) => s.text.trim());
   const current = useComposer((s) => s.design.template);
-  const photoUri = useComposer((s) => (s.design.background.type === 'image' ? s.design.background.uri : null));
+  const canvas = useComposer((s) => s.design.canvas);
+  const photo = useComposer((s) => (s.design.background.type === 'image' ? s.design.background.image : null));
   const chooseTemplate = useComposer((s) => s.chooseTemplate);
 
   return (
@@ -27,9 +27,10 @@ export function TemplatePicker({ author }: { author: CardAuthor }) {
         <TemplateThumb
           key={id}
           id={id}
-          text={text}
+          text={text || TEMPLATES[id].sample}
           author={author}
-          photoUri={photoUri}
+          canvas={canvas}
+          photo={photo}
           selected={id === current}
           onPress={() => {
             Haptics.selectionAsync();
@@ -45,25 +46,25 @@ interface ThumbProps {
   id: TemplateId;
   text: string;
   author: CardAuthor;
-  photoUri: string | null;
+  canvas: ReturnType<typeof createDesign>['canvas'];
+  photo: string | null;
   selected: boolean;
   onPress: () => void;
 }
 
-const TemplateThumb = memo(function TemplateThumb({ id, text, author, photoUri, selected, onPress }: ThumbProps) {
+const TemplateThumb = memo(function TemplateThumb({ id, text, author, canvas, photo, selected, onPress }: ThumbProps) {
   const theme = useTheme();
   const design = useMemo(() => {
-    const d = { ...createDesign(id), fontSize: suggestedFontSize(id, text.length) };
-    if (d.background.type === 'image' && photoUri) d.background = { ...d.background, uri: photoUri };
-    return d;
-  }, [id, text.length, photoUri]);
+    const d = { ...createDesign(id), canvas };
+    return d.background.type === 'image' && photo ? { ...d, background: { ...d.background, image: photo } } : d;
+  }, [id, canvas, photo]);
 
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="radio"
       accessibilityState={{ selected }}
-      accessibilityLabel={`${TEMPLATES[id].label} template`}
+      accessibilityLabel={`${TEMPLATES[id].label} template. ${TEMPLATES[id].description}`}
       style={styles.thumb}>
       <View style={[styles.ring, { borderColor: selected ? theme.text : 'transparent' }]}>
         <QuoteCard text={text} design={design} author={author} width={THUMB_WIDTH} radius={radius.sm} />

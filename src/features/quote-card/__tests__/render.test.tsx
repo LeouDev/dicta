@@ -8,10 +8,11 @@ import path from 'path';
 
 import type { SkImage, SkTypefaceFontProvider } from '@shopify/react-native-skia';
 
+import { contentInsets } from '../geometry';
 import type * as Layout from '../layout';
 import type * as Canvas from '../quote-canvas';
-import type * as Templates from '../templates';
-import { CARD_FORMATS, TEMPLATE_IDS, type CardAuthor, type CardFormat } from '../types';
+import { createDesign } from '../templates';
+import { FORMATS, TEMPLATE_IDS, type CardAuthor } from '../types';
 
 // Skia's web build, backed by the CanvasKit instance this file loads below.
 jest.mock('@shopify/react-native-skia', () => {
@@ -20,14 +21,19 @@ jest.mock('@shopify/react-native-skia', () => {
 });
 
 const PACKAGES: Record<string, string> = {
-  ArchivoBlack: 'archivo-black',
+  Archivo: 'archivo',
   Caveat: 'caveat',
+  CaveatBrush: 'caveat-brush',
   CormorantGaramond: 'cormorant-garamond',
   CourierPrime: 'courier-prime',
-  DMSans: 'dm-sans',
   DMSerifDisplay: 'dm-serif-display',
-  Inter: 'inter',
-  LibreBaskerville: 'libre-baskerville',
+  InstrumentSans: 'instrument-sans',
+  Nunito: 'nunito',
+  PatrickHand: 'patrick-hand',
+  PlayfairDisplay: 'playfair-display',
+  ShareTechMono: 'share-tech-mono',
+  SourceSerif4: 'source-serif-4',
+  VT323: 'vt323',
 };
 
 const TEXTS = {
@@ -39,7 +45,6 @@ const TEXTS = {
 };
 
 const author: CardAuthor = { displayName: 'Leou', username: 'galileouuu', avatarUrl: null, isVerified: true };
-const FORMATS = Object.keys(CARD_FORMATS) as CardFormat[];
 const outDir = process.env.RENDER_OUT;
 // RENDER_ONLY=editorial,journal limits which templates are rendered while iterating.
 const only = process.env.RENDER_ONLY?.split(',');
@@ -47,10 +52,9 @@ const templates = TEMPLATE_IDS.filter((t) => !only || only.includes(t));
 
 let fonts: SkTypefaceFontProvider;
 let avatar: SkImage | null = null;
+let photo: SkImage | null = null;
 let layoutCard: typeof Layout.layoutCard;
 let QuoteCanvas: typeof Canvas.QuoteCanvas;
-let createDesign: typeof Templates.createDesign;
-let suggestedFontSize: typeof Templates.suggestedFontSize;
 let draw: (width: number, height: number, element: React.ReactElement) => Promise<SkImage>;
 
 beforeAll(async () => {
@@ -67,7 +71,6 @@ beforeAll(async () => {
   const headless = require('@shopify/react-native-skia/lib/module/headless');
   ({ layoutCard } = require('../layout'));
   ({ QuoteCanvas } = require('../quote-canvas'));
-  ({ createDesign, suggestedFontSize } = require('../templates'));
   const { fontAssets } = require('@/constants/fonts');
   /* eslint-enable @typescript-eslint/no-require-imports */
 
@@ -78,8 +81,10 @@ beforeAll(async () => {
     fonts.registerFont(Skia.Typeface.MakeFreeTypeFaceFromData(Skia.Data.fromBytes(new Uint8Array(fs.readFileSync(file)))), face);
   }
 
-  const avatarFile = process.env.RENDER_AVATAR;
-  if (avatarFile) avatar = Skia.Image.MakeImageFromEncoded(Skia.Data.fromBytes(new Uint8Array(fs.readFileSync(avatarFile))));
+  const image = (file: string | undefined) =>
+    file ? Skia.Image.MakeImageFromEncoded(Skia.Data.fromBytes(new Uint8Array(fs.readFileSync(file)))) : null;
+  avatar = image(process.env.RENDER_AVATAR);
+  photo = image(process.env.RENDER_PHOTO);
   draw = (width, height, element) => headless.drawOffscreen(headless.makeOffscreenSurface(width, height), element);
   if (outDir) fs.mkdirSync(outDir, { recursive: true });
 });
@@ -89,22 +94,25 @@ describe.each(Object.entries(TEXTS))('%s text', (label, text) => {
   it.each(templates)(
     '%s stays inside every export format',
     async (template) => {
-      const design = { ...createDesign(template), fontSize: suggestedFontSize(template, text.length) };
+      const design = createDesign(template);
 
       for (const format of FORMATS) {
         const layout = layoutCard({ text, design, author, width: 1080, format, fonts, watermark: format === 'story' });
-        expect(layout.lines.length).toBeGreaterThan(0);
+        expect(layout.words.length).toBe(text.split(/\s+/).length);
 
-        for (const line of layout.lines) {
-          // Tilted lines may lean a few pixels past their box, never off the card.
-          expect(line.x).toBeGreaterThanOrEqual(-4);
-          expect(line.x + line.paragraph.getLongestLine()).toBeLessThanOrEqual(layout.width + 4);
-          expect(line.y).toBeGreaterThanOrEqual(0);
-          expect(line.y + line.paragraph.getHeight()).toBeLessThanOrEqual(layout.height);
+        const inset = contentInsets({ format, frame: design.frame, size: layout, scale: layout.scale, padding: design.padding, topOffset: design.topOffset });
+        for (const word of layout.words) {
+          // The editorial wave tilts and bobs words a little past their boxes.
+          const lean = word.paragraph.getHeight() * 0.15 + 2;
+          expect(word.x).toBeGreaterThanOrEqual(inset.left - lean);
+          expect(word.x + word.paragraph.getLongestLine()).toBeLessThanOrEqual(layout.width - inset.right + lean);
+          expect(word.y + word.dy).toBeGreaterThanOrEqual(inset.top - lean);
+          expect(word.y + word.dy + word.paragraph.getHeight()).toBeLessThanOrEqual(layout.height - inset.bottom + lean);
         }
 
         if (outDir) {
-          const image = await draw(layout.width, layout.height, <QuoteCanvas layout={layout} avatar={avatar} backgroundImage={null} />);
+          const background = design.background.type === 'image' ? photo : null;
+          const image = await draw(layout.width, layout.height, <QuoteCanvas layout={layout} avatar={avatar} backgroundImage={background} />);
           fs.writeFileSync(path.join(outDir, `${template}-${format}-${label}.png`), image.encodeToBytes());
         }
       }

@@ -9,7 +9,7 @@ let loading: Promise<SkTypefaceFontProvider> | null = null;
 
 /**
  * Loads every bundled face into one Skia font provider, once per app run.
- * Each face is registered under its expo-font key (e.g. "Inter_600SemiBold"),
+ * Each face is registered under its expo-font key (e.g. "InstrumentSans_600SemiBold"),
  * so the renderer and app UI share exactly one font naming scheme.
  */
 export function loadCardFonts(): Promise<SkTypefaceFontProvider> {

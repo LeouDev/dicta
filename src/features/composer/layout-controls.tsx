@@ -4,13 +4,13 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { spacing } from '@/constants/tokens';
-import { CARD_FORMATS, DESIGN_LIMITS, type CardFormat, type TextAlign, type VerticalAlign } from '@/features/quote-card/types';
+import { CANVASES, DESIGN_LIMITS, type Canvas, type TextAlign, type VerticalAlign } from '@/features/quote-card/types';
 import { useTheme } from '@/hooks/use-theme';
 
 import { SectionLabel, Segmented, SliderRow } from './controls';
 import { useComposer } from './store';
 
-const FORMATS = (Object.keys(CARD_FORMATS) as CardFormat[]).map((value) => ({ value, label: CARD_FORMATS[value].label }));
+const CANVAS_OPTIONS = (Object.keys(CANVASES) as Canvas[]).map((value) => ({ value, label: value }));
 
 export function LayoutControls() {
   const theme = useTheme();
@@ -21,7 +21,7 @@ export function LayoutControls() {
   return (
     <>
       <SectionLabel>Format</SectionLabel>
-      <Segmented options={FORMATS} value={design.format} onChange={(format) => update({ format })} />
+      <Segmented options={CANVAS_OPTIONS} value={design.canvas} onChange={(canvas) => update({ canvas })} />
 
       <SectionLabel>Alignment</SectionLabel>
       <View style={styles.pair}>
@@ -32,8 +32,8 @@ export function LayoutControls() {
               { value: 'center', icon: 'align.center', accessibilityLabel: 'Align center' },
               { value: 'right', icon: 'align.right', accessibilityLabel: 'Align right' },
             ]}
-            value={design.textAlign}
-            onChange={(textAlign) => update({ textAlign })}
+            value={design.align}
+            onChange={(align) => update({ align })}
           />
         </View>
         <View style={styles.half}>
@@ -43,12 +43,21 @@ export function LayoutControls() {
               { value: 'center', icon: 'position.center', accessibilityLabel: 'Middle' },
               { value: 'bottom', icon: 'position.bottom', accessibilityLabel: 'Bottom' },
             ]}
-            value={design.verticalAlign}
-            onChange={(verticalAlign) => update({ verticalAlign })}
+            value={design.vAlign}
+            onChange={(vAlign) => update({ vAlign })}
           />
         </View>
       </View>
 
+      <SliderRow
+        label="Editorial wave"
+        value={design.curve}
+        min={DESIGN_LIMITS.curve.min}
+        max={DESIGN_LIMITS.curve.max}
+        step={0.01}
+        display={(v) => (v < 0.02 ? 'Off' : `${Math.round(v * 100)}%`)}
+        onChange={(curve) => update({ curve })}
+      />
       <SliderRow
         label="Padding"
         value={design.padding}
@@ -84,13 +93,13 @@ export function LayoutControls() {
             onChange={(textWidth) => update({ textWidth })}
           />
           <SliderRow
-            label="Hand-set curve"
-            value={design.curve}
-            min={DESIGN_LIMITS.curve.min}
-            max={DESIGN_LIMITS.curve.max}
+            label="Top offset"
+            value={design.topOffset}
+            min={DESIGN_LIMITS.topOffset.min}
+            max={DESIGN_LIMITS.topOffset.max}
             step={0.01}
-            display={(v) => (v < 0.02 ? 'Off' : `${Math.round(v * 100)}%`)}
-            onChange={(curve) => update({ curve })}
+            display={(v) => `${Math.round(v * 100)}%`}
+            onChange={(topOffset) => update({ topOffset })}
           />
         </>
       )}

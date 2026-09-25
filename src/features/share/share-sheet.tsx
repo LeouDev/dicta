@@ -12,9 +12,10 @@ import { Icon, type IconName } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { radius, spacing } from '@/constants/tokens';
 import { ToggleRow } from '@/features/composer/controls';
-import { EXPORT_OPTIONS, EXPORT_WIDTH, exportCardImage, resolveExportFormat, type ExportFormat } from '@/features/quote-card/export';
+import { EXPORT_OPTIONS, EXPORT_WIDTH, exportCardImage } from '@/features/quote-card/export';
+import { formatRatio } from '@/features/quote-card/geometry';
 import { QuoteCard } from '@/features/quote-card/quote-card';
-import { CARD_FORMATS, type CardAuthor, type QuoteDesign } from '@/features/quote-card/types';
+import type { CardAuthor, Format, QuoteDesign } from '@/features/quote-card/types';
 import { useRecordShare } from '@/hooks/use-social';
 import { useTheme } from '@/hooks/use-theme';
 import { friendlyError } from '@/services/errors';
@@ -55,11 +56,11 @@ function ShareSheet({ target, onClose }: { target: ShareTarget; onClose: () => v
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const { width: screenWidth } = useWindowDimensions();
-  const [format, setFormat] = useState<ExportFormat>('story');
+  const [format, setFormat] = useState<Format>('story');
   const [watermark, setWatermark] = useState(false);
   const recordShare = useRecordShare(postId ?? null);
-  const resolved = resolveExportFormat(format, design);
-  const previewWidth = Math.min(screenWidth - spacing.xl * 2, PREVIEW_HEIGHT * CARD_FORMATS[resolved].ratio);
+  const ratio = formatRatio(format, design.canvas);
+  const previewWidth = Math.min(screenWidth - spacing.xl * 2, PREVIEW_HEIGHT * ratio);
   const counted = () => postId && recordShare.mutate();
 
   const render = () => exportCardImage({ text, design, author, format, watermark });
@@ -114,19 +115,19 @@ function ShareSheet({ target, onClose }: { target: ShareTarget; onClose: () => v
           design={design}
           author={author}
           width={previewWidth}
-          format={resolved}
+          format={format}
           watermark={watermark}
           radius={radius.sm}
         />
         <Text variant="caption" color="textTertiary" style={styles.size}>
-          {EXPORT_WIDTH} × {Math.round(EXPORT_WIDTH / CARD_FORMATS[resolved].ratio)} PNG
+          {EXPORT_WIDTH} × {Math.round(EXPORT_WIDTH / ratio)} PNG
         </Text>
       </View>
 
       <View style={styles.formats} accessibilityRole="radiogroup">
         {EXPORT_OPTIONS.map((option) => {
           const selected = option.format === format;
-          const ratio = CARD_FORMATS[resolveExportFormat(option.format, design)].ratio;
+          const tileRatio = formatRatio(option.format, design.canvas);
           return (
             <Pressable
               key={option.format}
@@ -149,8 +150,8 @@ function ShareSheet({ target, onClose }: { target: ShareTarget; onClose: () => v
                   style={[
                     styles.silhouette,
                     {
-                      width: 30 * Math.min(1, ratio / 0.8),
-                      aspectRatio: ratio,
+                      width: 30 * Math.min(1, tileRatio / 0.8),
+                      aspectRatio: tileRatio,
                       borderColor: selected ? theme.text : theme.textTertiary,
                     },
                   ]}

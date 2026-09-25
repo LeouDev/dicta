@@ -1,4 +1,4 @@
-import { createDesign, suggestedFontSize } from '@/features/quote-card/templates';
+import { createDesign } from '@/features/quote-card/templates';
 
 import { validatePost } from '../validate';
 
@@ -14,7 +14,7 @@ jest.mock('expo-sqlite/localStorage/install', () => {
 });
 
 // eslint-disable-next-line import/first
-import { useComposer } from '../store';
+import { mergeDesign, useComposer } from '../store';
 
 describe('validatePost', () => {
   it('requires text within the limit', () => {
@@ -25,38 +25,30 @@ describe('validatePost', () => {
   });
 
   it('requires a photo for photo backgrounds', () => {
-    expect(validatePost('Hi', createDesign('photograph'))).toMatch(/photo/i);
-    const withPhoto = { ...createDesign('photograph'), background: { type: 'image' as const, uri: 'file:///a.jpg', dim: 0.4 } };
-    expect(validatePost('Hi', withPhoto)).toBeNull();
+    const photo = createDesign('photograph');
+    expect(validatePost('Hi', photo)).toMatch(/photo/i);
+    expect(validatePost('Hi', { ...photo, background: { ...photo.background, image: 'file:///a.jpg' } })).toBeNull();
   });
 });
 
 describe('composer store', () => {
   beforeEach(() => useComposer.getState().reset());
 
-  it('auto-sizes type to the text until the person picks a size', () => {
-    const s = useComposer.getState();
-    s.setText('Short.');
-    s.autoSize();
-    expect(useComposer.getState().design.fontSize).toBe(suggestedFontSize('editorial', 6));
-
-    useComposer.getState().setFontSize(50);
-    useComposer.getState().setText('A much longer thought that would normally get a smaller size by default.');
-    useComposer.getState().autoSize();
-    expect(useComposer.getState().design.fontSize).toBe(50);
+  it('merges nested design patches', () => {
+    const base = createDesign('editorial');
+    const next = mergeDesign(base, { size: 60, header: { avatar: false }, texture: { strength: 0.2 } });
+    expect(next).toEqual({ ...base, size: 60, header: { ...base.header, avatar: false }, texture: { ...base.texture, strength: 0.2 } });
   });
 
-  it('switching template restyles and re-enables auto-sizing', () => {
-    useComposer.getState().setFontSize(50);
+  it('switching template restyles but keeps the canvas', () => {
+    useComposer.getState().update({ canvas: '9:16', size: 50 });
     useComposer.getState().chooseTemplate('midnight');
-    const { design, sizeLocked } = useComposer.getState();
-    expect(design.template).toBe('midnight');
-    expect(design.fontFamily).toBe('elegant');
-    expect(sizeLocked).toBe(false);
+    const { design } = useComposer.getState();
+    expect(design).toMatchObject({ template: 'midnight', font: 'elegant', canvas: '9:16', size: createDesign('midnight').size });
   });
 
   it('keeps text readable when the background changes', () => {
-    useComposer.getState().update({ textColor: '#1A1714', metaColor: '#1A1714' });
+    useComposer.getState().update({ textColor: '#1A1714' });
     useComposer.getState().setBackground({ type: 'solid', color: '#0E0E10' });
     expect(useComposer.getState().design.textColor).toBe('#FFFFFF');
 
@@ -73,12 +65,21 @@ describe('composer store', () => {
   it('restores a saved draft, repairing an invalid design', async () => {
     localStorage.setItem(
       'dicta.composer.draft',
-      JSON.stringify({ state: { text: 'Saved thought', design: { template: 'journal', fontSize: 'huge' }, sizeLocked: true }, version: 1 }),
+      JSON.stringify({ state: { text: 'Saved thought', design: { version: 2, template: 'journal', size: 'huge' }, topic: 'healing' }, version: 1 }),
     );
     await useComposer.persist.rehydrate();
-    const { text, design, sizeLocked } = useComposer.getState();
+    const { text, design, topic } = useComposer.getState();
     expect(text).toBe('Saved thought');
     expect(design).toEqual(createDesign('journal'));
-    expect(sizeLocked).toBe(true);
+    expect(topic).toBe('healing');
+  });
+
+  it('upgrades a draft saved by the previous app version', async () => {
+    localStorage.setItem(
+      'dicta.composer.draft',
+      JSON.stringify({ state: { text: 'Old draft', design: { version: 1, template: 'midnight', fontFamily: 'typewriter', format: 'square' } }, version: 1 }),
+    );
+    await useComposer.persist.rehydrate();
+    expect(useComposer.getState().design).toMatchObject({ version: 2, template: 'midnight', font: 'typewriter', canvas: '1:1' });
   });
 });

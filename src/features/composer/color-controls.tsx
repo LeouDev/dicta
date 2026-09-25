@@ -11,16 +11,13 @@ import { ColorPickerSheet } from './color-picker-sheet';
 import { SectionLabel, SwatchRow } from './controls';
 import { useComposer } from './store';
 
-type Target = 'textColor' | 'metaColor';
-
 export function ColorControls() {
   const design = useComposer((s) => s.design);
   const update = useComposer((s) => s.update);
-  const [picking, setPicking] = useState<Target | null>(null);
+  const [picking, setPicking] = useState<'text' | 'highlight' | null>(null);
   const bg = design.background;
 
-  const applyPalette = (p: Palette) =>
-    update({ background: { type: 'solid', color: p.background }, textColor: p.text, metaColor: p.meta });
+  const applyPalette = (p: Palette) => update({ background: { type: 'solid', color: p.background }, textColor: p.text });
 
   return (
     <>
@@ -37,17 +34,32 @@ export function ColorControls() {
       </ScrollView>
 
       <SectionLabel>Text</SectionLabel>
-      <SwatchRow colors={TEXT_COLORS} value={design.textColor} onChange={(textColor) => update({ textColor })} onCustom={() => setPicking('textColor')} />
+      <SwatchRow colors={TEXT_COLORS} value={design.textColor} onChange={(textColor) => update({ textColor })} onCustom={() => setPicking('text')} />
 
-      <SectionLabel>Name & signature</SectionLabel>
-      <SwatchRow colors={TEXT_COLORS} value={design.metaColor} onChange={(metaColor) => update({ metaColor })} onCustom={() => setPicking('metaColor')} />
+      {design.composition === 'highlight' && (
+        <>
+          <SectionLabel>Highlighter</SectionLabel>
+          <SwatchRow
+            colors={[
+              { name: 'Yellow', value: '#F4CA3A' },
+              { name: 'Pink', value: '#F5A3C7' },
+              { name: 'Green', value: '#9EE09E' },
+              { name: 'Blue', value: '#9CC9F5' },
+              { name: 'Orange', value: '#F7B267' },
+            ]}
+            value={design.highlight}
+            onChange={(highlight) => update({ highlight })}
+            onCustom={() => setPicking('highlight')}
+          />
+        </>
+      )}
 
       {picking && (
         <ColorPickerSheet
           visible
-          title={picking === 'textColor' ? 'Text color' : 'Name & signature color'}
-          initial={design[picking].slice(0, 7)}
-          onChange={(hex) => update({ [picking]: hex })}
+          title={picking === 'text' ? 'Text color' : 'Highlighter color'}
+          initial={(picking === 'text' ? design.textColor : design.highlight).slice(0, 7)}
+          onChange={(hex) => update(picking === 'text' ? { textColor: hex } : { highlight: hex })}
           onClose={() => setPicking(null)}
         />
       )}

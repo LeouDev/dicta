@@ -9,7 +9,7 @@ Built with Expo SDK 57 (React Native 0.86, New Architecture, React Compiler), Ex
 | Phase | Scope | State |
 | --- | --- | --- |
 | 1 | Expo + TypeScript + Router, Supabase, design tokens, navigation, auth, onboarding, profile setup, full DB schema + RLS | ✅ Done |
-| 2–3 | Quote card engine (Skia), 8 templates, visual editor with live preview, drafts, publish, image export (9:16, 4:5, 1:1, original), feed + profile gallery | ✅ Done |
+| 2–3 | Quote card engine (Skia), 18 templates, visual editor with live preview, drafts, publish, image export (9:16, 4:5, 1:1, original), feed + profile gallery | ✅ Done |
 | 4 | Social: likes (double-tap), threaded comments, follows, saves, Activity with realtime badge, Discover (trending, creators, topics, hashtags), debounced search, post view, other profiles, share sheet (save image, copy link, share counts), settings (edit profile, log out, delete account), report + block | ✅ Done |
 | 5 | Website with shared quote pages and universal links, App Store pages | ✅ Done |
 | 6 | Seed data, push notifications, App Store submission | Next |
@@ -56,7 +56,7 @@ npm run render:cards   # renders every template × format × sample text to .ren
 npm run test:db        # backend tests (supabase/tests/social.sql) against the linked project, in one rolled-back transaction
 ```
 
-`RENDER_ONLY=editorial,journal npm run render:cards` limits the templates; `RENDER_AVATAR=/path/to/photo.jpg` adds an avatar.
+`RENDER_ONLY=editorial,journal npm run render:cards` limits the templates; `RENDER_AVATAR=/path/to/photo.jpg` adds an avatar and `RENDER_PHOTO=/path/to/photo.jpg` a photo background.
 
 ## Architecture
 
@@ -104,7 +104,7 @@ The root layout uses `Stack.Protected` guards driven by two facts: *signed in?* 
 
 `constants/tokens.ts` is the single source for colors (light and dark semantic tokens), the 8pt spacing scale, radii, typography, shadows, animation springs and touch targets. App chrome uses San Francisco for UI text and DM Serif Display for editorial titles. Quote card designs carry their own colors and never follow the app theme.
 
-`constants/fonts.ts` defines the font library used by the card editor: Editorial (DM Serif Display), Elegant (Cormorant Garamond), Classic (Libre Baskerville), Modern (Inter), Minimal (DM Sans), Bold (Archivo Black), Typewriter (Courier Prime) and Handwritten (Caveat). All are Google Fonts under the **SIL Open Font License 1.1**, which allows bundling in commercial apps. Only the listed weights ship, imported per weight to keep the bundle small.
+`constants/fonts.ts` defines the 13 card fonts: Editorial (Source Serif 4), Display (DM Serif Display), Classic (Playfair Display), Elegant (Cormorant Garamond), Modern (Instrument Sans), Bold (Archivo), Rounded (Nunito), Typewriter (Courier Prime), Pager (Share Tech Mono), Pixel (VT323), Handwritten (Caveat), Print (Patrick Hand) and Marker (Caveat Brush). All are Google Fonts under the **SIL Open Font License 1.1**, which allows bundling in commercial apps. Only the listed weights ship, imported per weight to keep the bundle small.
 
 ### Quote card engine
 
@@ -115,22 +115,24 @@ QuoteDesign (JSON in post_designs.design)          CardAuthor (live from profile
         │  parseQuoteDesign(): validate, clamp, fill template defaults
         ▼
 layoutCard({ text, design, author, width, format, fonts })   ← pure, synchronous (Skia Paragraph API)
-        │  → CardLayout: positioned paragraphs, per-line tilt, header, signature, texture params
+        │  flow.ts: paragraphs → composition (flow, kicker, columns, highlight) → lines → words
+        │  → CardLayout: positioned words (with the editorial wave), header, frames, signature, texture params
         ▼
 <QuoteCanvas layout avatar backgroundImage />                ← pure Skia drawing tree, no async, no layout
         ├── <QuoteCard>         on screen: feed, profile grid, editor preview, template thumbnails
         └── exportCardImage()   offscreen drawAsImage at 1080px → PNG → iOS share sheet
 ```
 
-- **Design units.** Designs are authored on a virtual canvas 1000 units wide; every size scales with the render width, so a 358pt feed card and a 1080px export are the same composition.
-- **Formats adapt, they don't stretch.** Width sets the type scale; the format only changes the canvas height the design flows into. Stories keep clear of Instagram's top/bottom UI, and text shrinks to fit (binary search on the font scale) when a format is shorter. It never grows past the chosen size.
-- **Editorial "hand-set" look.** Each laid-out line is re-set as its own paragraph and tilted ±1.5° around its center, deterministically seeded from the text, so a post never changes between renders.
-- **Textures are procedural** (one SkSL shader: paper, grain, noise, canvas, film), evaluated in design units, so there are no image assets and they stay crisp at any resolution. Grain and noise multiply on light cards and screen on dark ones.
+- **Design units.** Designs are authored on a virtual canvas 1080 units wide; every size scales with the render width, so a 358pt feed card and a 1080px export are the same composition. Version 1 designs (1000 units, flat fields) are upgraded on read.
+- **Formats adapt, they don't stretch.** Width sets the type scale; the format (original canvas, story 9:16, post 4:5, square 1:1) only changes the canvas height the design flows into. Stories keep clear of Instagram's top/bottom UI (10% / 13%), and font size is a maximum: text shrinks to fit by binary search (Story may grow to 115%).
+- **Editorial wave.** Each word is its own paragraph, rotated `curve × 5 × sin(i × 2.3 + 1.1)`° and bobbed `curve × 0.08 × cos(i × 1.7)` em, so a post never changes between renders.
+- **Textures are procedural** (one SkSL shader: paper, grain, heavy grain, canvas, film, lined, book page, concrete, mottle, scanlines), evaluated in design units, so there are no image assets and they stay crisp at any resolution.
+- **Frames**: pager and LCD devices draw their own chrome and put the text on their screen; the notification frame is a frosted panel.
 - **Fonts** are the same OFL files the app UI uses, registered once into a Skia font provider under their expo-font names; system fallback covers emoji and other scripts.
 - **Images** (avatars, photo backgrounds) are decoded once and shared through an LRU cache.
-- **Templates** are full style presets (`templates.ts`). Switching keeps the format, signature and chosen photo; font size auto-suggests from text length until the person drags the size slider.
+- **Templates** are 18 full style presets (`templates.ts`) merged onto one base design. Switching keeps the header toggles, signature, canvas and chosen photo.
 
-Files: `src/features/quote-card/` (`types`, `templates`, `serialize`, `geometry`, `layout`, `quote-canvas`, `quote-card`, `export`, `textures`, `fonts`, `images`, `palettes`) and `src/features/composer/` (editor: `store`, `write-step`, `design-step`, the six control panels, `color-picker-sheet`, `export-sheet`, `photo`, `validate`).
+Files: `src/features/quote-card/` (`types`, `templates`, `serialize`, `geometry`, `flow`, `layout`, `quote-canvas`, `frames`, `quote-card`, `export`, `textures`, `fonts`, `images`, `palettes`) and `src/features/composer/` (editor: `store`, `write-step`, `design-step`, the six control panels, `color-picker-sheet`, `export-sheet`, `photo`, `validate`).
 
 ### Database
 
@@ -159,6 +161,7 @@ Tables: `profiles`, `posts`, `post_designs` (the structured card design as JSONB
 
 - **Shared links:** Copy link in the app produces `https://dicta-orcin.vercel.app/post/<id>`. With Dicta installed, iOS opens it in the app (universal links via `ios.associatedDomains` and the `apple-app-site-association` file). Otherwise the page shows the quote with an Open in Dicta button, and link previews show the quote.
 - **App Store Connect:** use `/privacy` for the privacy policy URL and `/support` for the support URL.
+- **Tests:** `cd web && npm test` (Node's built-in runner) checks the shared page against version 1 and 2 designs and hand-written JSON.
 
 ## Building for iOS
 

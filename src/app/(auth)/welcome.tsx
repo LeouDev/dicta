@@ -17,7 +17,7 @@ import { Text } from '@/components/ui/text';
 import { Wordmark } from '@/components/wordmark';
 import { shadows, spacing, typography } from '@/constants/tokens';
 import { QuoteCard } from '@/features/quote-card/quote-card';
-import { createDesign, suggestedFontSize } from '@/features/quote-card/templates';
+import { createDesign } from '@/features/quote-card/templates';
 import type { CardAuthor, TemplateId } from '@/features/quote-card/types';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -48,7 +48,7 @@ const SLIDES = [
 type Slide = (typeof SLIDES)[number];
 
 // Built once so QuoteCard's memoized layout isn't recomputed on every render.
-const DESIGNS = SLIDES.map((slide) => ({ ...createDesign(slide.template), fontSize: suggestedFontSize(slide.template, slide.text.length) }));
+const DESIGNS = SLIDES.map((slide) => createDesign(slide.template));
 
 export default function WelcomeScreen() {
   const { width } = useWindowDimensions();

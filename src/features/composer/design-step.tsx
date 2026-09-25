@@ -9,7 +9,7 @@ import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { hitTarget, shadows, spacing } from '@/constants/tokens';
 import { QuoteCard } from '@/features/quote-card/quote-card';
-import { CARD_FORMATS, type CardAuthor } from '@/features/quote-card/types';
+import { CANVASES, type CardAuthor } from '@/features/quote-card/types';
 import { useTheme } from '@/hooks/use-theme';
 
 import { BackgroundPicker } from './background-picker';
@@ -49,7 +49,7 @@ export function DesignStep({ author, onEditText, onShare, onPost, posting }: Des
   const [tab, setTab] = useState<TabKey>('templates');
   const [area, setArea] = useState<{ width: number; height: number } | null>(null);
 
-  const ratio = CARD_FORMATS[design.format].ratio;
+  const ratio = CANVASES[design.canvas];
   const cardWidth = area
     ? Math.floor(Math.min(area.width - spacing.lg * 2, (area.height - spacing.md * 2) * ratio))
     : 0;

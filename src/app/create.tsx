@@ -68,10 +68,7 @@ export default function CreateScreen() {
   return step === 'write' ? (
     <WriteStep
       onClose={close}
-      onNext={() => {
-        useComposer.getState().autoSize();
-        setStep('design');
-      }}
+      onNext={() => setStep('design')}
     />
   ) : (
     <DesignStep

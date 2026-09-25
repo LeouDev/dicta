@@ -1,11 +1,11 @@
 import { StyleSheet } from 'react-native';
 
 import { Text } from '@/components/ui/text';
-import { FONT_IDS, FONT_LIBRARY, availableWeights, resolveFontFace, type FontWeight } from '@/constants/fonts';
+import { FONT_KEYS, FONT_LIBRARY, availableWeights, hasItalic, resolveFace, type FontWeight } from '@/constants/fonts';
 import { DESIGN_LIMITS } from '@/features/quote-card/types';
 import { useTheme } from '@/hooks/use-theme';
 
-import { Chip, ChipScroller, SectionLabel, Segmented, SliderRow } from './controls';
+import { Chip, ChipScroller, SectionLabel, Segmented, SliderRow, ToggleRow } from './controls';
 import { useComposer } from './store';
 
 const WEIGHT_LABELS: Record<FontWeight, string> = {
@@ -14,32 +14,32 @@ const WEIGHT_LABELS: Record<FontWeight, string> = {
   500: 'Medium',
   600: 'Semibold',
   700: 'Bold',
-  800: 'Black',
+  800: 'Heavy',
+  900: 'Black',
 };
 
-const CATEGORY_LABELS = { serif: 'Serif', sans: 'Sans', typewriter: 'Mono', handwritten: 'Script' } as const;
+const CATEGORY_LABELS = { serif: 'Serif', sans: 'Sans', mono: 'Mono', script: 'Script' } as const;
 
 export function FontPicker() {
   const theme = useTheme();
   const design = useComposer((s) => s.design);
   const update = useComposer((s) => s.update);
-  const setFontSize = useComposer((s) => s.setFontSize);
-  const weights = availableWeights(design.fontFamily);
+  const weights = availableWeights(design.font);
 
   return (
     <>
       <SectionLabel>Typeface</SectionLabel>
       <ChipScroller>
-        {FONT_IDS.map((id) => {
-          const font = FONT_LIBRARY[id];
+        {FONT_KEYS.map((key) => {
+          const font = FONT_LIBRARY[key];
           return (
             <Chip
-              key={id}
+              key={key}
               label={`${font.label} · ${CATEGORY_LABELS[font.category]}`}
-              selected={design.fontFamily === id}
-              onPress={() => update({ fontFamily: id, fontWeight: font.defaultWeight })}
+              selected={design.font === key}
+              onPress={() => update({ font: key, weight: font.defaultWeight, italic: design.italic && hasItalic(key) })}
               preview={
-                <Text allowFontScaling={false} style={[styles.aa, { fontFamily: resolveFontFace(id, font.defaultWeight), color: theme.text }]}>
+                <Text allowFontScaling={false} style={[styles.aa, { fontFamily: resolveFace(key, font.defaultWeight), color: theme.text }]}>
                   Aa
                 </Text>
               }
@@ -53,20 +53,26 @@ export function FontPicker() {
           <SectionLabel>Weight</SectionLabel>
           <Segmented
             options={weights.map((w) => ({ value: String(w), label: WEIGHT_LABELS[w] }))}
-            value={String(design.fontWeight)}
-            onChange={(w) => update({ fontWeight: Number(w) as FontWeight })}
+            value={String(design.weight)}
+            onChange={(w) => update({ weight: Number(w) as FontWeight })}
           />
         </>
       )}
+      {hasItalic(design.font) && <ToggleRow label="Italic" value={design.italic} onChange={(italic) => update({ italic })} />}
+      <ToggleRow
+        label="All caps"
+        value={design.textTransform === 'uppercase'}
+        onChange={(caps) => update({ textTransform: caps ? 'uppercase' : 'none' })}
+      />
 
       <SliderRow
         label="Size"
-        value={design.fontSize}
-        min={DESIGN_LIMITS.fontSize.min}
-        max={DESIGN_LIMITS.fontSize.max}
+        value={design.size}
+        min={DESIGN_LIMITS.size.min}
+        max={DESIGN_LIMITS.size.max}
         step={1}
-        display={(v) => String(Math.round(v))}
-        onChange={setFontSize}
+        display={(v) => `up to ${Math.round(v)}`}
+        onChange={(size) => update({ size })}
       />
       <SliderRow
         label="Letter spacing"

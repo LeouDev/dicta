@@ -2,54 +2,79 @@ import { StyleSheet, View } from 'react-native';
 
 import { TextField } from '@/components/ui/text-field';
 import { spacing } from '@/constants/tokens';
-import { DESIGN_LIMITS, type CardAuthor } from '@/features/quote-card/types';
+import { isDeviceFrame } from '@/features/quote-card/geometry';
+import { DESIGN_LIMITS, SIGNATURE_MAX_LENGTH, type CardAuthor, type SignatureStyle } from '@/features/quote-card/types';
 
-import { SectionLabel, SliderRow, ToggleRow } from './controls';
+import { SectionLabel, Segmented, SliderRow, ToggleRow } from './controls';
 import { useComposer } from './store';
 
 export function ProfileControls({ author }: { author: CardAuthor }) {
   const design = useComposer((s) => s.design);
   const update = useComposer((s) => s.update);
-  const defaultSignature = `— ${author.displayName}`;
+  const header = design.header;
+  const device = isDeviceFrame(design.frame);
 
   return (
     <>
-      <SectionLabel>Identity</SectionLabel>
-      <ToggleRow label="Profile header" value={design.showProfile} onChange={(showProfile) => update({ showProfile })} />
-      {design.showProfile && (
-        <View style={styles.nested}>
-          <ToggleRow label="Profile photo" value={design.showAvatar} onChange={(showAvatar) => update({ showAvatar })} />
-          <ToggleRow label="Username" value={design.showUsername} onChange={(showUsername) => update({ showUsername })} />
-          {author.isVerified && (
-            <ToggleRow label="Verified badge" value={design.showVerifiedBadge} onChange={(showVerifiedBadge) => update({ showVerifiedBadge })} />
+      {!device && design.frame !== 'notification' && (
+        <>
+          <SectionLabel>Identity</SectionLabel>
+          <ToggleRow label="Profile header" value={header.show} onChange={(show) => update({ header: { show } })} />
+          {header.show && (
+            <View style={styles.nested}>
+              <ToggleRow label="Profile photo" value={header.avatar} onChange={(avatar) => update({ header: { avatar } })} />
+              <ToggleRow label="Name" value={header.name} onChange={(name) => update({ header: { name } })} />
+              <ToggleRow label="Username" value={header.username} onChange={(username) => update({ header: { username } })} />
+              {author.isVerified && <ToggleRow label="Verified badge" value={header.verified} onChange={(verified) => update({ header: { verified } })} />}
+              <Segmented
+                options={[
+                  { value: 'top-left', label: 'Left' },
+                  { value: 'top-center', label: 'Center' },
+                ]}
+                value={header.position}
+                onChange={(position) => update({ header: { position } })}
+              />
+              <SliderRow
+                label="Header size"
+                value={header.scale}
+                min={DESIGN_LIMITS.headerScale.min}
+                max={DESIGN_LIMITS.headerScale.max}
+                step={0.01}
+                display={(v) => `${Math.round(v * 100)}%`}
+                onChange={(scale) => update({ header: { scale } })}
+              />
+            </View>
           )}
-          <SliderRow
-            label="Header size"
-            value={design.headerSize}
-            min={DESIGN_LIMITS.headerSize.min}
-            max={DESIGN_LIMITS.headerSize.max}
-            step={1}
-            display={(v) => String(Math.round(v))}
-            onChange={(headerSize) => update({ headerSize })}
-          />
-        </View>
+        </>
       )}
 
-      <SectionLabel>Signature</SectionLabel>
-      <ToggleRow
-        label="Sign the card"
-        value={design.showSignature}
-        onChange={(showSignature) => update({ showSignature, signature: design.signature || defaultSignature })}
-      />
-      {design.showSignature && (
-        <TextField
-          label="Signature"
-          value={design.signature}
-          placeholder={defaultSignature}
-          maxLength={60}
-          onChangeText={(signature) => update({ signature })}
-          returnKeyType="done"
-        />
+      {!device && (
+        <>
+          <SectionLabel>Signature</SectionLabel>
+          <ToggleRow label="Sign the card" value={design.signature.show} onChange={(show) => update({ signature: { show } })} />
+          {design.signature.show && (
+            <>
+              <TextField
+                label="Signature"
+                value={design.signature.text}
+                placeholder={`— ${author.displayName}`}
+                maxLength={SIGNATURE_MAX_LENGTH}
+                onChangeText={(text) => update({ signature: { text } })}
+                returnKeyType="done"
+              />
+              <Segmented<SignatureStyle>
+                options={[
+                  { value: 'script', label: 'Script' },
+                  { value: 'serif', label: 'Serif' },
+                  { value: 'caps', label: 'Caps' },
+                  { value: 'note', label: 'Note' },
+                ]}
+                value={design.signature.style}
+                onChange={(style) => update({ signature: { style } })}
+              />
+            </>
+          )}
+        </>
       )}
     </>
   );
