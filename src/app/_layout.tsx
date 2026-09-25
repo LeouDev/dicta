@@ -6,6 +6,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
+import { Toaster } from '@/components/toast';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Screen } from '@/components/ui/screen';
 import { fontAssets } from '@/constants/fonts';
@@ -66,6 +67,15 @@ function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
   }
 
   const hasProfile = Boolean(profile.data);
+  // Pushed screens use the native header: back chevron, title, no hairline.
+  const pushed = {
+    headerShown: true,
+    title: '',
+    headerBackButtonDisplayMode: 'minimal' as const,
+    headerShadowVisible: false,
+    headerTintColor: theme.text,
+    headerStyle: { backgroundColor: theme.background },
+  };
   const base = scheme === 'dark' ? DarkTheme : DefaultTheme;
   const navTheme = {
     ...base,
@@ -85,11 +95,31 @@ function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
         <Stack.Protected guard={signedIn && hasProfile}>
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="create" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
+          <Stack.Screen name="post/[id]/index" options={pushed} />
+          <Stack.Screen
+            name="post/[id]/comments"
+            options={{
+              presentation: 'formSheet',
+              sheetAllowedDetents: [0.62, 1],
+              sheetGrabberVisible: true,
+              sheetCornerRadius: 22,
+              contentStyle: { backgroundColor: theme.background },
+            }}
+          />
+          <Stack.Screen name="user/[username]" options={pushed} />
+          <Stack.Screen name="topic/[slug]" options={pushed} />
+          <Stack.Screen name="tag/[tag]" options={pushed} />
+          <Stack.Screen name="settings/index" options={{ ...pushed, title: 'Settings' }} />
+          <Stack.Screen name="settings/edit-profile" options={{ ...pushed, title: 'Edit profile' }} />
+          <Stack.Screen name="settings/blocked" options={{ ...pushed, title: 'Blocked accounts' }} />
+          <Stack.Screen name="share" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="report" options={{ presentation: 'modal' }} />
         </Stack.Protected>
         {/* Email deep links: reachable in any auth state. */}
         <Stack.Screen name="auth-callback" />
         <Stack.Screen name="reset-password" />
       </Stack>
+      <Toaster />
     </ThemeProvider>
   );
 }

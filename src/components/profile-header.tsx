@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { spacing } from '@/constants/tokens';
@@ -9,7 +10,8 @@ import { Icon } from './ui/icon';
 import { Text } from './ui/text';
 import { UserAvatar } from './user-avatar';
 
-export function ProfileHeader({ profile }: { profile: Profile }) {
+/** Identity + stats. `actions` renders below (Follow, Edit profile…). */
+export function ProfileHeader({ profile, actions }: { profile: Profile; actions?: ReactNode }) {
   const theme = useTheme();
   const stats = [
     { label: 'Posts', value: profile.posts_count },
@@ -54,6 +56,7 @@ export function ProfileHeader({ profile }: { profile: Profile }) {
           </View>
         ))}
       </View>
+      {actions && <View style={styles.actions}>{actions}</View>}
     </View>
   );
 }
@@ -65,4 +68,5 @@ const styles = StyleSheet.create({
   bio: { maxWidth: 320 },
   stats: { flexDirection: 'row', gap: spacing.xl, marginTop: spacing.xs },
   stat: { alignItems: 'center', gap: spacing.xxs, minWidth: 64 },
+  actions: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.xs },
 });

@@ -10,10 +10,8 @@ Built with Expo SDK 57 (React Native 0.86, New Architecture, React Compiler), Ex
 | --- | --- | --- |
 | 1 | Expo + TypeScript + Router, Supabase, design tokens, navigation, auth, onboarding, profile setup, full DB schema + RLS | ✅ Done |
 | 2–3 | Quote card engine (Skia), 8 templates, visual editor with live preview, drafts, publish, image export (9:16, 4:5, 1:1, original), feed + profile gallery | ✅ Done |
-| 2 | Seed data, Discover, search | Next |
-| 4 | Likes, comments, follows, saves, notifications (schema + triggers already live) | |
-| 5 | Full share sheet (Instagram Stories deep link, copy link, share counts) | |
-| 6–8 | Performance, accessibility pass, polish + testing | |
+| 4 | Social: likes (double-tap), threaded comments, follows, saves, Activity with realtime badge, Discover (trending, creators, topics, hashtags), debounced search, post view, other profiles, share sheet (save image, copy link, share counts), settings (edit profile, log out, delete account), report + block | ✅ Done |
+| 5 | Seed data, push notifications, universal links (web domain) | Next |
 
 ## Getting started
 
@@ -54,6 +52,7 @@ npm test               # Jest (jest-expo), incl. real-Skia layout checks for eve
 npm run typecheck      # tsc --noEmit
 npm run lint           # expo lint (ESLint + React Compiler rules)
 npm run render:cards   # renders every template × format × sample text to .renders/*.png (slow, CPU)
+npm run test:db        # backend tests (supabase/tests/social.sql) against the linked project, in one rolled-back transaction
 ```
 
 `RENDER_ONLY=editorial,journal npm run render:cards` limits the templates; `RENDER_AVATAR=/path/to/photo.jpg` adds an avatar.
@@ -64,20 +63,26 @@ npm run render:cards   # renders every template × format × sample text to .ren
 src/
   app/            Expo Router routes only (screens + layouts)
     (auth)/       welcome (onboarding), sign-in, sign-up, forgot-password
-    (tabs)/       home, discover, activity, profile + custom BottomTabBar
+    (tabs)/       home, discover (+ search), activity, profile + custom BottomTabBar
     create.tsx    Create modal: write → design → post / share
+    post/[id]/    post view; comments (native form sheet)
+    user/[username].tsx, topic/[slug].tsx, tag/[tag].tsx
+    settings/     settings, edit profile, blocked accounts
+    share.tsx, report.tsx   modal routes (see Decisions)
     create-profile.tsx, auth-callback.tsx, reset-password.tsx
-  components/     Reusable UI (ui/ primitives, UserAvatar, ProfileHeader, BottomTabBar…)
-  features/       Feature modules: quote-card (renderer), composer (editor), feed, auth
+  components/     Reusable UI (ui/ primitives, UserAvatar, ProfileHeader, FollowButton, Toaster, BottomTabBar…)
+  features/       Feature modules: quote-card (renderer), composer (editor), feed (PostCard, grid, actions),
+                  comments, social (optimistic reducers), share, safety, profile (shared profile form), auth
   constants/      Design tokens (tokens.ts) and the font library (fonts.ts)
-  hooks/          useTheme, useMyProfile, useDebouncedValue
-  lib/            Supabase client, TanStack Query client, query keys
-  services/       Data access (auth, profiles) + friendly error mapping
+  hooks/          Queries and optimistic mutations (posts, social, notifications, discover, safety…)
+  lib/            Supabase client, TanStack Query client, query keys, cache patching, action sheets
+  services/       Data access (posts, comments, social, notifications, discover, safety, share, account…)
   store/          Zustand stores (auth session)
   types/          Generated Supabase types + app models
   utils/          Pure helpers (validation, formatting), unit tested
 supabase/
   migrations/     Schema, RLS, triggers, RPCs, storage buckets/policies
+  tests/          SQL tests for the social layer (npm run test:db)
   config.toml     Auth/storage config mirrored to the hosted project
 ```
 
@@ -130,7 +135,8 @@ Tables: `profiles`, `posts`, `post_designs` (the structured card design as JSONB
 - **RLS on every table.** Public profiles and posts. Saves, notifications and blocks are private. Blocked users can't see or comment on each other's content.
 - **Column-level grants.** Clients can only write user-editable columns, so counters, `is_verified` and moderation `status` are server-owned.
 - **Triggers** maintain like, comment, save, follow and post counts, create notifications (like, comment, reply, mention, follow, comment like) and index hashtags.
-- **RPCs:** `create_post` (post and design in one transaction), `home_feed` (keyset pagination), `trending_posts`, `record_share` and `delete_my_account`. Computed fields `liked_by_me`, `saved_by_me` and `followed_by_me` work directly in PostgREST selects.
+- **RPCs:** `create_post` (post and design in one transaction), `home_feed` (keyset pagination), `trending_posts`, `record_share` and `delete_my_account`. Discovery and search: `trending_hashtags`, `search_hashtags`, `search_profiles`, `search_posts` and `suggested_creators` (security invoker, so RLS and blocks apply; search input is escaped for `LIKE`). Computed fields `liked_by_me`, `saved_by_me` and `followed_by_me` work directly in PostgREST selects.
+- **Blocking** removes follows and notifications between the two people, and hides each other's posts, comments, profiles in search and notifications.
 - **Storage:** public-read buckets `avatars/`, `post-images/` and `generated-cards/`. Users can only write under their own `<user-id>/` folder. Buckets enforce MIME types and size limits.
 - **Realtime** is enabled on `notifications` for the Activity badge.
 
@@ -139,6 +145,8 @@ Tables: `profiles`, `posts`, `post_designs` (the structured card design as JSONB
 - **JS tabs with a custom tab bar** instead of native tabs, so the Create button can be visually distinct and open a modal.
 - **`post_designs` is a separate table**, as specified, written atomically through `create_post`.
 - **The publishable key** goes in `EXPO_PUBLIC_SUPABASE_ANON_KEY`; the legacy anon JWT also works. Never ship a secret or service-role key.
+- **Social writes are optimistic.** Taps update every cached copy of a post, comment or profile at once (`lib/cache.ts`); requests for the same target run in order (mutation `scope`), so the last tap wins, and failures roll back with a quiet toast. Counts are owned by database triggers, never computed by the client.
+- **Share and Report are modal routes, not React Native `Modal`s.** An RN `Modal` presents from the root view controller and silently fails while the editor or the comments sheet is up; native-stack modals stack correctly. The toast renders in a `FullWindowOverlay` so it shows above sheets.
 - **Account deletion** runs through a `SECURITY DEFINER` RPC that deletes the auth user and cascades from there. The app removes the user's storage files first. No service-role key is ever needed on device.
 
 ## Building for iOS

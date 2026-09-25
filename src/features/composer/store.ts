@@ -14,7 +14,10 @@ interface ComposerState {
   design: QuoteDesign;
   /** Set once the person drags the size slider; stops auto-sizing to text length. */
   sizeLocked: boolean;
+  /** Optional Discover topic (topics.slug). */
+  topic: string | null;
   setText: (text: string) => void;
+  setTopic: (topic: string | null) => void;
   update: (patch: Partial<QuoteDesign>) => void;
   /** Changes the background and fixes text colors that would become unreadable on it. */
   setBackground: (background: CardBackground) => void;
@@ -49,13 +52,14 @@ const draftStorage: StateStorage = {
   },
 };
 
-const fresh = () => ({ text: '', design: createDesign('editorial'), sizeLocked: false });
+const fresh = () => ({ text: '', design: createDesign('editorial'), sizeLocked: false, topic: null });
 
 export const useComposer = create<ComposerState>()(
   persist(
     (set) => ({
       ...fresh(),
       setText: (text) => set({ text: text.slice(0, TEXT_MAX_LENGTH) }),
+      setTopic: (topic) => set({ topic }),
       update: (patch) => set((s) => ({ design: { ...s.design, ...patch } })),
       setBackground: (background) =>
         set((s) => {
@@ -85,15 +89,16 @@ export const useComposer = create<ComposerState>()(
       name: 'dicta.composer.draft',
       version: 1,
       storage: createJSONStorage(() => draftStorage),
-      partialize: ({ text, design, sizeLocked }) => ({ text, design, sizeLocked }),
+      partialize: ({ text, design, sizeLocked, topic }) => ({ text, design, sizeLocked, topic }),
       // Drafts may come from an older app version: validate on the way in.
       merge: (persisted, current) => {
-        const p = (persisted ?? {}) as Partial<Pick<ComposerState, 'text' | 'design' | 'sizeLocked'>>;
+        const p = (persisted ?? {}) as Partial<Pick<ComposerState, 'text' | 'design' | 'sizeLocked' | 'topic'>>;
         return {
           ...current,
           text: typeof p.text === 'string' ? p.text.slice(0, TEXT_MAX_LENGTH) : '',
           design: p.design ? parseQuoteDesign(p.design) : current.design,
           sizeLocked: p.sizeLocked === true,
+          topic: typeof p.topic === 'string' ? p.topic : null,
         };
       },
     },

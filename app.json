@@ -52,7 +52,15 @@
           "cameraPermission": "Dicta uses the camera so you can take a profile photo."
         }
       ],
-      "expo-sharing"
+      "expo-sharing",
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Dicta uses your photo library so you can choose a profile photo and backgrounds for your quote cards.",
+          "savePhotosPermission": "Dicta saves your quote cards to your photo library when you ask it to.",
+          "isAccessMediaLocationEnabled": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

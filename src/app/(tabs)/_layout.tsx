@@ -1,8 +1,10 @@
 import { Tabs } from 'expo-router/tabs';
 
 import { BottomTabBar } from '@/components/bottom-tab-bar';
+import { useNotificationsRealtime } from '@/hooks/use-notifications';
 
 export default function TabsLayout() {
+  useNotificationsRealtime();
   return (
     <Tabs tabBar={(props) => <BottomTabBar {...props} />} screenOptions={{ headerShown: false }}>
       <Tabs.Screen name="index" options={{ title: 'Home' }} />

@@ -2,16 +2,17 @@ import { useMutation } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { ActionSheetIOS, Alert, Platform } from 'react-native';
+import { Alert } from 'react-native';
 
 import { DesignStep } from '@/features/composer/design-step';
-import { ExportSheet } from '@/features/composer/export-sheet';
 import { clearDraftPhotos } from '@/features/composer/photo';
 import { useComposer } from '@/features/composer/store';
 import { validatePost } from '@/features/composer/validate';
 import { WriteStep } from '@/features/composer/write-step';
 import type { CardAuthor } from '@/features/quote-card/types';
+import { openShare } from '@/features/share/share-sheet';
 import { useMyProfile } from '@/hooks/use-my-profile';
+import { showActions } from '@/lib/action-sheet';
 import { queryClient } from '@/lib/query-client';
 import { friendlyError } from '@/services/errors';
 import { publishPost } from '@/services/posts';
@@ -27,15 +28,13 @@ export default function CreateScreen() {
   const text = useComposer((s) => s.text);
   const design = useComposer((s) => s.design);
   const [step, setStep] = useState<'write' | 'design'>('write');
-  const [sharing, setSharing] = useState(false);
 
   const publish = useMutation({
-    mutationFn: () => publishPost({ userId, text, design }),
+    mutationFn: () => publishPost({ userId, text, design, topic: useComposer.getState().topic }),
     onSuccess: () => {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       useComposer.getState().reset();
       clearDraftPhotos();
-      queryClient.invalidateQueries({ queryKey: ['feed'] });
       queryClient.invalidateQueries({ queryKey: ['posts'] });
       queryClient.invalidateQueries({ queryKey: ['profile'] });
       router.back();
@@ -51,39 +50,36 @@ export default function CreateScreen() {
 
   // The draft is saved continuously, so closing never loses work unless asked.
   const close = () => {
-    if (!text.trim() || Platform.OS !== 'ios') return router.back();
-    ActionSheetIOS.showActionSheetWithOptions(
-      { options: ['Keep draft', 'Discard draft', 'Cancel'], destructiveButtonIndex: 1, cancelButtonIndex: 2 },
-      (index) => {
-        if (index === 1) {
+    if (!text.trim()) return router.back();
+    showActions([
+      { label: 'Keep draft', onPress: () => router.back() },
+      {
+        label: 'Discard draft',
+        destructive: true,
+        onPress: () => {
           useComposer.getState().reset();
           clearDraftPhotos();
-        }
-        if (index !== 2) router.back();
+          router.back();
+        },
       },
-    );
+    ]);
   };
 
-  return (
-    <>
-      {step === 'write' ? (
-        <WriteStep
-          onClose={close}
-          onNext={() => {
-            useComposer.getState().autoSize();
-            setStep('design');
-          }}
-        />
-      ) : (
-        <DesignStep
-          author={author}
-          onEditText={() => setStep('write')}
-          onShare={() => setSharing(true)}
-          onPost={post}
-          posting={publish.isPending}
-        />
-      )}
-      <ExportSheet visible={sharing} onClose={() => setSharing(false)} text={text} design={design} author={author} />
-    </>
+  return step === 'write' ? (
+    <WriteStep
+      onClose={close}
+      onNext={() => {
+        useComposer.getState().autoSize();
+        setStep('design');
+      }}
+    />
+  ) : (
+    <DesignStep
+      author={author}
+      onEditText={() => setStep('write')}
+      onShare={() => openShare({ text, design, author })}
+      onPost={post}
+      posting={publish.isPending}
+    />
   );
 }

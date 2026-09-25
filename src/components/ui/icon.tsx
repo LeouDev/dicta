@@ -37,6 +37,20 @@ const ICONS = {
   'position.top': { ios: 'align.vertical.top', android: 'vertical_align_top' },
   'position.center': { ios: 'align.vertical.center', android: 'vertical_align_center' },
   'position.bottom': { ios: 'align.vertical.bottom', android: 'vertical_align_bottom' },
+  heart: { ios: 'heart', android: 'favorite_border' },
+  'heart.fill': { ios: 'heart.fill', android: 'favorite' },
+  comment: { ios: 'bubble.left', android: 'chat_bubble_outline' },
+  bookmark: { ios: 'bookmark', android: 'bookmark_border' },
+  'bookmark.fill': { ios: 'bookmark.fill', android: 'bookmark' },
+  more: { ios: 'ellipsis', android: 'more_horiz' },
+  send: { ios: 'arrow.up', android: 'send' },
+  search: { ios: 'magnifyingglass', android: 'search' },
+  link: { ios: 'link', android: 'link' },
+  download: { ios: 'square.and.arrow.down', android: 'download' },
+  hashtag: { ios: 'number', android: 'tag' },
+  'person.add': { ios: 'person.badge.plus', android: 'person_add' },
+  flag: { ios: 'flag', android: 'flag' },
+  blocked: { ios: 'hand.raised', android: 'block' },
 } as const satisfies Record<string, { ios: string; android: string }>;
 
 export type IconName = keyof typeof ICONS;

@@ -621,6 +621,87 @@ export type Database = {
         Args: { post: Database["public"]["Tables"]["posts"]["Row"] }
         Returns: boolean
       }
+      search_hashtags: {
+        Args: { p_limit?: number; p_query: string }
+        Returns: {
+          post_count: number
+          tag: string
+        }[]
+      }
+      search_posts: {
+        Args: { p_limit?: number; p_offset?: number; p_query: string }
+        Returns: {
+          author_id: string
+          card_image_path: string | null
+          comment_count: number
+          created_at: string
+          id: string
+          like_count: number
+          save_count: number
+          share_count: number
+          status: string
+          text: string
+          topic: string | null
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "posts"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      search_profiles: {
+        Args: { p_limit?: number; p_query: string }
+        Returns: {
+          avatar_url: string | null
+          bio: string
+          created_at: string
+          display_name: string
+          followers_count: number
+          following_count: number
+          id: string
+          is_verified: boolean
+          posts_count: number
+          updated_at: string
+          username: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      suggested_creators: {
+        Args: { p_limit?: number }
+        Returns: {
+          avatar_url: string | null
+          bio: string
+          created_at: string
+          display_name: string
+          followers_count: number
+          following_count: number
+          id: string
+          is_verified: boolean
+          posts_count: number
+          updated_at: string
+          username: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      trending_hashtags: {
+        Args: { p_days?: number; p_limit?: number }
+        Returns: {
+          post_count: number
+          tag: string
+        }[]
+      }
       trending_posts: {
         Args: { p_days?: number; p_limit?: number; p_offset?: number }
         Returns: {

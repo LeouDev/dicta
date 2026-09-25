@@ -39,7 +39,7 @@ export function UserAvatar({ uri, name, size = 40 }: UserAvatarProps) {
       style={[shape, styles.fallback, { backgroundColor: theme.accentSoft }]}
       accessibilityLabel={name ? `${name}'s profile photo` : 'Profile photo'}>
       <Text
-        style={{ color: theme.accent, fontSize: size * 0.38, fontFamily: fontFamily.display }}
+        style={{ color: theme.accent, fontSize: size * 0.38, lineHeight: size * 0.5, fontFamily: fontFamily.display }}
         allowFontScaling={false}>
         {initials(name).toUpperCase()}
       </Text>
