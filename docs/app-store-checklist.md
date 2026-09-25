@@ -17,7 +17,7 @@
 
 ## Before inviting testers
 
-- ⬜ Apple push key (docs/production.md, "Push notifications"). Without it no push reaches a phone.
+- ✅ Apple push key (created by EAS with the first build); a real push reached an iPhone through TestFlight on 2026-09-26.
 - ✅ Custom SMTP through Resend from air-rally.com, with DMARC, and the welcome email (docs/production.md, "Email"). Verified 2026-09-26.
 - ✅ `npm run test:db` passes on the live database (2026-09-26).
 

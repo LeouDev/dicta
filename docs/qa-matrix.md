@@ -30,7 +30,7 @@ PASS = exercised end to end this phase. NOT TESTED = not run this phase; the rea
 | Website | PASS | Page, card and preview for every production post. The first post's new card finished in the background about 70 s later (Paper texture, CPU). |
 | Link preview | PASS | Preview images for all six scripts, without missing-glyph boxes. iMessage checked by you earlier; WhatsApp not checked. |
 | Notifications: permission, tokens, settings, taps | PASS | Asked from Activity, not at launch. Token registered. Likes switch saved to the database and restored. Pushes open the right screen. |
-| Notifications: delivery to a phone | NOT TESTED | Blocked on the Apple push key: Expo answers "Could not find APNs credentials". Everything before Expo is verified. |
+| Notifications: delivery to a phone | PASS | 2026-09-26, TestFlight build 1 on your iPhone: Alven liked your post in the simulator; the push was queued, sent through Expo within a second, and arrived on the phone. Tapping it opened the post. |
 | Block | PASS | Follows both ways and notifications between A and B removed; B's posts left A's feed; B listed in Blocked accounts. |
 | Unblock | PASS | Unblocked; following again works. |
 | Report | PASS | Row in `reports`: reason, details, post, status `open`. |

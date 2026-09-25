@@ -45,7 +45,7 @@ Before running `npx supabase config push`, run `npx supabase config diff` first.
 1. **Apple Developer team**: `ios.appleTeamId` in `app.json` is set to `Z5643XKUTZ`, so the generated Xcode project signs with that team. For device builds, either add your Apple ID in *Xcode → Settings → Accounts* (Xcode then creates the certificate and profile and registers `com.leoudev.dicta` with the *Sign in with Apple* capability), or build with EAS, which manages credentials and syncs capabilities. Supabase's Apple provider already uses that bundle ID as its client ID; native sign-in needs no secret.
 2. **Email delivery**: done. Auth emails and the welcome email go through Resend from air-rally.com ([docs/production.md](docs/production.md#email)). Email confirmation is on, and the templates live in `supabase/templates` and `web/emails`.
 3. **Redirect URLs**: `dicta://**` and `exp+dicta://**` are already allowed (email confirmation and password reset open the app).
-4. **Push notifications**: Expo needs an Apple push key for `com.leoudev.dicta` (`npx eas-cli@latest credentials -p ios`). See [docs/production.md](docs/production.md#push-notifications).
+4. **Push notifications**: done. EAS holds the Apple push key for `com.leoudev.dicta` (`npx eas-cli@latest credentials -p ios` to manage it); see [docs/production.md](docs/production.md#push-notifications).
 
 ## Scripts
 

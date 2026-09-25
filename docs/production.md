@@ -34,8 +34,8 @@ New followers, likes, comments and replies (never your own actions; mentions and
 
 The app asks for permission from Activity (never at launch) and in Settings → Notifications, which also has a switch per kind. Tokens are registered while signed in, removed on sign-out, and move to whoever signs in last on a device. Tapping a push opens the follower, or the post and then its comments, from the foreground or a cold start.
 
-**Needs you:**
-- **Apple push key.** Expo answers "Could not find APNs credentials for com.leoudev.dicta (@galileouuu/dicta)". Run `npx eas-cli@latest credentials -p ios`, choose production, then Push Notifications, and let EAS create the key (or upload an existing .p8). A production `eas build` offers the same.
+**Working end to end since 2026-09-26:** EAS created the Apple push key with the first production build, and a like from the Alven account reached the owner's iPhone (TestFlight build 1) within seconds; tapping it opened the post. Development builds in the simulator can't receive these (Apple answers BadDeviceToken: their tokens belong to its test server).
+
 - **Optional hardening:** turn on "Enhanced security for push notifications" in the Expo project settings, create an access token, and add it to Vercel as `EXPO_ACCESS_TOKEN` (the site already sends it when present).
 
 Not done: Expo push receipts aren't checked, so credential errors only show in the Vercel logs of `/api/push`.
