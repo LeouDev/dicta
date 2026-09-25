@@ -12,20 +12,20 @@ PASS = exercised end to end this phase. NOT TESTED = not run this phase; the rea
 | Password reset | PASS (email) | 2026-09-26: a reset email reached Gmail through Resend. Not yet started from "Forgot password?" on a phone, which is what makes the link work. |
 | Profile | PASS | Own and other profiles; post, follower and following counts updated after deleting posts, following, blocking and unblocking. |
 | Publishing | PASS | Six posts in six scripts across Editorial, Midnight, Typewriter and Minimal. Artwork stored 0.7–1.7 s after publishing; keys match the website's. |
-| Drafts | NOT TESTED | Not re-run this phase. |
+| Drafts | PASS | 2026-09-26, build 4 on your iPhone. |
 | Feed | PASS after fix | **Found:** new posts landed above the visible area (FlashList kept the old first post in place). Fixed and re-checked. Timestamps went "11m" → "18m" with no refetch. |
 | Likes | PASS | Like → row, count 1, B notified, push queued. Unlike → row and notification removed. Re-like pushes nothing new (database test). |
 | Double tap | PASS | 2026-09-26, build 4 on your iPhone: double-tapping a card likes it. (The simulator tool can't tap twice within 260 ms.) |
 | Comments | PASS | Comment → row, count 1, B notified, push queued. Deleting it removed the notification and reset the count. |
 | Replies | PASS | Backend only: reply notification and push in the database test. Reply UI not re-run. |
 | Follows | PASS | Re-follow from B's profile: A following, B's follower count 1, B notified. |
-| Saves | NOT TESTED | Not re-run this phase. |
+| Saves | PASS | 2026-09-26, build 4 on your iPhone. |
 | Activity | PASS | A's side: push prompt card, empty state. B's rows exist in the database; B's badge needs B's phone. |
-| Discover | NOT TESTED | Not re-run this phase. |
-| Search | NOT TESTED | Not re-run this phase. |
+| Discover | PASS | 2026-09-26, build 4 on your iPhone. |
+| Search | PASS | 2026-09-26, build 4 on your iPhone. |
 | Sharing | PASS | Share screen opens with format choices. |
 | Save Image | PASS | Story (1080 × 1920) and Original (1080 × 1350) of the Arabic post saved to Photos; right-to-left order and joined letters correct. |
-| Copy Link | NOT TESTED | The link format (`/post/<id>`) was checked on the website; the button wasn't tapped. |
+| Copy Link | PASS | 2026-09-26, build 4 on your iPhone. |
 | Instagram / Facebook Stories | PASS | 2026-09-26, TestFlight build 3 on your iPhone: Instagram's story editor opened with the card as a sticker over its blurred copy, and accepted the Meta app ID (you're the Meta app's admin; other people's accounts not tried yet). Pasting into Instagram's Link sticker brought the post's link. Facebook Stories works too (build 4). In the simulator the pasteboard held the sticker (PNG 1208 × 1478, transparent corners), background (JPEG 1080 × 1920), app ID and link. |
 | Threads / X | PASS | 2026-09-26, build 3 on your iPhone: the Threads app opened a new thread with the quote and a link preview showing the card. X works too (build 4). Both URLs have a unit test. |
 | Tab bar (Liquid Glass) | PASS | 2026-09-26, build 4 on your iPhone (dark mode, over photo cards), and the iOS 26.5 simulator: floating glass capsule over the feed, the selection bubble moves between tabs, Create and the profile photo kept, light and dark. Lists scroll clear of it. |
