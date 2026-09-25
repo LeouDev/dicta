@@ -13,7 +13,7 @@
 - ✅ EAS environment variables `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY` (the public key) for production and preview builds, since the cloud build doesn't see `.env.local`.
 - ✅ First production build (1.0.0, build 1) on 2026-09-26, with the distribution certificate, provisioning profile and Apple push key created by EAS.
 - ⬜ After the build, check Xcode Organizer's privacy report (or App Store Connect's email) for any required-reason API it flags.
-- ⬜ TestFlight: `npx eas-cli@latest submit -p ios --latest` when you're ready. Internal testers need no review; external testers go through Beta App Review.
+- ✅ Build 1 uploaded to App Store Connect on 2026-09-26 (`npx eas-cli@latest submit -p ios --latest`; the app ID is saved in eas.json). EAS created the internal TestFlight group "Team (Expo)" with the owner's Apple ID. Internal testers need no review; external testers go through Beta App Review.
 
 ## Before inviting testers
 
