@@ -8,26 +8,52 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 import { NotoColorEmoji_400Regular } from '@expo-google-fonts/noto-color-emoji/400Regular';
-import { BlurMask, Fill, Group, Image, ImageFormat, RoundedRect, Skia, rect, rrect, type SkImage, type SkTypefaceFontProvider } from '@shopify/react-native-skia';
+import { NotoSans_400Regular } from '@expo-google-fonts/noto-sans/400Regular';
+import { NotoSansArabic_400Regular } from '@expo-google-fonts/noto-sans-arabic/400Regular';
+import { NotoSansJP_400Regular } from '@expo-google-fonts/noto-sans-jp/400Regular';
+import { NotoSansKR_400Regular } from '@expo-google-fonts/noto-sans-kr/400Regular';
+import { NotoSansSC_400Regular } from '@expo-google-fonts/noto-sans-sc/400Regular';
+import { ImageFormat, Skia, type SkImage, type SkTypefaceFontProvider } from '@shopify/react-native-skia';
 import { drawOffscreen, makeOffscreenSurface } from '@shopify/react-native-skia/lib/module/headless';
 import type { ReactElement } from 'react';
 
 import { fontAssets } from '@/constants/fonts';
-import { colors } from '@/constants/tokens';
-import { cardSize, showsAvatar } from '@/features/quote-card/geometry';
+import { showsAvatar } from '@/features/quote-card/geometry';
 import { layoutCard, setFallbackFamilies, type CardLayout } from '@/features/quote-card/layout';
+import { LinkPreview, PREVIEW_SIZE, previewCardSize } from '@/features/quote-card/link-preview';
 import { QuoteCanvas } from '@/features/quote-card/quote-canvas';
 import { parseQuoteDesign } from '@/features/quote-card/serialize';
-import { DESIGN_WIDTH, type Format, type QuoteDesign } from '@/features/quote-card/types';
+import type { Format, QuoteDesign } from '@/features/quote-card/types';
 import { toAuthor } from '@/services/author';
+
+export { PREVIEW_SIZE };
 
 /** Same width as the app's exports. */
 export const CARD_WIDTH = 1080;
-/** Link previews (Open Graph, X, iMessage) are 1.91:1. */
-export const PREVIEW_SIZE = { width: 1200, height: 630 };
-const PREVIEW_MARGIN = 48;
 
-const EMOJI = 'NotoColorEmoji';
+/**
+ * Faces for characters a card's own face lacks. iOS falls back to its system
+ * fonts; here Noto stands in, loaded only when a card needs it (the Chinese,
+ * Japanese and Korean faces are 5–10 MB each). A face is never replaced where
+ * it has the glyph: these are only tried for missing ones.
+ */
+const HAN_KANA = /[\u3000-\u30FF\u31F0-\u31FF\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF\uFF00-\uFFEF]|[\u{20000}-\u{3134F}]/u;
+const FALLBACK_FACES = [
+  { family: 'NotoSans', asset: NotoSans_400Regular, needed: () => true },
+  { family: 'NotoSansArabic', asset: NotoSansArabic_400Regular, needed: (t: string) => /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(t) },
+  { family: 'NotoSansSC', asset: NotoSansSC_400Regular, needed: (t: string) => HAN_KANA.test(t) },
+  { family: 'NotoSansJP', asset: NotoSansJP_400Regular, needed: (t: string) => HAN_KANA.test(t) },
+  { family: 'NotoSansKR', asset: NotoSansKR_400Regular, needed: (t: string) => /[\u1100-\u11FF\u3130-\u318F\uAC00-\uD7AF]/.test(t) },
+  { family: 'NotoColorEmoji', asset: NotoColorEmoji_400Regular, needed: (t: string) => /\p{Extended_Pictographic}/u.test(t) },
+];
+// The order to try them in, by paragraph language (Chinese and Japanese share characters but not glyph shapes).
+const FALLBACK_ORDER = {
+  default: ['NotoSans', 'NotoSansArabic', 'NotoSansSC', 'NotoSansJP', 'NotoSansKR', 'NotoColorEmoji'],
+  zh: ['NotoSans', 'NotoSansSC', 'NotoSansJP', 'NotoSansKR', 'NotoColorEmoji'],
+  ja: ['NotoSans', 'NotoSansJP', 'NotoSansSC', 'NotoSansKR', 'NotoColorEmoji'],
+  ko: ['NotoSans', 'NotoSansKR', 'NotoSansSC', 'NotoSansJP', 'NotoColorEmoji'],
+  ar: ['NotoSansArabic', 'NotoSans', 'NotoColorEmoji'],
+};
 
 /** A post as the database stores it (see web/lib/supabase.js). */
 export interface PostRow {
@@ -63,41 +89,65 @@ export async function renderCard(post: PostRow, images: CardImages, { format = '
   }));
 }
 
+/** The card and its link preview from one drawing, as the app stores them when it publishes. */
+export async function renderCardAndPreview(post: PostRow, images: CardImages) {
+  const design = parseQuoteDesign(post.design);
+  return withCard(post, design, images, 'original', CARD_WIDTH, async (card) => ({
+    card: card.encodeToBytes(ImageFormat.JPEG, 90),
+    preview: await previewOf(card, design),
+  }));
+}
+
 /**
- * The link-preview image: the card, laid out at the preview's height (a smaller
- * copy of the same composition, so it draws fast), with the feed's rounded
- * corners and shadow on the app's paper color.
+ * Just the link preview, fast: the card is laid out at the preview's size, a
+ * small copy of the same composition, so even the slowest textures take seconds.
  */
 export async function renderLinkPreview(post: PostRow, images: CardImages): Promise<Uint8Array> {
   const design = parseQuoteDesign(post.design);
-  const height = PREVIEW_SIZE.height - PREVIEW_MARGIN * 2;
-  const width = Math.round(height * (DESIGN_WIDTH / cardSize('original', design.canvas, DESIGN_WIDTH).height));
-  return withCard(post, design, images, 'original', width, async (card, layout) => {
-    const preview = await draw(PREVIEW_SIZE.width, PREVIEW_SIZE.height, <LinkPreview card={card} radius={design.radius * layout.scale} />);
-    try {
-      return preview.encodeToBytes(ImageFormat.JPEG, 86);
-    } finally {
-      preview.dispose();
-    }
-  });
+  return withCard(post, design, images, 'original', previewCardSize(design.canvas).width, (card) => previewOf(card, design));
 }
 
-function LinkPreview({ card, radius }: { card: SkImage; radius: number }) {
-  const width = card.width();
-  const height = card.height();
-  const x = Math.round((PREVIEW_SIZE.width - width) / 2);
-  const y = Math.round((PREVIEW_SIZE.height - height) / 2);
-  return (
-    <Group>
-      <Fill color={colors.light.background} />
-      <RoundedRect x={x} y={y + 12} width={width} height={height} r={radius} color="rgba(26, 23, 20, 0.2)">
-        <BlurMask blur={22} style="normal" />
-      </RoundedRect>
-      <Group clip={rrect(rect(x, y, width, height), radius, radius)}>
-        <Image image={card} x={x} y={y} width={width} height={height} />
-      </Group>
-    </Group>
-  );
+/** The link preview made from a stored card image, without drawing the card again. */
+export async function previewFromCard(post: PostRow, cardJpeg: Uint8Array): Promise<Uint8Array> {
+  const card = decode(cardJpeg);
+  if (!card) throw new Error('Couldn’t read the stored card image.');
+  try {
+    return await previewOf(card, parseQuoteDesign(post.design));
+  } finally {
+    card.dispose();
+  }
+}
+
+/**
+ * Characters no font could draw (they'd show as boxes), across every paragraph
+ * of the card: words, header, signature. Empty when everything resolved.
+ */
+export function missingGlyphs(post: PostRow, width = 540): string[] {
+  const design = parseQuoteDesign(post.design);
+  const layout = layoutCard({ text: post.text, design, author: toAuthor(post.author), width, fonts: loadFonts(JSON.stringify(post)) });
+  const missing = new Set<string>();
+  const visit = (value: unknown, seen = new Set<object>()) => {
+    if (typeof value !== 'object' || value === null || seen.has(value)) return;
+    seen.add(value);
+    const paragraph = value as { __typename__?: string; ref?: { unresolvedCodepoints?: () => number[] } };
+    if (paragraph.__typename__ === 'Paragraph') {
+      for (const code of paragraph.ref?.unresolvedCodepoints?.() ?? []) missing.add(String.fromCodePoint(code));
+      return;
+    }
+    for (const child of Object.values(value)) visit(child, seen);
+  };
+  visit(layout);
+  disposeParagraphs(layout);
+  return [...missing];
+}
+
+async function previewOf(card: SkImage, design: QuoteDesign) {
+  const preview = await draw(PREVIEW_SIZE.width, PREVIEW_SIZE.height, <LinkPreview card={card} canvas={design.canvas} radius={design.radius} />);
+  try {
+    return preview.encodeToBytes(ImageFormat.JPEG, 86);
+  } finally {
+    preview.dispose();
+  }
 }
 
 async function withCard<T>(
@@ -110,7 +160,7 @@ async function withCard<T>(
 ): Promise<T> {
   const avatar = decode(images.avatar);
   const photo = decode(images.photo);
-  const layout = layoutCard({ text: post.text, design, author: toAuthor(post.author), width, format, fonts: loadFonts() });
+  const layout = layoutCard({ text: post.text, design, author: toAuthor(post.author), width, format, fonts: loadFonts(JSON.stringify(post)) });
   let card: SkImage | null = null;
   try {
     card = await draw(layout.width, layout.height, <QuoteCanvas layout={layout} avatar={avatar} backgroundImage={photo} />);
@@ -123,22 +173,29 @@ async function withCard<T>(
 }
 
 let fonts: SkTypefaceFontProvider | null = null;
+const loadedFallbacks = new Set<string>();
 
-/** Every face the app bundles, under the same names, plus a color emoji fallback. */
-function loadFonts(): SkTypefaceFontProvider {
-  if (fonts) return fonts;
-  const provider = Skia.TypefaceFontProvider.Make();
-  const faces: [string, unknown][] = [...Object.entries(fontAssets), [EMOJI, NotoColorEmoji_400Regular]];
-  for (const [name, asset] of faces) {
-    // esbuild's file loader turns each font import into a path next to this bundle.
-    const bytes = new Uint8Array(readFileSync(fileURLToPath(new URL(String(asset), import.meta.url))));
-    const typeface = Skia.Typeface.MakeFreeTypeFaceFromData(Skia.Data.fromBytes(bytes));
-    if (!typeface) throw new Error(`Couldn't load the font ${name}.`);
-    provider.registerFont(typeface, name);
+// esbuild's file loader turns each font import into a path next to this bundle.
+const typefaceOf = (name: string, asset: unknown) => {
+  const bytes = new Uint8Array(readFileSync(fileURLToPath(new URL(String(asset), import.meta.url))));
+  const typeface = Skia.Typeface.MakeFreeTypeFaceFromData(Skia.Data.fromBytes(bytes));
+  if (!typeface) throw new Error(`Couldn't load the font ${name}.`);
+  return typeface;
+};
+
+/** Every face the app bundles, under the same names, plus the fallbacks `text` needs. */
+function loadFonts(text: string): SkTypefaceFontProvider {
+  if (!fonts) {
+    fonts = Skia.TypefaceFontProvider.Make();
+    for (const [name, asset] of Object.entries(fontAssets)) fonts.registerFont(typefaceOf(name, asset), name);
+    setFallbackFamilies(FALLBACK_ORDER);
   }
-  setFallbackFamilies([EMOJI]);
-  fonts = provider;
-  return provider;
+  for (const face of FALLBACK_FACES) {
+    if (loadedFallbacks.has(face.family) || !face.needed(text)) continue;
+    fonts.registerFont(typefaceOf(face.family, face.asset), face.family);
+    loadedFallbacks.add(face.family);
+  }
+  return fonts;
 }
 
 // A photo that can't be decoded is left out, as the app does with one that fails to load.

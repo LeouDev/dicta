@@ -30,7 +30,7 @@ export default function CreateScreen() {
   const [step, setStep] = useState<'write' | 'design'>('write');
 
   const publish = useMutation({
-    mutationFn: () => publishPost({ userId, text, design, topic: useComposer.getState().topic }),
+    mutationFn: () => publishPost({ userId, text, design, topic: useComposer.getState().topic, author }),
     onSuccess: () => {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       useComposer.getState().reset();

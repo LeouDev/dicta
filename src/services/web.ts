@@ -11,3 +11,13 @@ export const postLink = (postId: string) => `${WEB_ORIGIN}/post/${postId}`;
 export function prepareCardImage(postId: string) {
   fetch(`${WEB_ORIGIN}/api/card?id=${encodeURIComponent(postId)}&warm=1`).catch(() => {});
 }
+
+/**
+ * Removes a deleted post, or every post of a deleted account, from the
+ * website's cache right away, so its page, artwork and link preview stop
+ * being served. The website checks the content is really gone first.
+ */
+export function purgeFromWebsite(target: { post: string } | { author: string }) {
+  const query = 'post' in target ? `post=${encodeURIComponent(target.post)}` : `author=${encodeURIComponent(target.author)}`;
+  fetch(`${WEB_ORIGIN}/api/purge?${query}`, { method: 'POST' }).catch(() => {});
+}

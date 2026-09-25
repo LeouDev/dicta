@@ -1,7 +1,8 @@
 // Supabase for the website. Posts are read with the public anon key, so the
 // database's rules apply (hidden and removed posts stay invisible). The service
-// role key, which exists only on the server, is used for one thing: storing a
-// post's card images and pointing posts.card_image_path at them.
+// role key, which exists only on the server, is used for card images: reading
+// and storing them in the private generated-cards bucket, and pointing
+// posts.card_image_path at the current one.
 
 export const BUCKET = 'generated-cards';
 
@@ -25,11 +26,21 @@ export async function fetchPost(id) {
   return { ...row, design: designRow?.design ?? null };
 }
 
-export const publicUrl = (path) => `${env().url}/storage/v1/object/public/${BUCKET}/${path}`;
+/** Whether a profile is visible (false once the account is deleted). */
+export async function profileExists(id) {
+  const { url, anon } = env();
+  const res = await fetch(`${url}/rest/v1/profiles?id=eq.${id}&select=id`, { headers: keyHeaders(anon) });
+  if (!res.ok) throw new Error(`Couldn't look up profile ${id} (${res.status}).`);
+  return (await res.json()).length > 0;
+}
 
-export async function imageExists(path) {
-  const res = await fetch(publicUrl(path), { method: 'HEAD' });
-  return res.ok;
+/** A stored card image's bytes, or null if there's none. */
+export async function downloadImage(path) {
+  const { url, service } = env();
+  const res = await fetch(`${url}/storage/v1/object/authenticated/${BUCKET}/${path}`, { headers: keyHeaders(service) });
+  if (res.status === 400 || res.status === 404) return null;
+  if (!res.ok) throw new Error(`Couldn't read ${path} (${res.status}).`);
+  return new Uint8Array(await res.arrayBuffer());
 }
 
 /**

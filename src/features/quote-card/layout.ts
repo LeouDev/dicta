@@ -1,4 +1,4 @@
-import { Skia, TextAlign as SkTextAlign, type SkParagraph, type SkTypefaceFontProvider } from '@shopify/react-native-skia';
+import { Skia, TextAlign as SkTextAlign, TextDirection, type SkParagraph, type SkTypefaceFontProvider } from '@shopify/react-native-skia';
 
 import { FONT_LIBRARY, UI_FACES, resolveFace } from '@/constants/fonts';
 
@@ -106,17 +106,26 @@ interface TextOptions {
   lineHeight?: number;
   maxLines?: number;
   shadows?: { color: string; blur: number }[];
+  /** Right-to-left text (Arabic, Hebrew), so trailing punctuation sits on the left. */
+  rtl?: boolean;
+  /** Language of the paragraph, which picks the right glyphs when a face falls back (Chinese vs Japanese). */
+  lang?: string;
 }
 
 function paragraph(text: string, o: TextOptions, fonts: SkTypefaceFontProvider, width: number): SkParagraph {
   // Skia's JSI bridge rejects undefined values, so optional keys are only added when set.
   const builder = Skia.ParagraphBuilder.Make(
-    { textAlign: SK_ALIGN[o.align ?? 'left'], ...(o.maxLines ? { maxLines: o.maxLines, ellipsis: '…' } : {}) },
+    {
+      textAlign: SK_ALIGN[o.align ?? 'left'],
+      ...(o.rtl ? { textDirection: TextDirection.RTL } : {}),
+      ...(o.maxLines ? { maxLines: o.maxLines, ellipsis: '…' } : {}),
+    },
     fonts,
   );
   builder.pushStyle({
     color: Skia.Color(o.color),
-    fontFamilies: [o.face, ...fallbackFamilies],
+    fontFamilies: [o.face, ...((o.lang && fallbacks[o.lang]) || fallbacks.default)],
+    ...(o.lang ? { locale: o.lang } : {}),
     fontSize: o.size,
     letterSpacing: (o.letterSpacing ?? 0) * o.size,
     ...(o.lineHeight ? { heightMultiplier: o.lineHeight, halfLeading: true } : {}),
@@ -128,24 +137,25 @@ function paragraph(text: string, o: TextOptions, fonts: SkTypefaceFontProvider, 
   return p;
 }
 
-// Families to try for characters a card face lacks, such as emoji. Empty in the
-// app, where iOS falls back to its system fonts; the website's renderer, which
-// has no system fonts, registers its own.
-let fallbackFamilies: string[] = [];
-export function setFallbackFamilies(families: string[]) {
-  fallbackFamilies = families;
+// Families to try, in order, for characters a card face lacks (emoji, other
+// scripts), by paragraph language. Empty in the app, where iOS falls back to its
+// own system fonts; the website's renderer, which has none, registers Noto.
+type Fallbacks = { default: string[] } & Partial<Record<string, string[]>>;
+let fallbacks: Fallbacks = { default: [] };
+export function setFallbackFamilies(byLanguage: Fallbacks) {
+  fallbacks = byLanguage;
   widths.clear();
 }
 
 // Word widths at 100px, per face and tracking. Widths scale linearly with size,
 // so the fit search is arithmetic after the first measurement.
 const widths = new Map<string, number>();
-function measureWord(fonts: SkTypefaceFontProvider, face: string, letterSpacing: number, word: string): number {
-  const key = `${face}|${letterSpacing}|${word}`;
+function measureWord(fonts: SkTypefaceFontProvider, face: string, letterSpacing: number, word: string, lang?: string): number {
+  const key = `${face}|${letterSpacing}|${lang ?? ''}|${word}`;
   let w = widths.get(key);
   if (w === undefined) {
     if (widths.size > 5000) widths.clear();
-    const measured = paragraph(word, { face, size: 100, color: '#000000', letterSpacing }, fonts, UNLIMITED);
+    const measured = paragraph(word, { face, size: 100, color: '#000000', letterSpacing, ...(lang ? { lang } : {}) }, fonts, UNLIMITED);
     w = measured.getLongestLine();
     // Only the width is kept. Free the paragraph now: the website's renderer
     // (CanvasKit) never garbage-collects it.
@@ -183,7 +193,7 @@ export function layoutCard({ text, design, author, width, format = 'original', f
       kickerScale: design.kickerScale,
       align: design.align,
       wordGap: FONT_LIBRARY[design.font].wordGap,
-      measure: (w) => measureWord(fonts, face, design.letterSpacing, w),
+      measure: (w, lang) => measureWord(fonts, face, design.letterSpacing, w, lang),
     });
 
   const body =
@@ -349,6 +359,8 @@ function placeWords(flow: FlowResult, origin: { x: number; y: number }, design: 
         letterSpacing: design.letterSpacing,
         lineHeight: w.lineHeight / w.size,
         ...(design.glow ? { shadows: [{ color: design.glow, blur: w.size * 0.14 }, { color: design.glow, blur: w.size * 0.4 }] } : {}),
+        ...(w.rtl ? { rtl: true } : {}),
+        ...(w.lang ? { lang: w.lang } : {}),
       },
       fonts,
       UNLIMITED,

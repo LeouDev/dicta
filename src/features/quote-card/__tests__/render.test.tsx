@@ -3,16 +3,18 @@
  * and canvas the app uses, and checks every template fits every export format.
  * `npm run render:cards` also writes the PNGs to .renders/ for visual review.
  */
+import { createHash } from 'crypto';
 import fs from 'fs';
 import path from 'path';
 
 import type { SkImage, SkTypefaceFontProvider } from '@shopify/react-native-skia';
 
+import { ENGINE_VERSION } from '../card-key';
 import { contentInsets } from '../geometry';
 import type * as Layout from '../layout';
 import type * as Canvas from '../quote-canvas';
 import { createDesign } from '../templates';
-import { FORMATS, TEMPLATE_IDS, type CardAuthor } from '../types';
+import { FORMATS, TEMPLATE_IDS, type CardAuthor, type TemplateId } from '../types';
 
 // Skia's web build, backed by the CanvasKit instance this file loads below.
 jest.mock('@shopify/react-native-skia', () => {
@@ -120,3 +122,37 @@ describe.each(Object.entries(TEXTS))('%s text', (label, text) => {
     outDir ? 600_000 : 30_000,
   );
 });
+
+// The card engine is frozen. These drawings (every texture family, frames, blur,
+// highlight, gradient text, the wave, and Chinese and Arabic flow) must not change
+// unless ENGINE_VERSION does, because stored images are named by it: bumping it
+// redraws every post. After a deliberate change, bump the version and record the
+// fingerprint this test prints.
+const FROZEN = { version: 1, fingerprint: 'df163e24edeabe6c' };
+const REFERENCES: [TemplateId, string][] = [
+  ['editorial', 'Stay soft. It’s a strength.'],
+  ['diptych', 'still\n\nhere'],
+  ['pager', 'call me when you land'],
+  ['lcd', 'systems nominal'],
+  ['notification', 'you made it through'],
+  ['book', 'mark this line\n\nand keep reading'],
+  ['headline', 'one more lap\n\nthen rest.'],
+  ['ink', 'hand-pulled'],
+  ['wall', 'concrete ideas'],
+  ['dialogue', 'said / heard'],
+  ['grain', 'every day is a beginning'],
+  ['journal', 'lines on lines'],
+  ['minimal', '每一天都是新的开始。\n\nكل يوم هو بداية جديدة.'],
+];
+
+test('the drawing is frozen at ENGINE_VERSION', async () => {
+  const hash = createHash('sha256');
+  for (const [template, text] of REFERENCES) {
+    const layout = layoutCard({ text, design: createDesign(template), author, width: 216, format: 'original', fonts });
+    const image = await draw(layout.width, layout.height, <QuoteCanvas layout={layout} avatar={null} backgroundImage={null} />);
+    hash.update(template).update(image.readPixels() as Uint8Array);
+  }
+  const fingerprint = hash.digest('hex').slice(0, 16);
+  if (fingerprint !== FROZEN.fingerprint) console.warn(`card engine fingerprint: ${fingerprint}`);
+  expect({ version: ENGINE_VERSION, fingerprint }).toEqual(FROZEN);
+}, 120_000);

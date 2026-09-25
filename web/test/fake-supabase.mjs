@@ -1,9 +1,11 @@
 // An in-memory Supabase behind global fetch, just enough for the website's
-// functions: posts over PostgREST, and Storage (public reads, uploads, list, delete).
+// functions: posts and profiles over PostgREST, and Storage (public buckets for
+// photos, the private generated-cards bucket for card images).
 export const SUPABASE_URL = 'https://x.supabase.co';
 export const ORIGIN = 'https://dicta.test';
 export const POST_ID = '11111111-1111-1111-1111-111111111111';
 export const AUTHOR_ID = '22222222-2222-2222-2222-222222222222';
+const CARDS = 'generated-cards';
 
 /** A post as the website reads it (design unwrapped from post_designs). */
 export function post(overrides = {}) {
@@ -21,20 +23,23 @@ export function post(overrides = {}) {
 export const storageUrl = (bucketPath) => `${SUPABASE_URL}/storage/v1/object/public/${bucketPath}`;
 
 /**
- * Installs the fake. `files` maps "bucket/path" to bytes; `calls` records
+ * Installs the fake. `files` maps "bucket/path" to bytes; `profiles` lists
+ * visible profile ids (every post's author by default); `calls` records
  * "METHOD path?query" for every request, including ones to ORIGIN.
  */
-export function fakeSupabase({ posts = [post()], files = {} } = {}) {
+export function fakeSupabase({ posts = [post()], files = {}, profiles } = {}) {
   process.env.SUPABASE_URL = SUPABASE_URL;
   process.env.SUPABASE_ANON_KEY = 'anon';
   process.env.SUPABASE_SERVICE_ROLE_KEY = 'service';
   const db = {
     posts: new Map(posts.map((p) => [p.id, structuredClone(p)])),
+    profiles: new Set(profiles ?? posts.map((p) => p.author_id)),
     files: new Map(Object.entries(files).map(([path, bytes]) => [path, { bytes, created_at: new Date().toISOString() }])),
     calls: [],
     storageFailure: null,
   };
   const json = (value, status = 200) => new Response(JSON.stringify(value), { status, headers: { 'Content-Type': 'application/json' } });
+  const notFound = () => json({ statusCode: '404', error: 'not_found' }, 400);
 
   globalThis.fetch = async (input, init = {}) => {
     const url = new URL(typeof input === 'string' ? input : input.url);
@@ -53,27 +58,37 @@ export function fakeSupabase({ posts = [post()], files = {} } = {}) {
       }
       return json(row ? [{ ...structuredClone(row), design: [{ design: row.design }] }] : []);
     }
+    if (url.pathname === '/rest/v1/profiles') {
+      const id = url.searchParams.get('id')?.replace('eq.', '');
+      return json(db.profiles.has(id) ? [{ id }] : []);
+    }
 
     const publicPath = url.pathname.match(/^\/storage\/v1\/object\/public\/(.+)$/)?.[1];
     if (publicPath) {
       if (db.storageFailure) return new Response('down', { status: db.storageFailure });
-      const file = db.files.get(decodeURIComponent(publicPath));
-      if (!file) return json({ statusCode: '404', error: 'not_found' }, 400);
+      const path = decodeURIComponent(publicPath);
+      // Card images are private: only the service role can read them.
+      const file = path.startsWith(`${CARDS}/`) ? null : db.files.get(path);
+      if (!file) return notFound();
       return new Response(method === 'HEAD' ? null : file.bytes, { status: 200, headers: { 'Content-Type': 'image/jpeg' } });
     }
 
     if (!service) return json({ message: 'unauthorized' }, 401);
-    const bucket = 'generated-cards';
-    if (url.pathname === `/storage/v1/object/list/${bucket}`) {
+    const privatePath = url.pathname.match(/^\/storage\/v1\/object\/authenticated\/(.+)$/)?.[1];
+    if (privatePath) {
+      const file = db.files.get(decodeURIComponent(privatePath));
+      return file ? new Response(file.bytes, { status: 200, headers: { 'Content-Type': 'image/jpeg' } }) : notFound();
+    }
+    if (url.pathname === `/storage/v1/object/list/${CARDS}`) {
       const { prefix, search } = JSON.parse(init.body);
       const names = [...db.files.keys()]
-        .filter((path) => path.startsWith(`${bucket}/${prefix}`))
-        .map((path) => path.slice(`${bucket}/${prefix}`.length))
+        .filter((path) => path.startsWith(`${CARDS}/${prefix}`))
+        .map((path) => path.slice(`${CARDS}/${prefix}`.length))
         .filter((name) => name.startsWith(search));
-      return json(names.map((name) => ({ name, created_at: db.files.get(`${bucket}/${prefix}${name}`).created_at })));
+      return json(names.map((name) => ({ name, created_at: db.files.get(`${CARDS}/${prefix}${name}`).created_at })));
     }
-    if (url.pathname === `/storage/v1/object/${bucket}` && method === 'DELETE') {
-      for (const path of JSON.parse(init.body).prefixes) db.files.delete(`${bucket}/${path}`);
+    if (url.pathname === `/storage/v1/object/${CARDS}` && method === 'DELETE') {
+      for (const path of JSON.parse(init.body).prefixes) db.files.delete(`${CARDS}/${path}`);
       return json([]);
     }
     const upload = url.pathname.match(/^\/storage\/v1\/object\/(generated-cards\/.+)$/)?.[1];
@@ -86,9 +101,15 @@ export function fakeSupabase({ posts = [post()], files = {} } = {}) {
   return db;
 }
 
-/** Collects waitUntil() work the way Vercel does, so tests can wait for it. */
+/** The Vercel request context: waitUntil() work to wait for, and cache purges. */
 const background = [];
-globalThis[Symbol.for('@vercel/request-context')] = { get: () => ({ waitUntil: (promise) => background.push(promise) }) };
+export const purged = [];
+globalThis[Symbol.for('@vercel/request-context')] = {
+  get: () => ({
+    waitUntil: (promise) => background.push(promise),
+    purge: { dangerouslyDeleteByTag: async (tags) => void purged.push(...[tags].flat()) },
+  }),
+};
 
 export async function settle() {
   while (background.length) await background.shift();

@@ -4,9 +4,8 @@
 //
 // dist/render.mjs   the Skia renderer, with CanvasKit and every font beside it
 // dist/design.mjs   design parsing and card sizes, no Skia (for the post page)
-// dist/version.mjs  a hash of everything that affects the pixels
 import { createHash } from 'node:crypto';
-import { copyFileSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -63,10 +62,9 @@ copyFileSync(join(canvaskit, 'canvaskit.wasm'), join(dist, 'canvaskit.wasm'));
 await build({ ...common, entryPoints: { render: join(here, 'render.tsx') }, banner: { js: loadCanvasKit } });
 await build({ ...common, entryPoints: { design: join(here, 'design.ts') } });
 
-// Stored images are named by this, so a renderer change redraws every card.
+// A fingerprint of everything that affects the pixels, to compare builds (stored
+// images are named by ENGINE_VERSION in card-key.ts, not by this).
 const hash = createHash('sha256');
 for (const file of ['render.mjs', 'canvaskit.wasm']) hash.update(readFileSync(join(dist, file)));
 for (const font of readdirSync(join(dist, 'fonts')).sort()) hash.update(font).update(readFileSync(join(dist, 'fonts', font)));
-const version = hash.digest('hex').slice(0, 12);
-writeFileSync(join(dist, 'version.mjs'), `export const RENDERER_VERSION = '${version}';\n`);
-console.log(`card renderer ${version} → ${dist}`);
+console.log(`card renderer ${hash.digest('hex').slice(0, 12)} → ${dist}`);

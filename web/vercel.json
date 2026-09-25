@@ -1,5 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "regions": [
+    "icn1"
+  ],
   "installCommand": "cd .. && npm ci --ignore-scripts --no-audit --no-fund && cd web && npm ci --no-audit --no-fund",
   "buildCommand": "npm run build",
   "outputDirectory": "public",
@@ -10,7 +13,7 @@
       "maxDuration": 300
     },
     "api/post.js": {
-      "includeFiles": "card/dist/{design.mjs,version.mjs}"
+      "includeFiles": "card/dist/design.mjs"
     }
   },
   "rewrites": [

@@ -2,57 +2,49 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { ORIGIN, POST_ID, fakeSupabase, post, settle, storageUrl } from './fake-supabase.mjs';
+import { AUTHOR_ID, ORIGIN, POST_ID, fakeSupabase, post } from './fake-supabase.mjs';
 
 const { GET } = await import('../api/post.js');
-const { cardImagePath, cardKey } = await import('../lib/card-key.js');
+const { cardKey, toAuthor } = await import('../card/dist/design.mjs');
 
 async function render() {
   const res = await GET(new Request(`${ORIGIN}/api/post?id=${POST_ID}`));
-  return { status: res.status, html: await res.text() };
+  return { status: res.status, html: await res.text(), headers: res.headers };
 }
+const versionOf = (row) => cardKey({ text: row.text, design: row.design, author: toAuthor(row.author) });
 const imgSrc = (html) => html.match(/<img class="card" src="([^"]+)"/)?.[1];
 const meta = (html, property) => html.match(new RegExp(`<meta (?:property|name)="${property}" content="([^"]*)"`))?.[1];
 
-test('shows the stored artwork, sized like the design, with the app’s accessibility label', async () => {
+test('shows the post’s artwork at a versioned URL, sized like the design, with the app’s accessibility label', async () => {
   const row = post({ text: 'Stay <soft>.\n\nIt’s a strength.' });
-  const path = cardImagePath(row, cardKey(row));
-  const db = fakeSupabase({ posts: [{ ...row, card_image_path: path }] });
+  fakeSupabase({ posts: [row] });
 
-  const { status, html } = await render();
+  const { status, html, headers } = await render();
   assert.equal(status, 200);
-  assert.equal(imgSrc(html), storageUrl(`generated-cards/${path}`));
+  assert.equal(imgSrc(html), `${ORIGIN}/card/${POST_ID}.jpg?v=${versionOf(row)}`);
   assert.match(html, /width="1080" height="1350"/);
   assert.match(html, /alt="Quote by Mara: Stay &lt;soft&gt;\.\n\nIt’s a strength\."/);
   assert.match(html, /--card-bg: #FFFFFF; --card-radius: 36/);
-  await settle();
-  assert.ok(!db.calls.some((call) => call.includes('warm')), 'a current card needs no redraw');
+  assert.equal(headers.get('vercel-cache-tag'), `post-${POST_ID},author-${AUTHOR_ID}`);
+});
+
+test('changes the artwork URL when anything on the card changes', async () => {
+  fakeSupabase({ posts: [post()] });
+  const before = imgSrc((await render()).html);
+  fakeSupabase({ posts: [post({ author: { username: 'mara', display_name: 'Mara Vell', avatar_url: null, is_verified: false } })] });
+  assert.notEqual(imgSrc((await render()).html), before);
 });
 
 test('points link previews at the post’s artwork', async () => {
   fakeSupabase();
   const { html } = await render();
-  assert.equal(meta(html, 'og:image'), `${ORIGIN}/card/${POST_ID}/og.jpg`);
+  assert.equal(meta(html, 'og:image'), `${ORIGIN}/card/${POST_ID}/og.jpg?v=${versionOf(post())}`);
   assert.equal(meta(html, 'og:image:width'), '1200');
   assert.equal(meta(html, 'og:image:height'), '630');
   assert.equal(meta(html, 'og:image:type'), 'image/jpeg');
   assert.equal(meta(html, 'twitter:card'), 'summary_large_image');
-  assert.equal(meta(html, 'twitter:image'), `${ORIGIN}/card/${POST_ID}/og.jpg`);
+  assert.equal(meta(html, 'twitter:image'), `${ORIGIN}/card/${POST_ID}/og.jpg?v=${versionOf(post())}`);
   assert.match(meta(html, 'og:image:alt'), /^Quote by Mara: Stay soft/);
-});
-
-test('before the first drawing, the image comes from /card, which draws it', async () => {
-  fakeSupabase();
-  const { html } = await render();
-  assert.equal(imgSrc(html), `${ORIGIN}/card/${POST_ID}.jpg`);
-});
-
-test('after a change, shows the previous drawing and asks for a new one', async () => {
-  const db = fakeSupabase({ posts: [post({ card_image_path: `x/${POST_ID}-old.jpg` })] });
-  const { html } = await render();
-  assert.equal(imgSrc(html), storageUrl(`generated-cards/x/${POST_ID}-old.jpg`));
-  await settle();
-  assert.ok(db.calls.includes(`GET /api/card?id=${POST_ID}&warm=1`));
 });
 
 test('sizes older designs the way the app upgrades them', async () => {
@@ -75,9 +67,11 @@ test('survives hand-written designs', async () => {
   }
 });
 
-test('404s for missing posts and bad ids', async () => {
+test('404s for missing posts (tagged, so a purge clears them) and bad ids', async () => {
   fakeSupabase({ posts: [] });
-  assert.equal((await render()).status, 404);
+  const missing = await render();
+  assert.equal(missing.status, 404);
+  assert.equal(missing.headers.get('vercel-cache-tag'), `post-${POST_ID}`);
   const bad = await GET(new Request(`${ORIGIN}/api/post?id=nope`));
   assert.equal(bad.status, 404);
 });

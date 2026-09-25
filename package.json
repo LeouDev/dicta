@@ -54,6 +54,11 @@
   },
   "devDependencies": {
     "@expo-google-fonts/noto-color-emoji": "^0.4.6",
+    "@expo-google-fonts/noto-sans": "^0.4.2",
+    "@expo-google-fonts/noto-sans-arabic": "^0.4.3",
+    "@expo-google-fonts/noto-sans-jp": "^0.4.3",
+    "@expo-google-fonts/noto-sans-kr": "^0.4.3",
+    "@expo-google-fonts/noto-sans-sc": "^0.4.3",
     "@testing-library/react-native": "^14.0.1",
     "@types/jest": "^29.5.14",
     "@types/node": "^26.6.2",

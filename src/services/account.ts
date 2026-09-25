@@ -1,5 +1,7 @@
 import { supabase } from '@/lib/supabase';
 
+import { purgeFromWebsite } from './web';
+
 const BUCKETS = ['avatars', 'post-images', 'generated-cards'] as const;
 
 /**
@@ -19,6 +21,7 @@ export async function deleteAccount(userId: string) {
   }
   const { error } = await supabase.rpc('delete_my_account');
   if (error) throw error;
+  purgeFromWebsite({ author: userId });
   // The server-side session died with the user; clear the local one.
   await supabase.auth.signOut({ scope: 'local' });
 }

@@ -5,6 +5,7 @@ import { loadCardFonts } from './fonts';
 import { showsAvatar } from './geometry';
 import { loadSkImage } from './images';
 import { layoutCard } from './layout';
+import { LinkPreview, PREVIEW_SIZE } from './link-preview';
 import { QuoteCanvas } from './quote-canvas';
 import type { CardAuthor, Format, QuoteDesign } from './types';
 
@@ -32,6 +33,26 @@ interface ExportInput {
  * the export matches the preview; the format re-lays out instead of stretching.
  */
 export async function exportCardImage({ text, design, author, format, watermark = false }: ExportInput): Promise<string> {
+  const image = await drawCard({ text, design, author, format, watermark });
+  const file = new File(Paths.cache, `dicta-${format}-${Date.now()}.png`);
+  file.create({ overwrite: true });
+  file.write(image.encodeToBytes(ImageFormat.PNG, 100));
+  return file.uri;
+}
+
+/**
+ * The images the website and link previews show for a post (see card-key.ts):
+ * the card as designed at export width, and the 1200 × 630 preview made from
+ * it. Drawn on the phone's GPU, they take a fraction of a second.
+ */
+export async function renderCardImages({ text, design, author }: Omit<ExportInput, 'format' | 'watermark'>) {
+  const card = await drawCard({ text, design, author, format: 'original' });
+  const preview = await drawAsImage(<LinkPreview card={card} canvas={design.canvas} radius={design.radius} />, PREVIEW_SIZE);
+  if (!preview) throw new Error('Couldn’t render the link preview.');
+  return { card: card.encodeToBytes(ImageFormat.JPEG, 90), preview: preview.encodeToBytes(ImageFormat.JPEG, 86) };
+}
+
+async function drawCard({ text, design, author, format, watermark = false }: ExportInput) {
   const [fonts, avatar, backgroundImage] = await Promise.all([
     loadCardFonts(),
     showsAvatar(design) && author.avatarUrl ? loadSkImage(author.avatarUrl) : null,
@@ -44,9 +65,5 @@ export async function exportCardImage({ text, design, author, format, watermark 
     height: layout.height,
   });
   if (!image) throw new Error('Couldn’t render the card image.');
-
-  const file = new File(Paths.cache, `dicta-${format}-${Date.now()}.png`);
-  file.create({ overwrite: true });
-  file.write(image.encodeToBytes(ImageFormat.PNG, 100));
-  return file.uri;
+  return image;
 }

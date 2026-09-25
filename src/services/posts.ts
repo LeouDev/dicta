@@ -3,13 +3,13 @@ import { File } from 'expo-file-system';
 
 import { validatePost } from '@/features/composer/validate';
 import { parseQuoteDesign } from '@/features/quote-card/serialize';
-import type { QuoteDesign } from '@/features/quote-card/types';
+import type { CardAuthor, QuoteDesign } from '@/features/quote-card/types';
 import { supabase } from '@/lib/supabase';
 import type { Json } from '@/types/database';
 import type { FeedPost } from '@/types/models';
 
 import { AUTHOR_SELECT, toAuthor } from './author';
-import { prepareCardImage } from './web';
+import { prepareCardImage, purgeFromWebsite } from './web';
 
 export { AUTHOR_SELECT, toAuthor };
 
@@ -145,10 +145,12 @@ interface NewPost {
   text: string;
   design: QuoteDesign;
   topic?: string | null;
+  /** The poster, as their card shows them. */
+  author: CardAuthor;
 }
 
 /** Validates, uploads any photo, and creates the post + design in one transaction. */
-export async function publishPost({ userId, text, design, topic }: NewPost) {
+export async function publishPost({ userId, text, design, topic, author }: NewPost) {
   if (!userId) throw new Error('Sign in to post.');
   const problem = validatePost(text, design);
   if (problem) throw new Error(problem);
@@ -162,7 +164,16 @@ export async function publishPost({ userId, text, design, topic }: NewPost) {
     p_background_image_path: published.background.type === 'image' ? published.background.path : undefined,
   });
   if (error) throw error;
-  prepareCardImage(data);
+  // The website's image and link preview, drawn here in the background. If that
+  // fails, the website draws them itself.
+  Promise.resolve()
+    .then(() => {
+      // Required lazily: it brings in Skia, which the other services (and their tests) don't load.
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { storeCardImages } = require('./card-images') as typeof import('./card-images');
+      return storeCardImages({ postId: data, authorId: userId, text: text.trim(), design: published, author });
+    })
+    .catch(() => prepareCardImage(data));
   return data;
 }
 
@@ -170,10 +181,17 @@ export async function publishPost({ userId, text, design, topic }: NewPost) {
 export async function deletePost(post: FeedPost) {
   const { error } = await supabase.from('posts').delete().eq('id', post.id);
   if (error) throw error;
+  purgeFromWebsite({ post: post.id });
   const bg = post.design.background;
-  if (bg.type === 'image' && bg.path) await supabase.storage.from('post-images').remove([bg.path]);
+  if (bg.type === 'image' && bg.path && !(await isPhotoInUse(bg.path))) await supabase.storage.from('post-images').remove([bg.path]);
   // The website stores each version of the card as <author>/<post id>-<version>.jpg (web/api/card.js).
   const { data: cards } = await supabase.storage.from('generated-cards').list(post.author.id, { search: `${post.id}-` });
   const paths = (cards ?? []).filter((file) => file.name.startsWith(`${post.id}-`)).map((file) => `${post.author.id}/${file.name}`);
   if (paths.length) await supabase.storage.from('generated-cards').remove(paths);
+}
+
+/** Whether another post still shows this uploaded photo (so it mustn't be deleted with this one). */
+async function isPhotoInUse(path: string) {
+  const { count, error } = await supabase.from('post_designs').select('post_id', { count: 'exact', head: true }).eq('background_image_path', path);
+  return Boolean(error) || (count ?? 0) > 0;
 }

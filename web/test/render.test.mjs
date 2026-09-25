@@ -3,9 +3,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-const { CARD_WIDTH, PREVIEW_SIZE, cardImageUrls, renderCard, renderLinkPreview } = await import('../card/dist/render.mjs');
+const { CARD_WIDTH, PREVIEW_SIZE, cardImageUrls, missingGlyphs, previewFromCard, renderCard, renderCardAndPreview, renderLinkPreview } = await import('../card/dist/render.mjs');
 const { cardSize, parseQuoteDesign } = await import('../card/dist/design.mjs');
-const { cardKey, cardImagePath, previewImagePath } = await import('../lib/card-key.js');
 
 const TEMPLATES = ['editorial', 'minimal', 'midnight', 'typewriter', 'journal', 'modern', 'gradient', 'photograph', 'diptych', 'headline', 'grain', 'pager', 'lcd', 'ink', 'wall', 'notification', 'book', 'dialogue'];
 const FORMATS = ['original', 'story', 'post', 'square'];
@@ -109,23 +108,39 @@ test('names the photos a card needs', () => {
   assert.equal(cardImageUrls({ text: 'x', design: { version: 2, template: 'photograph', background: { type: 'image', image: photo } }, author }).photo, photo);
 });
 
-test('a new key for anything the card draws, and only for that', () => {
-  const base = { id: 'p', author_id: 'u', text: 'Stay soft.', design: { version: 2, template: 'editorial', align: 'left' }, author };
-  const key = cardKey(base);
-  assert.match(key, /^[0-9a-f]{16}$/);
-  assert.equal(cardKey({ ...base, design: { align: 'left', template: 'editorial', version: 2 } }), key, 'key order doesn’t matter');
-  assert.equal(cardKey({ ...base, card_image_path: 'u/p-x.jpg', like_count: 9 }), key);
-  for (const changed of [
-    { text: 'Stay soft!' },
-    { design: { ...base.design, align: 'right' } },
-    { author: { ...author, display_name: 'Mara Vell' } },
-    { author: { ...author, username: 'maravell' } },
-    { author: { ...author, avatar_url: 'https://x/avatar-2.jpg' } },
-    { author: { ...author, is_verified: false } },
-  ]) {
-    assert.notEqual(cardKey({ ...base, ...changed }), key, JSON.stringify(changed));
+test('draws the card once and makes its preview from it, like the app does', async () => {
+  const { card, preview } = await renderCardAndPreview(row({ version: 2, template: 'midnight' }), none);
+  assert.deepEqual([decode(card).width, decode(card).height], [1080, 1350]);
+  const fromCard = decode(preview);
+  assert.deepEqual({ width: fromCard.width, height: fromCard.height }, PREVIEW_SIZE);
+  // The same preview, from the stored card image.
+  const again = decode(await previewFromCard(row({ version: 2, template: 'midnight' }), card));
+  // The stored card is a JPEG, so a few edge pixels differ slightly; on average it's the same image.
+  let total = 0;
+  for (let i = 0; i < again.pixels.length; i++) total += Math.abs(again.pixels[i] - fromCard.pixels[i]);
+  const mean = total / again.pixels.length;
+  assert.ok(mean < 1.5, `preview from the stored card matches (mean difference ${mean.toFixed(2)})`);
+});
+
+const LANGUAGES = {
+  English: 'Every day is another beginning.',
+  Chinese: '每一天都是新的开始。',
+  Japanese: '今日も新しい始まり。',
+  Korean: '오늘은 새로운 시작이다.',
+  Arabic: 'كل يوم هو بداية جديدة.',
+  Cyrillic: 'Каждый день — новое начало.',
+};
+
+test('draws every language in every template, with no missing glyphs', async () => {
+  for (const template of TEMPLATES) {
+    for (const [language, text] of Object.entries(LANGUAGES)) {
+      assert.deepEqual(missingGlyphs(row({ version: 2, template }, text)), [], `${language} in ${template}`);
+    }
   }
-  assert.notEqual(cardKey(base, 'another-renderer'), key);
-  assert.equal(cardImagePath(base, key), `u/p-${key}.jpg`);
-  assert.equal(previewImagePath(base, key), `u/p-${key}-og.jpg`);
+  // Names and signatures fall back too.
+  const korean = { text: 'Stay soft.', design: { version: 2, template: 'editorial', signature: { show: true, text: '— 민지' } }, author: { ...author, display_name: '김민지' } };
+  assert.deepEqual(missingGlyphs(korean), []);
+  // And a real drawing with all six.
+  const { bytes } = await renderCard(row({ version: 2, template: 'minimal' }, Object.values(LANGUAGES).join('\n\n')), none, { width: 540 });
+  assert.ok(ink(decode(bytes)) > 0.004);
 });

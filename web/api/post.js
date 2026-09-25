@@ -1,11 +1,10 @@
-// A shared quote at /post/<id>: the post's artwork (drawn by the app's own renderer and
-// served by /card, see card.js), <meta> tags so link previews show that artwork too, and a
-// way into the app. Posts are read with the public anon key, so database rules apply.
-import { waitUntil } from '@vercel/functions';
-
-import { cardSize, parseQuoteDesign } from '../card/dist/design.mjs';
-import { cardImagePath, cardKey } from '../lib/card-key.js';
-import { fetchPost, isConfigured, publicUrl } from '../lib/supabase.js';
+// A shared quote at /post/<id>: the post's artwork (stored when it's published, served by
+// /card, see card.js), <meta> tags so link previews show that artwork too, and a way into
+// the app. Posts are read with the public anon key, so database rules apply. The page is
+// cached with the post's tags, so deleting the post purges it at once (purge.js).
+import { cardKey, cardSize, parseQuoteDesign, toAuthor } from '../card/dist/design.mjs';
+import { missingPostTags, postTags } from '../lib/cache.js';
+import { fetchPost, isConfigured } from '../lib/supabase.js';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const CARD_WIDTH = 1080;
@@ -29,17 +28,15 @@ export async function GET(request) {
   } catch {
     return page(502, shell({ title: 'Dicta', body: missing('This quote couldn’t be loaded. Please try again.') }));
   }
-  if (!post) return notFound(url.origin);
+  if (!post) return notFound(url.origin, id);
 
-  // Something on the card changed since it was drawn: show that drawing while the new one draws.
-  const stale = post.card_image_path && post.card_image_path !== cardImagePath(post, cardKey(post));
-  if (stale) waitUntil(fetch(`${url.origin}/api/card?id=${id}&warm=1`).catch(() => {}));
-
+  // The version in the image URLs changes whenever anything on the card does.
+  const version = cardKey({ text: post.text, design: post.design, author: toAuthor(post.author) });
   const name = post.author.display_name || post.author.username;
   const canonical = `${url.origin}/post/${id}`;
   const title = `“${excerpt(post.text, 70)}” — ${name} on Dicta`;
   const alt = `Quote by ${name}: ${post.text.trim()}`;
-  const preview = `${url.origin}/card/${id}/og.jpg`;
+  const preview = `${url.origin}/card/${id}/og.jpg?v=${version}`;
 
   return page(
     200,
@@ -62,7 +59,7 @@ export async function GET(request) {
     <meta name="twitter:image" content="${preview}">`,
       body: `
     <main class="shared">
-      ${artwork(post, alt, url.origin)}
+      ${artwork(post, alt, `${url.origin}/card/${id}.jpg?v=${version}`)}
       <a class="author" href="dicta://user/${esc(post.author.username)}">
         ${post.author.avatar_url ? `<img src="${esc(post.author.avatar_url)}" alt="" width="40" height="40">` : `<span class="initial">${esc(name.slice(0, 1).toUpperCase())}</span>`}
         <span><strong>${esc(name)}</strong><span class="handle">@${esc(post.author.username)}</span></span>
@@ -73,15 +70,14 @@ export async function GET(request) {
       </div>
     </main>`,
     }),
-    'public, s-maxage=300, stale-while-revalidate=86400',
+    { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=86400', 'Vercel-Cache-Tag': postTags(post) },
   );
 }
 
-/** The stored card image or, before its first drawing, /card, which draws it. Sized and cornered like the app's feed. */
-function artwork(post, alt, origin) {
+/** The card image, sized and cornered like the app's feed. */
+function artwork(post, alt, src) {
   const design = parseQuoteDesign(post.design);
   const { height } = cardSize('original', design.canvas, CARD_WIDTH);
-  const src = post.card_image_path ? publicUrl(post.card_image_path) : `${origin}/card/${post.id}.jpg`;
   return `
       <figure class="card-frame" style="--card-bg: ${esc(design.background.color)}; --card-radius: ${design.radius}">
         <img class="card" src="${esc(src)}" width="${CARD_WIDTH}" height="${height}" alt="${esc(alt)}" fetchpriority="high">
@@ -94,11 +90,11 @@ const missing = (message) => `
       <a class="button" href="/">Go to Dicta</a>
     </main>`;
 
-function notFound(origin) {
+function notFound(origin, id) {
   return page(
     404,
     shell({ title: 'Quote not found · Dicta', head: `<meta property="og:image" content="${origin}/og.png">`, body: missing('This quote isn’t available. It may have been deleted.') }),
-    'public, s-maxage=60',
+    { 'Cache-Control': 'public, s-maxage=60', ...(id ? { 'Vercel-Cache-Tag': missingPostTags(id) } : {}) },
   );
 }
 
@@ -121,6 +117,6 @@ function shell({ title, head = '', body }) {
 </html>`;
 }
 
-function page(status, html, cache = 'no-store') {
-  return new Response(html, { status, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': cache } });
+function page(status, html, headers = { 'Cache-Control': 'no-store' }) {
+  return new Response(html, { status, headers: { 'Content-Type': 'text/html; charset=utf-8', ...headers } });
 }
