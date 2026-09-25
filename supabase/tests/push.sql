@@ -142,6 +142,10 @@ do $$ begin
 end $$;
 
 -- ── Devices ────────────────────────────────────────────────────────────
+do $$ begin
+  assert not has_function_privilege('anon', 'public.register_push_token(text)', 'execute'), 'only signed-in people register devices';
+  assert not has_function_privilege('authenticated', 'public.claim_push(uuid)', 'execute'), 'only the server claims pushes';
+end $$;
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"00000000-0000-4000-a000-00000000000b","role":"authenticated"}';
 do $$ begin
