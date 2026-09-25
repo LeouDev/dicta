@@ -1,5 +1,6 @@
-import { useState, type ReactNode, type Ref } from 'react';
+import { useEffect, useState, type ReactNode, type Ref } from 'react';
 import { StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
+import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
 
 import { radius, spacing, typography } from '@/constants/tokens';
 import { useTheme } from '@/hooks/use-theme';
@@ -13,15 +14,26 @@ interface TextFieldProps extends TextInputProps {
   prefix?: string;
   trailing?: ReactNode;
   ref?: Ref<TextInput>;
+  /** Bump this number to shake the field, say on each failed submit. No shake under Reduce Motion. */
+  shake?: number;
 }
 
-export function TextField({ label, error, hint, prefix, trailing, ref, onFocus, onBlur, style, ...rest }: TextFieldProps) {
+export function TextField({ label, error, hint, prefix, trailing, ref, shake, onFocus, onBlur, style, ...rest }: TextFieldProps) {
   const theme = useTheme();
   const [focused, setFocused] = useState(false);
   const borderColor = error ? theme.danger : focused ? theme.textTertiary : 'transparent';
+  const reduceMotion = useReducedMotion();
+  const offset = useSharedValue(0);
+
+  useEffect(() => {
+    if (!shake || reduceMotion) return;
+    const to = (x: number) => withTiming(x, { duration: 76, easing: Easing.out(Easing.quad) });
+    offset.set(withSequence(to(-8), to(7), to(-5), to(3), to(0)));
+  }, [shake, reduceMotion, offset]);
+  const shakeStyle = useAnimatedStyle(() => ({ transform: [{ translateX: offset.get() }] }));
 
   return (
-    <View style={styles.wrap}>
+    <Animated.View style={[styles.wrap, shakeStyle]}>
       <Text variant="caption" color="textSecondary" style={styles.label}>
         {label}
       </Text>
@@ -58,7 +70,7 @@ export function TextField({ label, error, hint, prefix, trailing, ref, onFocus, 
           {error || hint}
         </Text>
       )}
-    </View>
+    </Animated.View>
   );
 }
 
