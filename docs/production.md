@@ -44,12 +44,18 @@ Not done: Expo push receipts aren't checked, so credential errors only show in t
 
 Supabase's built-in mailer is still active: 2 emails an hour, delivered only to members of your Supabase organization. Beta testers can't confirm their accounts until custom SMTP is on.
 
-**Needs you:**
-1. Pick a provider (Resend, Postmark or Amazon SES) and verify a sending domain you control, for example `air-rally.com` or a Dicta domain. Add the DNS records it gives you: SPF (TXT), DKIM (TXT or CNAME), and a DMARC record such as `v=DMARC1; p=none; rua=mailto:support@air-rally.com`.
-2. In `supabase/config.toml`, uncomment `[auth.email.smtp]` and set `host`, `port`, `user`, `admin_email` (for example `no-reply@air-rally.com`) and `sender_name = "Dicta"`. Raise `[auth.rate_limit] email_sent` to 30 or more.
-3. `export SUPABASE_AUTH_SMTP_PASS=<the provider's SMTP password or API key>`, then `npx supabase config diff` and, if it only shows the email changes, `npx supabase config push`. (Or enter the same values in the dashboard under Authentication → Emails → SMTP Settings.)
+Set it up in the Supabase dashboard, not with `supabase config push`: on 2026-09-25 `config diff` showed a push would also change unrelated live settings (database pool sizes, the Vercel redirect URLs, a Twilio flag). Recommended setup, about 20 minutes, no code:
 
-The branded templates (`supabase/templates`) go out with that push. Links keep Supabase's `{{ .ConfirmationURL }}`: Supabase verifies the token and redirects to `dicta://auth-callback` or `dicta://reset-password` with a PKCE `code`, which the app exchanges. Site URL is `dicta://`; `dicta://**` and `exp+dicta://**` are allowed redirects.
+1. **Resend** (free: 3,000 emails a month, 100 a day): add the domain `auth.air-rally.com` (a subdomain keeps auth mail separate, as Supabase recommends; pick a Dicta domain instead if you buy one). Region: Tokyo.
+2. **Cloudflare** (air-rally.com's DNS): add the MX and TXT records Resend shows, as DNS only. Also add a DMARC record for the domain: TXT `_dmarc` = `v=DMARC1; p=none;` (there is none yet). The existing SPF record and Email Routing for support@ stay as they are.
+3. **Resend**: once the domain shows Verified, create an API key with sending access to that domain only.
+4. **Supabase → Authentication → Emails → SMTP Settings** (`/dashboard/project/phusfxrnwxhsczhzucod/auth/smtp`): enable custom SMTP. Sender email `no-reply@auth.air-rally.com`, sender name `Dicta`, host `smtp.resend.com`, port `465`, username `resend`, password = the API key (paste it straight from Resend; it never goes in the repo).
+5. **Rate limit**: Authentication → Rate Limits starts at 30 emails an hour with custom SMTP, which is fine for the beta (Resend's free plan caps at 100 a day).
+6. **Templates**: Authentication → Emails → Templates. Paste the subject and HTML from `supabase/templates` into Confirm signup (`confirm-signup.html`, "Confirm your email for Dicta"), Reset password (`reset-password.html`, "Reset your Dicta password") and Change email address (`email-change.html`, "Confirm your new email for Dicta").
+
+Before anyone runs `supabase config push` later, copy these settings into `supabase/config.toml` (password as `env(SUPABASE_AUTH_SMTP_PASS)`) and reconcile the other differences `config diff` lists.
+
+Links keep Supabase's `{{ .ConfirmationURL }}`: Supabase verifies the token and redirects to `dicta://auth-callback` or `dicta://reset-password` with a PKCE `code`, which the app exchanges. Site URL is `dicta://`; `dicta://**` and `exp+dicta://**` are allowed redirects.
 
 **Then check on an iPhone:** sign up → the email arrives → the link opens Dicta signed in. Forgot password → the link opens the new-password screen → sign in with it. Change email → both addresses confirm. A link opened on another device shows "Link expired" (PKCE ties it to the phone that asked), and a used link does too.
 

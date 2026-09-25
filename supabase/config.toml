@@ -235,17 +235,16 @@ otp_length = 8
 otp_expiry = 3600
 
 # Use a production-ready SMTP server
-# Production email (docs/production.md#email). Uncomment once the provider is set
-# up, with SUPABASE_AUTH_SMTP_PASS in the environment, then raise
-# auth.rate_limit.email_sent (the built-in service allows 2 an hour and only
-# delivers to members of the Supabase organization).
+# Production email is configured in the Supabase dashboard (docs/production.md#email).
+# Mirror it here, with the password from the environment, before any `config push`,
+# or the push may switch it off.
 # [auth.email.smtp]
 # enabled = true
 # host = "smtp.resend.com"
 # port = 465
 # user = "resend"
 # pass = "env(SUPABASE_AUTH_SMTP_PASS)"
-# admin_email = "no-reply@YOUR-DOMAIN"
+# admin_email = "no-reply@auth.air-rally.com"
 # sender_name = "Dicta"
 
 [auth.email.template.confirmation]
