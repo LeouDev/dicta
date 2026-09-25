@@ -8,7 +8,7 @@ PASS = exercised end to end this phase. NOT TESTED = not run this phase; the rea
 | --- | --- | --- |
 | Authentication | PASS | Session restored across cold starts. A fresh email sign-in wasn't re-run: the test account's password isn't known to me. |
 | Apple Sign In | NOT TESTED | Needs an Apple ID on a device. |
-| Email confirmation | NOT TESTED | SMTP now works (2026-09-26), but no one has signed up with a new address yet. The app's handler (`dicta://auth-callback`, PKCE code exchange) is unchanged. |
+| Email confirmation | PASS | 2026-09-26, TestFlight build 2 on your iPhone: sign-up with a new address, the email's link opened Dicta and moved on to profile setup (build 1 stayed on "Confirming your email"). From build 4, an address that already has an account says so instead of waiting for an email. |
 | Password reset | PASS (email) | 2026-09-26: a reset email reached Gmail through Resend. Not yet started from "Forgot password?" on a phone, which is what makes the link work. |
 | Profile | PASS | Own and other profiles; post, follower and following counts updated after deleting posts, following, blocking and unblocking. |
 | Publishing | PASS | Six posts in six scripts across Editorial, Midnight, Typewriter and Minimal. Artwork stored 0.7–1.7 s after publishing; keys match the website's. |
