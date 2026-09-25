@@ -42,6 +42,8 @@ export default function HomeScreen() {
         <FlashList
           data={posts}
           keyExtractor={(post) => post.id}
+          // New posts arrive at the top: show them rather than hold the old first post in place.
+          maintainVisibleContentPosition={{ disabled: true }}
           renderItem={({ item }) => <PostCard post={item} width={cardWidth} />}
           contentContainerStyle={styles.list}
           onEndReached={() => {

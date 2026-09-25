@@ -40,6 +40,8 @@ export function PostGrid({ query, header, empty }: PostGridProps) {
       masonry
       numColumns={2}
       keyExtractor={(post) => post.id}
+      // New posts arrive at the top: show them rather than hold the old first post in place.
+      maintainVisibleContentPosition={{ disabled: true }}
       ListHeaderComponent={header}
       renderItem={({ item }) => <GridTile post={item} width={tileWidth} />}
       contentContainerStyle={styles.list}
