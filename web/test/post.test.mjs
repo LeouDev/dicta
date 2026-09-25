@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { AUTHOR_ID, ORIGIN, POST_ID, fakeSupabase, post } from './fake-supabase.mjs';
+import { ORIGIN, POST_ID, fakeSupabase, post } from './fake-supabase.mjs';
 
 const { GET } = await import('../api/post.js');
 const { cardKey, toAuthor } = await import('../card/dist/design.mjs');
@@ -25,7 +25,7 @@ test('shows the post’s artwork at a versioned URL, sized like the design, with
   assert.match(html, /width="1080" height="1350"/);
   assert.match(html, /alt="Quote by Mara: Stay &lt;soft&gt;\.\n\nIt’s a strength\."/);
   assert.match(html, /--card-bg: #FFFFFF; --card-radius: 36/);
-  assert.equal(headers.get('vercel-cache-tag'), `post-${POST_ID},author-${AUTHOR_ID}`);
+  assert.equal(headers.get('vercel-cache-tag'), `post-${POST_ID}`);
 });
 
 test('changes the artwork URL when anything on the card changes', async () => {

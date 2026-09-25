@@ -15,7 +15,6 @@ const names = (row) => {
 };
 const bytesOf = async (res) => new Uint8Array(await res.arrayBuffer());
 const isJpeg = (bytes) => bytes[0] === 0xff && bytes[1] === 0xd8;
-const TAGS = `post-${POST_ID},author-${AUTHOR_ID}`;
 
 test('serves a stored card from the private bucket, cached and tagged for purging', async () => {
   const { card } = names(post());
@@ -26,7 +25,7 @@ test('serves a stored card from the private bucket, cached and tagged for purgin
   assert.equal(res.status, 200);
   assert.equal(res.headers.get('content-type'), 'image/jpeg');
   assert.deepEqual(await bytesOf(res), stored);
-  assert.equal(res.headers.get('vercel-cache-tag'), TAGS);
+  assert.equal(res.headers.get('vercel-cache-tag'), `post-${POST_ID}`);
   assert.match(res.headers.get('cache-control'), /s-maxage=31536000/);
   assert.equal(uploads(db).length, 0);
   assert.ok(!db.calls.some((call) => call.includes('/object/public/generated-cards')), 'never public');

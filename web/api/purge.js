@@ -1,30 +1,23 @@
-// POST /api/purge?post=<id> or ?author=<id>: drops a deleted post (or every post
-// of a deleted account) from Vercel's cache at once: its page, artwork and link
-// preview (all tagged in lib/cache.js). The app calls it right after deleting.
-// Anyone may call it, but it only purges content that is no longer visible.
+// POST /api/purge?post=<id>: drops a post that's no longer public (deleted,
+// hidden, removed, or gone with its author's account) from Vercel's cache at
+// once: its page, artwork and link preview, all tagged in lib/cache.js. The
+// database calls it (supabase/migrations/20260927000100_push_and_purge.sql).
+// Anyone may call it, but it only purges posts that really are gone.
 import { dangerouslyDeleteByTag } from '@vercel/functions';
 
-import { fetchPost, isConfigured, profileExists } from '../lib/supabase.js';
+import { postTag } from '../lib/cache.js';
+import { fetchPost, isConfigured } from '../lib/supabase.js';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function POST(request) {
-  const url = new URL(request.url);
-  const post = url.searchParams.get('post');
-  const author = url.searchParams.get('author');
+  const post = new URL(request.url).searchParams.get('post') ?? '';
   if (!isConfigured()) return status(503);
+  if (!UUID.test(post)) return status(400);
   try {
-    if (post && UUID.test(post)) {
-      if (await fetchPost(post)) return status(409);
-      await dangerouslyDeleteByTag(`post-${post}`);
-      return status(204);
-    }
-    if (author && UUID.test(author)) {
-      if (await profileExists(author)) return status(409);
-      await dangerouslyDeleteByTag(`author-${author}`);
-      return status(204);
-    }
-    return status(400);
+    if (await fetchPost(post)) return status(409);
+    await dangerouslyDeleteByTag(postTag(post));
+    return status(204);
   } catch (error) {
     console.error('purge:', error);
     return status(500);

@@ -1,8 +1,8 @@
 // Supabase for the website. Posts are read with the public anon key, so the
 // database's rules apply (hidden and removed posts stay invisible). The service
-// role key, which exists only on the server, is used for card images: reading
+// role key, which exists only on the server, is used for card images (reading
 // and storing them in the private generated-cards bucket, and pointing
-// posts.card_image_path at the current one.
+// posts.card_image_path at the current one) and for sending pushes.
 
 export const BUCKET = 'generated-cards';
 
@@ -24,14 +24,6 @@ export async function fetchPost(id) {
   if (!row?.author) return null;
   const designRow = Array.isArray(row.design) ? row.design[0] : row.design;
   return { ...row, design: designRow?.design ?? null };
-}
-
-/** Whether a profile is visible (false once the account is deleted). */
-export async function profileExists(id) {
-  const { url, anon } = env();
-  const res = await fetch(`${url}/rest/v1/profiles?id=eq.${id}&select=id`, { headers: keyHeaders(anon) });
-  if (!res.ok) throw new Error(`Couldn't look up profile ${id} (${res.status}).`);
-  return (await res.json()).length > 0;
 }
 
 /** A stored card image's bytes, or null if there's none. */
@@ -98,4 +90,24 @@ export async function removeOldVersions(post, key, now = Date.now()) {
     headers: { ...keyHeaders(service), 'Content-Type': 'application/json' },
     body: JSON.stringify({ prefixes: old }),
   });
+}
+
+/** The push for one queued notification, marked sent as it's read (claim_push), or null. */
+export async function claimPush(id) {
+  const { url, service } = env();
+  const res = await fetch(`${url}/rest/v1/rpc/claim_push`, {
+    method: 'POST',
+    headers: { ...keyHeaders(service), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ p_id: id }),
+  });
+  if (!res.ok) throw new Error(`Couldn't claim push ${id} (${res.status}).`);
+  return res.json();
+}
+
+/** Forgets devices that can't receive pushes anymore. */
+export async function removePushTokens(tokens) {
+  const { url, service } = env();
+  const list = encodeURIComponent(tokens.map((token) => `"${token}"`).join(','));
+  const res = await fetch(`${url}/rest/v1/push_tokens?token=in.(${list})`, { method: 'DELETE', headers: keyHeaders(service) });
+  if (!res.ok) throw new Error(`Couldn't remove push tokens (${res.status}).`);
 }

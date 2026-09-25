@@ -13,6 +13,7 @@ import { fontAssets } from '@/constants/fonts';
 import { loadCardFonts } from '@/features/quote-card/fonts';
 import { colors } from '@/constants/tokens';
 import { useMyProfile } from '@/hooks/use-my-profile';
+import { usePushNotifications } from '@/hooks/use-push';
 import { useSchemeName } from '@/hooks/use-theme';
 import { queryClient } from '@/lib/query-client';
 import { friendlyError } from '@/services/errors';
@@ -50,6 +51,8 @@ function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
   useEffect(() => {
     if (ready) SplashScreen.hideAsync();
   }, [ready]);
+  const hasProfile = Boolean(profile.data);
+  usePushNotifications(ready && signedIn && hasProfile);
 
   if (!ready) return null;
 
@@ -66,7 +69,6 @@ function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
     );
   }
 
-  const hasProfile = Boolean(profile.data);
   // Pushed screens use the native header: back chevron, title, no hairline.
   const pushed = {
     headerShown: true,
@@ -111,6 +113,7 @@ function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
           <Stack.Screen name="tag/[tag]" options={pushed} />
           <Stack.Screen name="settings/index" options={{ ...pushed, title: 'Settings' }} />
           <Stack.Screen name="settings/edit-profile" options={{ ...pushed, title: 'Edit profile' }} />
+          <Stack.Screen name="settings/notifications" options={{ ...pushed, title: 'Notifications' }} />
           <Stack.Screen name="settings/blocked" options={{ ...pushed, title: 'Blocked accounts' }} />
           <Stack.Screen name="share" options={{ presentation: 'modal' }} />
           <Stack.Screen name="report" options={{ presentation: 'modal' }} />

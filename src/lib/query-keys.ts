@@ -29,4 +29,5 @@ export const queryKeys = {
   suggestedCreators: (userId: string | null) => ['creators', userId] as const,
   searchUsers: (query: string) => ['users', 'search', query] as const,
   blocked: (userId: string | null) => ['blocked', userId] as const,
+  pushSettings: (userId: string | null) => ['push-settings', userId] as const,
 };

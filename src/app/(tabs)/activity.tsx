@@ -3,6 +3,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { memo, useCallback, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, Text as RNText, StyleSheet, View } from 'react-native';
 
+import { PushPrompt } from '@/components/push-prompt';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Screen } from '@/components/ui/screen';
 import { ScreenHeader } from '@/components/ui/screen-header';
@@ -76,6 +77,7 @@ export default function ActivityScreen() {
         }}
         onEndReached={() => notifications.hasNextPage && !notifications.isFetchingNextPage && notifications.fetchNextPage()}
         onEndReachedThreshold={0.5}
+        ListHeaderComponent={<PushPrompt />}
         ListEmptyComponent={
           notifications.isPending ? (
             <ActivityIndicator color={theme.textTertiary} style={styles.loading} />

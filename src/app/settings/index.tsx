@@ -73,6 +73,7 @@ export default function SettingsScreen() {
 
       <Group title="Account">
         <Row icon="pencil" label="Edit profile" onPress={() => router.push('/settings/edit-profile')} />
+        <Row icon="bell" label="Notifications" onPress={() => router.push('/settings/notifications')} divider />
         <Row icon="blocked" label="Blocked accounts" onPress={() => router.push('/settings/blocked')} divider />
       </Group>
 

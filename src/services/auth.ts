@@ -4,6 +4,8 @@ import * as Linking from 'expo-linking';
 
 import { supabase } from '@/lib/supabase';
 
+import { unregisterDevice } from './push';
+
 export async function signInWithEmail(email: string, password: string) {
   const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
   if (error) throw error;
@@ -79,6 +81,8 @@ export async function updatePassword(password: string) {
 }
 
 export async function signOut() {
+  // Stop pushes to this phone first: removing its token needs the session.
+  await unregisterDevice().catch(() => {});
   const { error } = await supabase.auth.signOut();
   if (error) throw error;
 }

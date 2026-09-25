@@ -7,10 +7,10 @@
 //   /api/card?id=<id>&warm=1    draw anything missing now, in the background
 //
 // Pages link here with ?v=<key>, so a changed card gets a new URL. Responses are
-// tagged with the post and its author, and api/purge.js drops them on deletion.
+// tagged with the post, and api/purge.js drops them once it's no longer public.
 import { waitUntil } from '@vercel/functions';
 
-import { missingPostTags, postTags } from '../lib/cache.js';
+import { postTag } from '../lib/cache.js';
 import {
   downloadImage,
   fetchPost,
@@ -29,7 +29,7 @@ export async function GET(request) {
   if (!isConfigured() || !UUID.test(id)) return empty(404);
   try {
     const post = await fetchPost(id);
-    if (!post) return empty(404, { 'Cache-Control': 'public, s-maxage=60', 'Vercel-Cache-Tag': missingPostTags(id) });
+    if (!post) return empty(404, { 'Cache-Control': 'public, s-maxage=60', 'Vercel-Cache-Tag': postTag(id) });
     const names = await imageNames(post);
     const current = post.card_image_path === names.card;
 
@@ -98,7 +98,7 @@ async function drawAll(post, names) {
 
 function jpeg(bytes, post, cache = 'public, max-age=300, s-maxage=31536000') {
   return new Response(bytes, {
-    headers: { 'Content-Type': 'image/jpeg', 'Cache-Control': cache, 'Vercel-Cache-Tag': postTags(post) },
+    headers: { 'Content-Type': 'image/jpeg', 'Cache-Control': cache, 'Vercel-Cache-Tag': postTag(post.id) },
   });
 }
 

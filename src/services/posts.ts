@@ -9,7 +9,7 @@ import type { Json } from '@/types/database';
 import type { FeedPost } from '@/types/models';
 
 import { AUTHOR_SELECT, toAuthor } from './author';
-import { prepareCardImage, purgeFromWebsite } from './web';
+import { prepareCardImage } from './web';
 
 export { AUTHOR_SELECT, toAuthor };
 
@@ -181,7 +181,7 @@ export async function publishPost({ userId, text, design, topic, author }: NewPo
 export async function deletePost(post: FeedPost) {
   const { error } = await supabase.from('posts').delete().eq('id', post.id);
   if (error) throw error;
-  purgeFromWebsite({ post: post.id });
+  // The website drops its cached page and images by itself (a database trigger calls api/purge).
   const bg = post.design.background;
   if (bg.type === 'image' && bg.path && !(await isPhotoInUse(bg.path))) await supabase.storage.from('post-images').remove([bg.path]);
   // The website stores each version of the card as <author>/<post id>-<version>.jpg (web/api/card.js).

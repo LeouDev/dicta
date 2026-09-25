@@ -448,6 +448,115 @@ export type Database = {
         }
         Relationships: []
       }
+      push_deliveries: {
+        Row: {
+          actor_id: string
+          comment_id: string | null
+          created_at: string
+          id: string
+          notification_id: string
+          post_id: string | null
+          recipient_id: string
+          sent_at: string | null
+          type: Database["public"]["Enums"]["notification_type"]
+        }
+        Insert: {
+          actor_id: string
+          comment_id?: string | null
+          created_at?: string
+          id?: string
+          notification_id: string
+          post_id?: string | null
+          recipient_id: string
+          sent_at?: string | null
+          type: Database["public"]["Enums"]["notification_type"]
+        }
+        Update: {
+          actor_id?: string
+          comment_id?: string | null
+          created_at?: string
+          id?: string
+          notification_id?: string
+          post_id?: string | null
+          recipient_id?: string
+          sent_at?: string | null
+          type?: Database["public"]["Enums"]["notification_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_deliveries_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "push_deliveries_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      push_settings: {
+        Row: {
+          comments: boolean
+          follows: boolean
+          likes: boolean
+          replies: boolean
+          user_id: string
+        }
+        Insert: {
+          comments?: boolean
+          follows?: boolean
+          likes?: boolean
+          replies?: boolean
+          user_id: string
+        }
+        Update: {
+          comments?: boolean
+          follows?: boolean
+          likes?: boolean
+          replies?: boolean
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_settings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      push_tokens: {
+        Row: {
+          token: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          token: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          token?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_tokens_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reports: {
         Row: {
           comment_id: string | null
@@ -569,6 +678,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_push: { Args: { p_id: string }; Returns: Json }
       create_post: {
         Args: {
           p_background_image_path?: string
@@ -617,6 +727,7 @@ export type Database = {
             Returns: boolean
           }
       record_share: { Args: { p_post_id: string }; Returns: undefined }
+      register_push_token: { Args: { p_token: string }; Returns: undefined }
       saved_by_me: {
         Args: { post: Database["public"]["Tables"]["posts"]["Row"] }
         Returns: boolean

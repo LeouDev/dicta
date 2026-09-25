@@ -84,11 +84,6 @@ describe('deletePost', () => {
     expect([...mockCards].sort()).toEqual(['u1/p10-cccc.jpg', 'u2/p1-dddd.jpg']);
   });
 
-  it('purges the post from the website’s cache at once', async () => {
-    await deletePost(post({ id: 'p1' }));
-    expect(fetchMock).toHaveBeenCalledWith('https://dicta-orcin.vercel.app/api/purge?post=p1', { method: 'POST' });
-  });
-
   it('keeps an uploaded photo another post still uses', async () => {
     const photo = { ...createDesign('photograph').background, image: 'https://x/p.jpg', path: 'u1/photo.jpg' };
     const withPhoto = post({ id: 'p1', design: { ...createDesign('photograph'), background: photo } });

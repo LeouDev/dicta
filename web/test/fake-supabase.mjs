@@ -1,6 +1,7 @@
 // An in-memory Supabase behind global fetch, just enough for the website's
-// functions: posts and profiles over PostgREST, and Storage (public buckets for
-// photos, the private generated-cards bucket for card images).
+// functions: posts and pushes over PostgREST, Storage (public buckets for
+// photos, the private generated-cards bucket for card images), and Expo's push
+// service.
 export const SUPABASE_URL = 'https://x.supabase.co';
 export const ORIGIN = 'https://dicta.test';
 export const POST_ID = '11111111-1111-1111-1111-111111111111';
@@ -23,17 +24,20 @@ export function post(overrides = {}) {
 export const storageUrl = (bucketPath) => `${SUPABASE_URL}/storage/v1/object/public/${bucketPath}`;
 
 /**
- * Installs the fake. `files` maps "bucket/path" to bytes; `profiles` lists
- * visible profile ids (every post's author by default); `calls` records
- * "METHOD path?query" for every request, including ones to ORIGIN.
+ * Installs the fake. `files` maps "bucket/path" to bytes; `pushes` maps queued
+ * delivery ids to what claim_push returns; `expo(message)` answers each push
+ * with a ticket. `calls` records "METHOD path?query" for every request,
+ * including ones to ORIGIN; `sent` collects the messages Expo received.
  */
-export function fakeSupabase({ posts = [post()], files = {}, profiles } = {}) {
+export function fakeSupabase({ posts = [post()], files = {}, pushes = {}, expo = () => ({ status: 'ok', id: 'ticket' }) } = {}) {
   process.env.SUPABASE_URL = SUPABASE_URL;
   process.env.SUPABASE_ANON_KEY = 'anon';
   process.env.SUPABASE_SERVICE_ROLE_KEY = 'service';
   const db = {
     posts: new Map(posts.map((p) => [p.id, structuredClone(p)])),
-    profiles: new Set(profiles ?? posts.map((p) => p.author_id)),
+    pushes: new Map(Object.entries(pushes)),
+    sent: [],
+    removedTokens: [],
     files: new Map(Object.entries(files).map(([path, bytes]) => [path, { bytes, created_at: new Date().toISOString() }])),
     calls: [],
     storageFailure: null,
@@ -46,6 +50,11 @@ export function fakeSupabase({ posts = [post()], files = {}, profiles } = {}) {
     const method = (init.method ?? 'GET').toUpperCase();
     db.calls.push(`${method} ${url.pathname}${url.search}`);
     if (url.origin === ORIGIN) return new Response(null, { status: 202 });
+    if (url.origin === 'https://exp.host') {
+      const messages = JSON.parse(init.body);
+      db.sent.push(...messages);
+      return json({ data: messages.map(expo) });
+    }
     const service = init.headers?.Authorization === 'Bearer service';
 
     if (url.pathname === '/rest/v1/posts') {
@@ -58,9 +67,18 @@ export function fakeSupabase({ posts = [post()], files = {}, profiles } = {}) {
       }
       return json(row ? [{ ...structuredClone(row), design: [{ design: row.design }] }] : []);
     }
-    if (url.pathname === '/rest/v1/profiles') {
-      const id = url.searchParams.get('id')?.replace('eq.', '');
-      return json(db.profiles.has(id) ? [{ id }] : []);
+    if (url.pathname === '/rest/v1/rpc/claim_push') {
+      if (!service) return json({ message: 'permission denied' }, 401);
+      const { p_id } = JSON.parse(init.body);
+      const push = db.pushes.get(p_id) ?? null;
+      db.pushes.delete(p_id);
+      return json(push);
+    }
+    if (url.pathname === '/rest/v1/push_tokens' && method === 'DELETE') {
+      if (!service) return json({ message: 'permission denied' }, 401);
+      const list = url.searchParams.get('token').match(/^in\.\((.*)\)$/)[1];
+      db.removedTokens.push(...list.split(',').map((token) => JSON.parse(token)));
+      return new Response(null, { status: 204 });
     }
 
     const publicPath = url.pathname.match(/^\/storage\/v1\/object\/public\/(.+)$/)?.[1];

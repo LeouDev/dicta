@@ -57,6 +57,7 @@
         }
       ],
       "expo-sharing",
+      "expo-notifications",
       [
         "expo-media-library",
         {
@@ -69,6 +70,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "da018177-d078-4944-9195-f4734eebc3c8"
+      }
+    },
+    "owner": "galileouuu"
   }
 }

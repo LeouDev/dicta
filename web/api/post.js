@@ -3,7 +3,7 @@
 // the app. Posts are read with the public anon key, so database rules apply. The page is
 // cached with the post's tags, so deleting the post purges it at once (purge.js).
 import { cardKey, cardSize, parseQuoteDesign, toAuthor } from '../card/dist/design.mjs';
-import { missingPostTags, postTags } from '../lib/cache.js';
+import { postTag } from '../lib/cache.js';
 import { fetchPost, isConfigured } from '../lib/supabase.js';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -70,7 +70,7 @@ export async function GET(request) {
       </div>
     </main>`,
     }),
-    { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=86400', 'Vercel-Cache-Tag': postTags(post) },
+    { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=86400', 'Vercel-Cache-Tag': postTag(post.id) },
   );
 }
 
@@ -94,7 +94,7 @@ function notFound(origin, id) {
   return page(
     404,
     shell({ title: 'Quote not found · Dicta', head: `<meta property="og:image" content="${origin}/og.png">`, body: missing('This quote isn’t available. It may have been deleted.') }),
-    { 'Cache-Control': 'public, s-maxage=60', ...(id ? { 'Vercel-Cache-Tag': missingPostTags(id) } : {}) },
+    { 'Cache-Control': 'public, s-maxage=60', ...(id ? { 'Vercel-Cache-Tag': postTag(id) } : {}) },
   );
 }
 

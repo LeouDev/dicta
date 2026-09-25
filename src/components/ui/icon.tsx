@@ -51,6 +51,7 @@ const ICONS = {
   'person.add': { ios: 'person.badge.plus', android: 'person_add' },
   flag: { ios: 'flag', android: 'flag' },
   blocked: { ios: 'hand.raised', android: 'block' },
+  bell: { ios: 'bell', android: 'notifications' },
 } as const satisfies Record<string, { ios: string; android: string }>;
 
 export type IconName = keyof typeof ICONS;
