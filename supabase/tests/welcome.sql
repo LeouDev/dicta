@@ -1,6 +1,7 @@
 -- Backend tests for the welcome email: a new profile asks the website to send
 -- it, it's claimed once, and only the server can claim. ROLLED BACK: nothing
--- persists, and pg_net sends nothing (it only sends after a commit).
+-- persists, and pg_net sends nothing (it only sends after a commit). Checks
+-- look only at the test person, since this runs on the live database.
 --   npm run test:db
 begin;
 
@@ -21,8 +22,10 @@ end $$;
 
 reset role;
 do $$ begin
-  assert (select convert_from(body, 'utf8')::jsonb ->> 'id' from net.http_request_queue where url = 'https://dicta-orcin.vercel.app/api/welcome')
-       = '00000000-0000-4000-a000-00000000000c', 'a new profile asks the website to send the welcome email';
+  assert exists (select 1 from net.http_request_queue
+                 where url = 'https://dicta-orcin.vercel.app/api/welcome'
+                   and convert_from(body, 'utf8')::jsonb ->> 'id' = '00000000-0000-4000-a000-00000000000c'),
+    'a new profile asks the website to send the welcome email';
   assert public.claim_welcome('00000000-0000-4000-a000-00000000000c') = '{"email": "cleo@test.invalid"}'::jsonb, 'the first claim gets the address';
   assert public.claim_welcome('00000000-0000-4000-a000-00000000000c') is null, 'it is sent once';
   assert public.claim_welcome(gen_random_uuid()) is null, 'unknown people get nothing';
