@@ -44,3 +44,5 @@ example
 
 # card renders from npm run render:cards
 .renders/
+.vercel
+.env*

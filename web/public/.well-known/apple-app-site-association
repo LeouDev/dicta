@@ -1,0 +1,10 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["Z5643XKUTZ.com.leoudev.dicta"],
+        "components": [{ "/": "/post/*", "comment": "Shared quotes open in the app" }]
+      }
+    ]
+  }
+}

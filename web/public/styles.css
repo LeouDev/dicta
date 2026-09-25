@@ -1,0 +1,109 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=DM+Serif+Display&display=swap');
+
+/* Dicta's design tokens (src/constants/tokens.ts). */
+:root {
+  color-scheme: light;
+  --paper: #F7F3EC;
+  --surface: #FFFFFF;
+  --text: #1A1714;
+  --text-2: #5F5850;
+  --text-3: #7D746A;
+  --rule: rgba(26, 23, 20, 0.12);
+  --accent: #8E1B1B;
+  --on-primary: #F7F3EC;
+  --primary: #1A1714;
+  --serif: 'DM Serif Display', Georgia, 'Times New Roman', serif;
+  --wordmark: 'Cormorant Garamond', Garamond, Georgia, serif;
+  --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --paper: #121110;
+    --surface: #1C1A18;
+    --text: #F4EFE8;
+    --text-2: #B3ABA1;
+    --text-3: #948C82;
+    --rule: rgba(244, 239, 232, 0.12);
+    --accent: #E07A72;
+    --on-primary: #121110;
+    --primary: #F4EFE8;
+  }
+}
+
+* { box-sizing: border-box; }
+html { background: var(--paper); }
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--paper);
+  color: var(--text);
+  font: 17px/1.6 var(--sans);
+  padding: env(safe-area-inset-top, 0px) 20px env(safe-area-inset-bottom, 0px);
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent); text-underline-offset: 3px; }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+
+header.site { display: flex; justify-content: center; padding-block: 28px 12px; }
+.wordmark { font-family: var(--wordmark); font-weight: 600; font-size: 1.4rem; letter-spacing: 0.42em; margin-right: -0.42em; color: var(--accent); text-decoration: none; }
+footer.site { margin-top: auto; display: flex; justify-content: center; gap: 24px; padding-block: 40px 28px; font-size: 0.9rem; }
+footer.site a { color: var(--text-3); text-decoration: none; }
+footer.site a:hover { color: var(--text); }
+
+h1, h2 { font-family: var(--serif); font-weight: 400; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(2.1rem, 7vw, 3rem); line-height: 1.08; }
+h2 { font-size: 1.45rem; line-height: 1.2; margin-top: 12px; }
+p, ul { margin: 0; }
+
+/* Text pages: privacy, terms, support */
+.page { width: 100%; max-width: 680px; margin: 0 auto; padding-block: 24px; display: grid; gap: 16px; }
+.page .updated { color: var(--text-3); font-size: 0.9rem; }
+.page ul { padding-left: 1.2em; display: grid; gap: 6px; }
+.page li::marker { color: var(--accent); }
+
+/* Home */
+.home { width: 100%; max-width: 680px; margin: 0 auto; padding-block: 32px; display: grid; gap: 20px; justify-items: center; text-align: center; }
+.home .lede { color: var(--text-2); max-width: 32em; font-size: 1.1rem; }
+.home .note { color: var(--text-3); font-size: 0.95rem; }
+
+/* Shared quote */
+.shared { width: 100%; max-width: 440px; margin: 0 auto; padding-block: 16px; display: grid; gap: 22px; justify-items: center; }
+.shared.empty { text-align: center; padding-block: 18vh; gap: 24px; }
+.shared.empty h1 { font-size: 1.8rem; }
+.card-frame { width: 100%; margin: 0; container-type: inline-size; }
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6cqw;
+  width: 100%;
+  border-radius: 18px;
+  background: var(--bg);
+  color: var(--ink);
+  box-shadow: 0 10px 24px rgba(26, 23, 20, 0.1);
+  overflow: hidden;
+}
+.card blockquote { margin: 0 auto; width: 100%; white-space: pre-line; overflow-wrap: break-word; }
+.card figcaption { color: var(--meta); font: 600 3.4cqw/1.3 var(--sans); text-align: center; }
+.author { display: flex; align-items: center; gap: 12px; color: var(--text); text-decoration: none; }
+.author img, .author .initial { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+.author .initial { display: grid; place-items: center; background: var(--rule); color: var(--accent); font-family: var(--serif); font-size: 1.2rem; }
+.author strong { display: block; font-weight: 600; line-height: 1.2; }
+.author .handle { color: var(--text-3); font-size: 0.9rem; }
+.actions { display: grid; gap: 10px; justify-items: center; }
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 28px;
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--on-primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+.note { color: var(--text-3); font-size: 0.9rem; }
