@@ -83,6 +83,8 @@
     "db:types": "supabase gen types typescript --linked > src/types/database.ts",
     "db:push": "supabase db push --linked",
     "render:cards": "RENDER_OUT=.renders jest src/features/quote-card/__tests__/render.test.tsx",
+    "seed": "node scripts/seed/index.mjs",
+    "test:seed": "node --test scripts/seed/generate.test.mjs",
     "test:db": "supabase db query --linked -f supabase/tests/social.sql && supabase db query --linked -f supabase/tests/push.sql"
   },
   "private": true,
