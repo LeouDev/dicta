@@ -1,5 +1,4 @@
 import * as Clipboard from 'expo-clipboard';
-import * as Linking from 'expo-linking';
 import * as MediaLibrary from 'expo-media-library';
 import * as Sharing from 'expo-sharing';
 
@@ -16,11 +15,10 @@ export function shareImage(uri: string) {
   return Sharing.shareAsync(uri, { mimeType: 'image/png', UTI: 'public.png', dialogTitle: 'Share your card' });
 }
 
-/**
- * App deep link to a post. A public https link needs a web domain with
- * universal links; until then, this opens the post for anyone with Dicta.
- */
-export const postLink = (postId: string) => Linking.createURL(`post/${postId}`);
+/** The website in web/: it opens /post links in Dicta when installed (universal links) and shows the quote otherwise. */
+const WEB_ORIGIN = 'https://dicta-orcin.vercel.app';
+
+export const postLink = (postId: string) => `${WEB_ORIGIN}/post/${postId}`;
 
 export async function copyPostLink(postId: string) {
   await Clipboard.setStringAsync(postLink(postId));

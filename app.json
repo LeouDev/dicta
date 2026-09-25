@@ -12,6 +12,9 @@
       "appleTeamId": "Z5643XKUTZ",
       "supportsTablet": false,
       "usesAppleSignIn": true,
+      "associatedDomains": [
+        "applinks:dicta-orcin.vercel.app"
+      ],
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
