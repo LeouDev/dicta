@@ -41,7 +41,7 @@ Before running `npx supabase config push`, run `npx supabase config diff` first.
 
 ### Manual configuration still required
 
-1. **Sign in with Apple**: in the Apple Developer portal, enable the *Sign in with Apple* capability for `com.leoudev.dicta` (change `ios.bundleIdentifier` in `app.json` if you use another ID). Supabase's Apple provider is already enabled with that bundle ID as the client ID; native sign-in needs no secret.
+1. **Apple Developer team**: `ios.appleTeamId` in `app.json` is set to `Z5643XKUTZ`, so the generated Xcode project signs with that team. For device builds, either add your Apple ID in *Xcode → Settings → Accounts* (Xcode then creates the certificate and profile and registers `com.leoudev.dicta` with the *Sign in with Apple* capability), or build with EAS, which manages credentials and syncs capabilities. Supabase's Apple provider already uses that bundle ID as its client ID; native sign-in needs no secret.
 2. **Email delivery**: Supabase's built-in mailer only sends to your team's addresses and is heavily rate limited. Configure custom SMTP (Resend, Postmark, SES…) under *Authentication → Emails* before inviting testers. Email confirmation is on.
 3. **Redirect URLs**: `dicta://**` and `exp+dicta://**` are already allowed (email confirmation and password reset open the app).
 
@@ -152,12 +152,11 @@ Tables: `profiles`, `posts`, `post_designs` (the structured card design as JSONB
 ## Building for iOS
 
 ```bash
-npm i -g eas-cli
-eas login
-eas build:configure
-eas build --platform ios --profile development   # dev client for devices
-eas build --platform ios --profile production    # App Store build
-eas submit --platform ios
+npx eas-cli@latest login
+npx eas-cli@latest build:configure
+npx eas-cli@latest build --platform ios --profile development   # dev client for devices
+npx eas-cli@latest build --platform ios --profile production    # App Store build
+npx eas-cli@latest submit --platform ios
 ```
 
 Set `EXPO_PUBLIC_SUPABASE_URL` / `EXPO_PUBLIC_SUPABASE_ANON_KEY` as EAS environment variables for each environment.

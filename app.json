@@ -9,6 +9,7 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "bundleIdentifier": "com.leoudev.dicta",
+      "appleTeamId": "Z5643XKUTZ",
       "supportsTablet": false,
       "usesAppleSignIn": true,
       "infoPlist": {

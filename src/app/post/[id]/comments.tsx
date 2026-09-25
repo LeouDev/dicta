@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useRef, useState, type RefObject } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -50,8 +50,7 @@ export default function CommentsScreen() {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const inputRef = useRef<TextInput>(null);
   const listRef = useRef<FlatList<CommentItem>>(null);
-  const rootRef = useRef<View>(null);
-  const keyboard = useKeyboardOverlap(rootRef);
+  const keyboard = useKeyboardOverlap();
   const body = draft.trim();
 
   const handlers: CommentHandlers = {
@@ -113,7 +112,7 @@ export default function CommentsScreen() {
   return (
     // Not collapsable: react-native-screens resizes a formSheet's first ScrollView to the whole
     // sheet, which would slide the list under the header. Keeping this wrapper hides the list from it.
-    <View ref={rootRef} collapsable={false} style={[styles.root, { backgroundColor: theme.background }]}>
+    <View collapsable={false} style={[styles.root, { backgroundColor: theme.background }]}>
       <View style={[styles.header, { borderBottomColor: theme.hairline }]}>
         <Text variant="headline" accessibilityRole="header">
           Comments
@@ -204,30 +203,23 @@ export default function CommentsScreen() {
 }
 
 /**
- * How far the keyboard covers this view (null while it's hidden). Measured in window
- * coordinates because iOS may lift or grow the sheet for the keyboard; re-measured once
- * the keyboard has settled so either behavior ends with the composer right above it.
+ * How far the keyboard covers the sheet (null while it's hidden). The sheet's bottom edge sits at
+ * the bottom of the screen while the keyboard is up, so that's the keyboard's height. (Measuring
+ * isn't an option: inside a native sheet, layout positions start at the sheet's top, not the screen's.)
  */
-function useKeyboardOverlap(ref: RefObject<View | null>) {
+function useKeyboardOverlap() {
   const [overlap, setOverlap] = useState<number | null>(null);
   useEffect(() => {
-    let current: number | null = null;
     const apply = (next: number | null, e: KeyboardEvent) => {
-      if (next === current) return;
-      current = next;
-      // LayoutAnimation applies to the next layout pass only, so configure it just for real changes.
       LayoutAnimation.configureNext(LayoutAnimation.create(Math.max(e.duration || 0, 10), 'keyboard', 'opacity'));
       setOverlap(next);
     };
-    const measure = (e: KeyboardEvent) =>
-      ref.current?.measureInWindow((_x, y, _w, height) => apply(Math.max(0, y + height - e.endCoordinates.screenY), e));
     const subscriptions = [
-      Keyboard.addListener('keyboardWillShow', measure),
-      Keyboard.addListener('keyboardDidShow', measure),
+      Keyboard.addListener('keyboardWillShow', (e) => apply(e.endCoordinates.height, e)),
       Keyboard.addListener('keyboardWillHide', (e) => apply(null, e)),
     ];
     return () => subscriptions.forEach((s) => s.remove());
-  }, [ref]);
+  }, []);
   return overlap;
 }
 
