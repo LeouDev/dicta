@@ -11,6 +11,9 @@
     "@expo-google-fonts/dm-serif-display": "^0.4.2",
     "@expo-google-fonts/inter": "^0.4.2",
     "@expo-google-fonts/libre-baskerville": "^0.4.3",
+    "@react-native-community/slider": "5.2.0",
+    "@shopify/flash-list": "2.0.2",
+    "@shopify/react-native-skia": "2.6.2",
     "@supabase/supabase-js": "^2.117.1",
     "@tanstack/react-query": "^5.103.2",
     "expo": "~57.0.25",
@@ -25,6 +28,7 @@
     "expo-image-picker": "~57.0.20",
     "expo-linking": "~57.0.11",
     "expo-router": "~57.0.23",
+    "expo-sharing": "~57.0.22",
     "expo-splash-screen": "~57.0.9",
     "expo-sqlite": "~57.0.3",
     "expo-status-bar": "~57.0.1",
@@ -44,6 +48,7 @@
   "devDependencies": {
     "@testing-library/react-native": "^14.0.1",
     "@types/jest": "^29.5.14",
+    "@types/node": "^26.6.2",
     "@types/react": "~19.2.2",
     "eslint": "^9.0.0",
     "eslint-config-expo": "~57.0.2",
@@ -61,7 +66,8 @@
     "test": "jest",
     "typecheck": "tsc --noEmit",
     "db:types": "supabase gen types typescript --linked > src/types/database.ts",
-    "db:push": "supabase db push --linked"
+    "db:push": "supabase db push --linked",
+    "render:cards": "RENDER_OUT=.renders jest src/features/quote-card/__tests__/render.test.tsx"
   },
   "private": true,
   "jest": {
@@ -69,6 +75,11 @@
     "testPathIgnorePatterns": [
       "/node_modules/",
       "/supabase/"
+    ],
+    "transformIgnorePatterns": [
+      "/node_modules/(?!(.pnpm|react-native|@react-native|@react-native-community|expo|@expo|@expo-google-fonts|react-navigation|@react-navigation|@sentry/react-native|native-base|standard-navigation|@shopify/react-native-skia))",
+      "/node_modules/react-native-reanimated/plugin/",
+      "/node_modules/@react-native/babel-preset/"
     ]
   }
 }

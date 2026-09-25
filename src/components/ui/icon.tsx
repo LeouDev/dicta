@@ -26,6 +26,17 @@ const ICONS = {
   verified: { ios: 'checkmark.seal.fill', android: 'verified' },
   signout: { ios: 'rectangle.portrait.and.arrow.right', android: 'logout' },
   pencil: { ios: 'pencil.line', android: 'edit' },
+  share: { ios: 'square.and.arrow.up', android: 'ios_share' },
+  photo: { ios: 'photo', android: 'image' },
+  eyedropper: { ios: 'eyedropper', android: 'colorize' },
+  'chevron.down': { ios: 'chevron.down', android: 'expand_more' },
+  'chevron.right': { ios: 'chevron.right', android: 'chevron_right' },
+  'align.left': { ios: 'text.alignleft', android: 'format_align_left' },
+  'align.center': { ios: 'text.aligncenter', android: 'format_align_center' },
+  'align.right': { ios: 'text.alignright', android: 'format_align_right' },
+  'position.top': { ios: 'align.vertical.top', android: 'vertical_align_top' },
+  'position.center': { ios: 'align.vertical.center', android: 'vertical_align_center' },
+  'position.bottom': { ios: 'align.vertical.bottom', android: 'vertical_align_bottom' },
 } as const satisfies Record<string, { ios: string; android: string }>;
 
 export type IconName = keyof typeof ICONS;

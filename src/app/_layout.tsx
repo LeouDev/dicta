@@ -9,6 +9,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Screen } from '@/components/ui/screen';
 import { fontAssets } from '@/constants/fonts';
+import { loadCardFonts } from '@/features/quote-card/fonts';
 import { colors } from '@/constants/tokens';
 import { useMyProfile } from '@/hooks/use-my-profile';
 import { useSchemeName } from '@/hooks/use-theme';
@@ -21,6 +22,10 @@ SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts(fontAssets);
   useEffect(() => startAuthListener(), []);
+  // Warm the card renderer's fonts so the first card paints without waiting.
+  useEffect(() => {
+    loadCardFonts().catch(() => {});
+  }, []);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -79,7 +84,7 @@ function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
         </Stack.Protected>
         <Stack.Protected guard={signedIn && hasProfile}>
           <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="create" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="create" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
         </Stack.Protected>
         {/* Email deep links: reachable in any auth state. */}
         <Stack.Screen name="auth-callback" />

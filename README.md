@@ -9,10 +9,10 @@ Built with Expo SDK 57 (React Native 0.86, New Architecture, React Compiler), Ex
 | Phase | Scope | State |
 | --- | --- | --- |
 | 1 | Expo + TypeScript + Router, Supabase, design tokens, navigation, auth, onboarding, profile setup, full DB schema + RLS | ✅ Done |
-| 2 | QuoteCard renderer, feed, profile gallery, seed data | Next |
-| 3 | Editor: templates, fonts, colors, backgrounds, layout, live preview, drafts, publish | |
+| 2–3 | Quote card engine (Skia), 8 templates, visual editor with live preview, drafts, publish, image export (9:16, 4:5, 1:1, original), feed + profile gallery | ✅ Done |
+| 2 | Seed data, Discover, search | Next |
 | 4 | Likes, comments, follows, saves, notifications (schema + triggers already live) | |
-| 5 | Share sheet + image export (9:16, 1:1, 4:5, original) | |
+| 5 | Full share sheet (Instagram Stories deep link, copy link, share counts) | |
 | 6–8 | Performance, accessibility pass, polish + testing | |
 
 ## Getting started
@@ -50,10 +50,13 @@ Before running `npx supabase config push`, run `npx supabase config diff` first.
 ## Scripts
 
 ```bash
-npm test            # Jest (jest-expo)
-npm run typecheck   # tsc --noEmit
-npm run lint        # expo lint (ESLint + React Compiler rules)
+npm test               # Jest (jest-expo), incl. real-Skia layout checks for every template × format
+npm run typecheck      # tsc --noEmit
+npm run lint           # expo lint (ESLint + React Compiler rules)
+npm run render:cards   # renders every template × format × sample text to .renders/*.png (slow, CPU)
 ```
+
+`RENDER_ONLY=editorial,journal npm run render:cards` limits the templates; `RENDER_AVATAR=/path/to/photo.jpg` adds an avatar.
 
 ## Architecture
 
@@ -62,10 +65,10 @@ src/
   app/            Expo Router routes only (screens + layouts)
     (auth)/       welcome (onboarding), sign-in, sign-up, forgot-password
     (tabs)/       home, discover, activity, profile + custom BottomTabBar
-    create.tsx    Create modal (editor lands in Phase 3)
+    create.tsx    Create modal: write → design → post / share
     create-profile.tsx, auth-callback.tsx, reset-password.tsx
   components/     Reusable UI (ui/ primitives, UserAvatar, ProfileHeader, BottomTabBar…)
-  features/       Feature-scoped UI (auth/…)
+  features/       Feature modules: quote-card (renderer), composer (editor), feed, auth
   constants/      Design tokens (tokens.ts) and the font library (fonts.ts)
   hooks/          useTheme, useMyProfile, useDebouncedValue
   lib/            Supabase client, TanStack Query client, query keys
@@ -93,6 +96,32 @@ The root layout uses `Stack.Protected` guards driven by two facts: *signed in?* 
 `constants/tokens.ts` is the single source for colors (light and dark semantic tokens), the 8pt spacing scale, radii, typography, shadows, animation springs and touch targets. App chrome uses San Francisco for UI text and DM Serif Display for editorial titles. Quote card designs carry their own colors and never follow the app theme.
 
 `constants/fonts.ts` defines the font library used by the card editor: Editorial (DM Serif Display), Elegant (Cormorant Garamond), Classic (Libre Baskerville), Modern (Inter), Minimal (DM Sans), Bold (Archivo Black), Typewriter (Courier Prime) and Handwritten (Caveat). All are Google Fonts under the **SIL Open Font License 1.1**, which allows bundling in commercial apps. Only the listed weights ship, imported per weight to keep the bundle small.
+
+### Quote card engine
+
+A post is **structured data** (`text` + `QuoteDesign`), never a flattened image. One renderer draws it everywhere:
+
+```
+QuoteDesign (JSON in post_designs.design)          CardAuthor (live from profiles)
+        │  parseQuoteDesign(): validate, clamp, fill template defaults
+        ▼
+layoutCard({ text, design, author, width, format, fonts })   ← pure, synchronous (Skia Paragraph API)
+        │  → CardLayout: positioned paragraphs, per-line tilt, header, signature, texture params
+        ▼
+<QuoteCanvas layout avatar backgroundImage />                ← pure Skia drawing tree, no async, no layout
+        ├── <QuoteCard>         on screen: feed, profile grid, editor preview, template thumbnails
+        └── exportCardImage()   offscreen drawAsImage at 1080px → PNG → iOS share sheet
+```
+
+- **Design units.** Designs are authored on a virtual canvas 1000 units wide; every size scales with the render width, so a 358pt feed card and a 1080px export are the same composition.
+- **Formats adapt, they don't stretch.** Width sets the type scale; the format only changes the canvas height the design flows into. Stories keep clear of Instagram's top/bottom UI, and text shrinks to fit (binary search on the font scale) when a format is shorter. It never grows past the chosen size.
+- **Editorial "hand-set" look.** Each laid-out line is re-set as its own paragraph and tilted ±1.5° around its center, deterministically seeded from the text, so a post never changes between renders.
+- **Textures are procedural** (one SkSL shader: paper, grain, noise, canvas, film), evaluated in design units, so there are no image assets and they stay crisp at any resolution. Grain and noise multiply on light cards and screen on dark ones.
+- **Fonts** are the same OFL files the app UI uses, registered once into a Skia font provider under their expo-font names; system fallback covers emoji and other scripts.
+- **Images** (avatars, photo backgrounds) are decoded once and shared through an LRU cache.
+- **Templates** are full style presets (`templates.ts`). Switching keeps the format, signature and chosen photo; font size auto-suggests from text length until the person drags the size slider.
+
+Files: `src/features/quote-card/` (`types`, `templates`, `serialize`, `geometry`, `layout`, `quote-canvas`, `quote-card`, `export`, `textures`, `fonts`, `images`, `palettes`) and `src/features/composer/` (editor: `store`, `write-step`, `design-step`, the six control panels, `color-picker-sheet`, `export-sheet`, `photo`, `validate`).
 
 ### Database
 

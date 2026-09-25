@@ -14,55 +14,41 @@ import Animated, {
 import { Button } from '@/components/ui/button';
 import { Screen } from '@/components/ui/screen';
 import { Text } from '@/components/ui/text';
-import { UserAvatar } from '@/components/user-avatar';
 import { Wordmark } from '@/components/wordmark';
-import { radius, shadows, spacing, typography } from '@/constants/tokens';
+import { shadows, spacing, typography } from '@/constants/tokens';
+import { QuoteCard } from '@/features/quote-card/quote-card';
+import { createDesign, suggestedFontSize } from '@/features/quote-card/templates';
+import type { CardAuthor, TemplateId } from '@/features/quote-card/types';
 import { useTheme } from '@/hooks/use-theme';
 
-// Sample card designs are content, not chrome, so they carry their own colors.
+const SAMPLE_AUTHOR: CardAuthor = { displayName: 'Mara Vell', username: 'maravell', avatarUrl: null, isVerified: false };
+
+// Real cards from the same renderer people will use, tilted like prints on a table.
 const SLIDES = [
   {
     headline: 'Your thoughts deserve more than plain text.',
-    card: {
-      text: 'Some thoughts are too beautiful to stay in your notes app.',
-      background: '#F4EEE3',
-      color: '#8E1B1B',
-      fontFamily: 'DMSerifDisplay_400Regular',
-      fontSize: 25,
-      lineHeight: 28,
-      rotate: -3,
-      header: true,
-    },
+    text: 'Some thoughts are too beautiful to stay in your notes app.',
+    template: 'editorial',
+    rotate: -3,
   },
   {
     headline: 'Turn words into something worth sharing.',
-    card: {
-      text: 'Say it once.\nSay it beautifully.',
-      background: '#151413',
-      color: '#F4EFE8',
-      fontFamily: 'CormorantGaramond_600SemiBold',
-      fontSize: 30,
-      lineHeight: 34,
-      rotate: 2.5,
-      header: false,
-    },
+    text: 'Say it once.\nSay it beautifully.',
+    template: 'midnight',
+    rotate: 2.5,
   },
   {
     headline: 'Follow people whose words inspire you.',
-    card: {
-      text: 'Find the ones whose words feel like home.',
-      background: '#FBF8F1',
-      color: '#1E2A4A',
-      fontFamily: 'Caveat_600SemiBold',
-      fontSize: 32,
-      lineHeight: 34,
-      rotate: -2,
-      header: false,
-    },
+    text: 'Find the ones whose words feel like home.',
+    template: 'journal',
+    rotate: -2,
   },
-] as const;
+] satisfies { headline: string; text: string; template: TemplateId; rotate: number }[];
 
 type Slide = (typeof SLIDES)[number];
+
+// Built once so QuoteCard's memoized layout isn't recomputed on every render.
+const DESIGNS = SLIDES.map((slide) => ({ ...createDesign(slide.template), fontSize: suggestedFontSize(slide.template, slide.text.length) }));
 
 export default function WelcomeScreen() {
   const { width } = useWindowDimensions();
@@ -109,16 +95,15 @@ export default function WelcomeScreen() {
 function SlideView({ slide, index, width, scrollX }: { slide: Slide; index: number; width: number; scrollX: SharedValue<number> }) {
   const reduceMotion = useReducedMotion();
   const cardWidth = Math.min(width * 0.66, 290);
-  const { card } = slide;
 
   const cardStyle = useAnimatedStyle(() => {
-    if (reduceMotion) return { transform: [{ rotate: `${card.rotate}deg` }] };
+    if (reduceMotion) return { transform: [{ rotate: `${slide.rotate}deg` }] };
     const input = [(index - 1) * width, index * width, (index + 1) * width];
     return {
       opacity: interpolate(scrollX.get(), input, [0.3, 1, 0.3], Extrapolation.CLAMP),
       transform: [
         { translateX: interpolate(scrollX.get(), input, [width * 0.25, 0, -width * 0.25], Extrapolation.CLAMP) },
-        { rotate: `${interpolate(scrollX.get(), input, [card.rotate * 3, card.rotate, card.rotate * -2], Extrapolation.CLAMP)}deg` },
+        { rotate: `${interpolate(scrollX.get(), input, [slide.rotate * 3, slide.rotate, slide.rotate * -2], Extrapolation.CLAMP)}deg` },
       ],
     };
   });
@@ -126,24 +111,8 @@ function SlideView({ slide, index, width, scrollX }: { slide: Slide; index: numb
   return (
     <View style={[styles.slide, { width }]}>
       <View style={styles.cardArea}>
-        <Animated.View
-          accessible
-          accessibilityLabel={`Example quote card: ${card.text.replace('\n', ' ')}`}
-          style={[styles.card, shadows.lifted, { width: cardWidth, backgroundColor: card.background }, cardStyle]}>
-          {card.header && (
-            <View style={styles.cardHeader}>
-              <UserAvatar name="Mara Vell" size={26} />
-              <View>
-                <Text style={[styles.cardName, { color: '#1A1714' }]}>Mara Vell</Text>
-                <Text style={[styles.cardHandle, { color: '#6B645C' }]}>@maravell</Text>
-              </View>
-            </View>
-          )}
-          <Text
-            allowFontScaling={false}
-            style={{ color: card.color, fontFamily: card.fontFamily, fontSize: card.fontSize, lineHeight: card.lineHeight, textAlign: 'center' }}>
-            {card.text}
-          </Text>
+        <Animated.View style={[shadows.lifted, cardStyle]}>
+          <QuoteCard text={slide.text} design={DESIGNS[index]} author={SAMPLE_AUTHOR} width={cardWidth} />
         </Animated.View>
       </View>
       <Text variant="display" align="center" style={styles.headline}>
@@ -171,16 +140,6 @@ const styles = StyleSheet.create({
   pager: { flexGrow: 1 },
   slide: { flex: 1, paddingHorizontal: spacing.lg, justifyContent: 'center' },
   cardArea: { flex: 1, alignItems: 'center', justifyContent: 'center', minHeight: 260 },
-  card: {
-    aspectRatio: 4 / 5,
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-    justifyContent: 'center',
-    gap: spacing.md,
-  },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, alignSelf: 'center' },
-  cardName: { fontSize: 12, fontWeight: '700' },
-  cardHandle: { fontSize: 10 },
   // Fixed three-line height keeps the card from jumping between slides.
   headline: {
     marginTop: spacing.lg,

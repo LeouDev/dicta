@@ -51,7 +51,8 @@
           "photosPermission": "Dicta uses your photo library so you can choose a profile photo and backgrounds for your quote cards.",
           "cameraPermission": "Dicta uses the camera so you can take a profile photo."
         }
-      ]
+      ],
+      "expo-sharing"
     ],
     "experiments": {
       "typedRoutes": true,

@@ -41,3 +41,6 @@ example
 # generated native folders
 /ios
 /android
+
+# card renders from npm run render:cards
+.renders/
