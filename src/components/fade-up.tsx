@@ -1,6 +1,6 @@
 import { useEffect, type ReactNode } from 'react';
 import type { StyleProp, ViewStyle } from 'react-native';
-import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
+import Animated, { Easing, ReduceMotion, useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
 
 /** Dicta's entrance curve: a quick start and a long settle. */
 export const ENTRANCE_EASING = Easing.bezier(0.2, 0.8, 0.2, 1);
@@ -24,7 +24,11 @@ export function FadeUp({ delay = 0, children, style }: FadeUpProps) {
   const shown = useSharedValue(0);
 
   useEffect(() => {
-    shown.set(withDelay(delay, withTiming(1, { duration: 560, easing: ENTRANCE_EASING })));
+    // Reanimated skips animations under Reduce Motion by default; a fade is the
+    // motion Apple recommends there, so it always runs (the rise doesn't).
+    shown.set(
+      withDelay(delay, withTiming(1, { duration: 560, easing: ENTRANCE_EASING, reduceMotion: ReduceMotion.Never }), ReduceMotion.Never),
+    );
   }, [delay, shown]);
 
   const animatedStyle = useAnimatedStyle(() => ({
