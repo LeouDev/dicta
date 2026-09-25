@@ -136,7 +136,7 @@ function background(bg, ink, vAlign, supabaseUrl) {
   // The app's readability overlay: 10% → 26% → 62%, reversed for top text, ×1.4 when strong.
   const k = bg.overlay === 'strong' ? 1.4 : bg.overlay === 'off' ? 0 : 1;
   const rgb = luminance(ink) < 0.5 ? '255,255,255' : '0,0,0';
-  const alphas = [0.1, 0.26, 0.62].map((a) => Math.min(0.92, a * k));
+  const alphas = [0.1, 0.26, 0.62].map((a) => +Math.min(0.92, a * k).toFixed(3));
   if (vAlign === 'top') alphas.reverse();
   return `linear-gradient(${alphas.map((a) => `rgba(${rgb},${a})`).join(', ')}), url("${bg.image.replace(/"/g, '%22')}") center / cover`;
 }
