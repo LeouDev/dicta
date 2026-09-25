@@ -244,7 +244,7 @@ otp_expiry = 3600
 # port = 465
 # user = "resend"
 # pass = "env(SUPABASE_AUTH_SMTP_PASS)"
-# admin_email = "no-reply@auth.air-rally.com"
+# admin_email = "no-reply@air-rally.com"
 # sender_name = "Dicta"
 
 [auth.email.template.confirmation]

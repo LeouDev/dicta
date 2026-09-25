@@ -4,7 +4,7 @@
 // hands out each address once, so anyone may call this.
 //
 // Needs RESEND_API_KEY. WELCOME_FROM overrides the sender, e.g.
-// "Dicta <onboarding@resend.dev>" to test before auth.air-rally.com is verified.
+// "Dicta <onboarding@resend.dev>" to test without a verified domain.
 import { readFileSync } from 'node:fs';
 
 import { claimWelcome, isConfigured, releaseWelcome } from '../lib/supabase.js';
@@ -24,14 +24,14 @@ export async function POST(request) {
     const claim = await claimWelcome(id);
     if (!claim) return status(204);
     // ponytail: Apple's relay only forwards mail from domains registered with Apple,
-    // so hidden Sign in with Apple addresses are skipped until auth.air-rally.com is.
+    // so hidden Sign in with Apple addresses are skipped until air-rally.com is.
     if (claim.email.endsWith('@privaterelay.appleid.com')) return status(204);
 
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from: process.env.WELCOME_FROM || 'Dicta <hello@auth.air-rally.com>',
+        from: process.env.WELCOME_FROM || 'Dicta <hello@air-rally.com>',
         to: claim.email,
         reply_to: 'support@air-rally.com',
         subject: 'Welcome to Dicta',

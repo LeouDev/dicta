@@ -44,22 +44,15 @@ Not done: Expo push receipts aren't checked, so credential errors only show in t
 
 Supabase's built-in mailer is still active: 2 emails an hour, delivered only to members of your Supabase organization. Beta testers can't confirm their accounts until custom SMTP is on.
 
-Set it up in the Supabase dashboard, not with `supabase config push`: on 2026-09-25 `config diff` showed a push would also change unrelated live settings (database pool sizes, the Vercel redirect URLs, a Twilio flag). Recommended setup, about 20 minutes, no code:
+Set it up in the Supabase dashboard, not with `supabase config push`: on 2026-09-25 `config diff` showed a push would also change unrelated live settings (database pool sizes, the Vercel redirect URLs, a Twilio flag).
 
-1. **Resend** (free: 3,000 emails a month, 100 a day): add the domain `auth.air-rally.com` (a subdomain keeps auth mail separate, as Supabase recommends; pick a Dicta domain instead if you buy one). Region: Tokyo.
-2. **Cloudflare** (air-rally.com's DNS): add the MX and TXT records Resend shows, as DNS only. Also add a DMARC record for the domain: TXT `_dmarc` = `v=DMARC1; p=none;` (there is none yet). The existing SPF record and Email Routing for support@ stay as they are.
-3. **Resend**: once the domain shows Verified, create an API key with sending access to that domain only.
-4. **Supabase → Authentication → Emails → SMTP Settings** (`/dashboard/project/phusfxrnwxhsczhzucod/auth/smtp`): enable custom SMTP. Sender email `no-reply@auth.air-rally.com`, sender name `Dicta`, host `smtp.resend.com`, port `465`, username `resend`, password = the API key (paste it straight from Resend; it never goes in the repo).
-5. **Rate limit**: Authentication → Rate Limits starts at 30 emails an hour with custom SMTP, which is fine for the beta (Resend's free plan caps at 100 a day).
-6. **Templates**: Authentication → Emails → Templates. Paste the subject and HTML from `supabase/templates` into Confirm signup (`confirm-signup.html`, "Confirm your email for Dicta"), Reset password (`reset-password.html`, "Reset your Dicta password") and Change email address (`email-change.html`, "Confirm your new email for Dicta").
+Dicta sends through **Resend** from **air-rally.com**, which is already verified there (Tokyo region; its MX, SPF and DKIM records are in Cloudflare, air-rally.com's DNS). The free plan covers 3,000 emails a month, 100 a day.
 
-### Welcome email
-
-Supabase Auth has no welcome template, so Dicta sends one itself, once, when someone finishes creating their profile (after confirming their email, or right after Sign in with Apple). A database trigger calls `/api/welcome`, which sends `web/emails/welcome.html` through Resend: subject "Welcome to Dicta", replies to support@air-rally.com. Its Open Dicta button links to the site's home, which opens the app when it's installed (apple-app-site-association; iOS picks up the change within about a day).
-
-**Needs you:** add `RESEND_API_KEY` (a Resend key with sending access) to the Vercel project's production environment, then redeploy. Until it's there, nothing is sent, and people who sign up in the meantime don't get one later. The sender is `Dicta <hello@auth.air-rally.com>`. To see it before the domain is verified, also set `WELCOME_FROM` to `Dicta <onboarding@resend.dev>`: Resend then delivers only to your own Resend account's address, so create a test account with that address. Remove `WELCOME_FROM` once the domain is verified.
-
-Hidden Sign in with Apple addresses (`@privaterelay.appleid.com`) are skipped: Apple only forwards mail from domains registered in Apple Developer → Certificates, IDs & Profiles → Services → Sign in with Apple for Email Communication. Register auth.air-rally.com there, then remove the skip in `web/api/welcome.js`.
+1. **DMARC** (not set yet): in Cloudflare → air-rally.com → DNS → Records, add TXT `_dmarc` = `v=DMARC1; p=none;` (or use Cloudflare's "Add a DMARC record" recommendation). The existing records, including Email Routing for support@, stay as they are.
+2. **Resend**: create an API key with sending access.
+3. **Supabase → Authentication → Emails → SMTP Settings** (`/dashboard/project/phusfxrnwxhsczhzucod/auth/smtp`): enable custom SMTP. Sender email `no-reply@air-rally.com`, sender name `Dicta`, host `smtp.resend.com`, port `465`, username `resend`, password = the API key (paste it straight from Resend; it never goes in the repo).
+4. **Rate limit**: Authentication → Rate Limits starts at 30 emails an hour with custom SMTP, which is fine for the beta.
+5. **Templates**: Authentication → Emails → Templates. Paste the subject and HTML from `supabase/templates` into Confirm signup (`confirm-signup.html`, "Confirm your email for Dicta"), Reset password (`reset-password.html`, "Reset your Dicta password") and Change email address (`email-change.html`, "Confirm your new email for Dicta").
 
 Before anyone runs `supabase config push` later, copy these settings into `supabase/config.toml` (password as `env(SUPABASE_AUTH_SMTP_PASS)`) and reconcile the other differences `config diff` lists.
 

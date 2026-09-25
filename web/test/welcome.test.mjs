@@ -23,7 +23,7 @@ test('sends the welcome email once, filled in', async () => {
   assert.equal(db.emails.length, 1);
   const [email] = db.emails;
   assert.equal(email.authorization, 'Bearer re_test');
-  assert.equal(email.from, 'Dicta <hello@auth.air-rally.com>');
+  assert.equal(email.from, 'Dicta <hello@air-rally.com>');
   assert.equal(email.to, 'mara@example.com');
   assert.equal(email.reply_to, 'support@air-rally.com');
   assert.equal(email.subject, 'Welcome to Dicta');
@@ -48,7 +48,7 @@ test('lets a refused email be sent later', async () => {
   let refuse = true;
   const db = fakeSupabase({
     welcome: { [ID]: 'mara@example.com' },
-    resend: () => (refuse ? { status: 403, body: { message: 'The auth.air-rally.com domain is not verified.' } } : { status: 200, body: { id: 'email' } }),
+    resend: () => (refuse ? { status: 403, body: { message: 'The air-rally.com domain is not verified.' } } : { status: 200, body: { id: 'email' } }),
   });
   assert.equal((await welcome({ id: ID })).status, 502);
   refuse = false;
