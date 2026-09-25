@@ -20,6 +20,16 @@ test('makes 20–30 people and 50–100 original posts, in six scripts', () => {
   }
 });
 
+test('varies templates, fonts, canvases, topics and hashtags', () => {
+  const distinct = (values) => new Set(values).size;
+  assert.ok(distinct(posts.map((p) => p.template)) >= 15);
+  assert.ok(distinct(posts.map((p) => p.design.font).filter(Boolean)) >= 10);
+  assert.equal(distinct(posts.map((p) => p.design.canvas)), 3);
+  assert.ok(distinct(posts.map((p) => p.topic)) >= 8);
+  const tagged = posts.filter((p) => /#[A-Za-z0-9_]{2,40}/.test(p.text));
+  assert.ok(tagged.length >= 10, `${tagged.length} posts with hashtags`);
+});
+
 test('fits the schema’s constraints', () => {
   assert.ok(unique(users, (u) => u.username) && unique(users, (u) => u.email) && unique(users, (u) => u.id));
   for (const u of users) {

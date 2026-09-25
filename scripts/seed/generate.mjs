@@ -134,6 +134,9 @@ const COMMENTS = [
 
 const REPLIES = ['Glad it found you.', 'Thank you for reading.', 'Same here.', 'It helped me too.', 'Right?', 'Thank you 🙏'];
 
+const FONTS = ['editorial', 'display', 'classic', 'elegant', 'modern', 'bold', 'rounded', 'typewriter', 'lcd', 'pixel', 'hand', 'print', 'brush'];
+const CANVASES = ['4:5', '9:16', '1:1'];
+
 // Every template draws without a photo; Photograph needs one, so it's left out.
 const TEMPLATES = [
   'editorial', 'minimal', 'midnight', 'typewriter', 'journal', 'modern', 'gradient', 'diptych', 'headline',
@@ -183,15 +186,20 @@ export function generate() {
     for (const j of others(between(3, 12), i)) follows.push({ follower: user.id, following: users[j].id, minutesAgo: between(60, 30 * 24 * 60) });
   });
 
-  // Newest last, spread over the past three weeks.
+  // Newest last, spread over the past three weeks. Every third post picks its own
+  // font; canvases rotate; some Latin-script posts carry hashtags, as people write them.
   const posts = QUOTES.map(([author, text, topic], i) => ({
     id: id(2, i + 1),
     author: users[author].id,
     authorIndex: author,
-    text,
+    text: i % 4 === 1 && /^[\x00-\u024f’—]+$/.test(text) ? `${text} #${topic.replace('-', '')}` : text,
     topic,
     template: TEMPLATES[i % TEMPLATES.length],
-    align: pick(['left', 'center', 'center']),
+    design: {
+      align: pick(['left', 'center', 'center']),
+      canvas: CANVASES[i % CANVASES.length],
+      ...(i % 3 === 0 ? { font: FONTS[(i / 3) % FONTS.length] } : {}),
+    },
     minutesAgo: Math.round(((QUOTES.length - i) / QUOTES.length) * 21 * 24 * 60) + between(0, 90),
   }));
 
@@ -262,7 +270,7 @@ ${rows(posts, (p) => `${q(p.id)}, ${q(p.author)}, ${q(p.text)}, ${q(p.topic)}, $
 
 insert into public.post_designs (post_id, template, design)
 values
-${rows(posts, (p) => `${q(p.id)}, ${q(p.template)}, ${q(JSON.stringify({ version: 2, template: p.template, align: p.align }))}`)};
+${rows(posts, (p) => `${q(p.id)}, ${q(p.template)}, ${q(JSON.stringify({ version: 2, template: p.template, ...p.design }))}`)};
 
 insert into public.likes (user_id, post_id, created_at)
 values
