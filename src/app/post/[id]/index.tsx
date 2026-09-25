@@ -15,7 +15,9 @@ import { useProfileByUsername } from '@/hooks/use-profile';
 import { useLikePost } from '@/hooks/use-social';
 import { useTheme } from '@/hooks/use-theme';
 import { friendlyError } from '@/services/errors';
-import { timeAgo } from '@/utils/time';
+import { useNow } from '@/hooks/use-now';
+import type { FeedPost } from '@/types/models';
+import { spokenTimeAgo, timeAgo } from '@/utils/time';
 
 /** One quote, full width: author, the card, and everything you can do with it. */
 export default function PostScreen() {
@@ -48,24 +50,7 @@ export default function PostScreen() {
   return (
     <ScrollView style={{ backgroundColor: theme.background }} contentContainerStyle={styles.content} contentInsetAdjustmentBehavior="automatic">
       <View style={styles.author}>
-        <Pressable
-          onPress={openAuthor}
-          accessibilityRole="link"
-          accessibilityLabel={`${p.author.displayName}, @${p.author.username}, posted ${timeAgo(p.createdAt)} ago`}
-          style={styles.identity}>
-          <UserAvatar uri={p.author.avatarUrl} name={p.author.displayName} size={40} />
-          <View style={styles.names}>
-            <View style={styles.nameRow}>
-              <Text variant="bodyStrong" numberOfLines={1} style={styles.shrink}>
-                {p.author.displayName}
-              </Text>
-              {p.author.isVerified && <Icon name="verified" size={14} color={theme.accent} />}
-            </View>
-            <Text variant="caption" color="textTertiary" numberOfLines={1}>
-              @{p.author.username} · {timeAgo(p.createdAt)}
-            </Text>
-          </View>
-        </Pressable>
+        <PostedBy post={p} onPress={openAuthor} />
         {author.data && <FollowButton profile={author.data} size="sm" />}
       </View>
 
@@ -94,6 +79,32 @@ export default function PostScreen() {
         </Pressable>
       </View>
     </ScrollView>
+  );
+}
+
+/** Who posted it and when; re-renders each minute to keep the time current, without the card. */
+function PostedBy({ post: p, onPress }: { post: FeedPost; onPress: () => void }) {
+  const theme = useTheme();
+  const now = useNow();
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="link"
+      accessibilityLabel={`${p.author.displayName}, @${p.author.username}, posted ${spokenTimeAgo(p.createdAt, now)}`}
+      style={styles.identity}>
+      <UserAvatar uri={p.author.avatarUrl} name={p.author.displayName} size={40} />
+      <View style={styles.names}>
+        <View style={styles.nameRow}>
+          <Text variant="bodyStrong" numberOfLines={1} style={styles.shrink}>
+            {p.author.displayName}
+          </Text>
+          {p.author.isVerified && <Icon name="verified" size={14} color={theme.accent} />}
+        </View>
+        <Text variant="caption" color="textTertiary" numberOfLines={1}>
+          @{p.author.username} · {timeAgo(p.createdAt, now)}
+        </Text>
+      </View>
+    </Pressable>
   );
 }
 

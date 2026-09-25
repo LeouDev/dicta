@@ -1,5 +1,5 @@
 import { hexToHsv, hsvToHex } from '../color';
-import { timeAgo } from '../time';
+import { spokenTimeAgo, timeAgo } from '../time';
 
 describe('color conversion', () => {
   it.each(['#9B1B1E', '#FFFFFF', '#000000', '#1E2A4A', '#F6F2EA', '#00FF7F'])('round-trips %s', (hex) => {
@@ -14,20 +14,32 @@ describe('color conversion', () => {
 });
 
 describe('timeAgo', () => {
-  const now = new Date('2026-09-25T12:00:00Z').getTime();
+  // Local time, so "yesterday" is a calendar day wherever the tests run.
+  const now = new Date(2026, 8, 25, 12, 0, 0).getTime();
   const ago = (ms: number) => new Date(now - ms).toISOString();
 
   it.each([
-    [10_000, 'now'],
+    [10_000, 'just now'],
     [5 * 60_000, '5m'],
-    [3 * 3_600_000, '3h'],
-    [4 * 86_400_000, '4d'],
+    [2 * 3_600_000, '2h'],
+    [23 * 3_600_000 + 59 * 60_000, '23h'],
   ])('%dms ago → %s', (ms, label) => {
     expect(timeAgo(ago(ms), now)).toBe(label);
   });
 
-  it('uses dates after a week', () => {
-    expect(timeAgo('2026-09-01T12:00:00Z', now)).toBe('Sep 1');
-    expect(timeAgo('2025-03-14T12:00:00Z', now)).toBe('Mar 14, 2025');
+  it('says Yesterday for the previous calendar day, then the date', () => {
+    expect(timeAgo(new Date(2026, 8, 24, 9, 0).toISOString(), now)).toBe('Yesterday');
+    expect(timeAgo(new Date(2026, 8, 23, 20, 0).toISOString(), now)).toBe('Sep 23');
+    expect(timeAgo(new Date(2026, 8, 1, 12, 0).toISOString(), now)).toBe('Sep 1');
+    expect(timeAgo(new Date(2025, 2, 14, 12, 0).toISOString(), now)).toBe('Mar 14, 2025');
+  });
+
+  it('has a spoken form for VoiceOver', () => {
+    expect(spokenTimeAgo(ago(10_000), now)).toBe('just now');
+    expect(spokenTimeAgo(ago(60_000), now)).toBe('1 minute ago');
+    expect(spokenTimeAgo(ago(5 * 60_000), now)).toBe('5 minutes ago');
+    expect(spokenTimeAgo(ago(2 * 3_600_000), now)).toBe('2 hours ago');
+    expect(spokenTimeAgo(new Date(2026, 8, 24, 9, 0).toISOString(), now)).toBe('yesterday');
+    expect(spokenTimeAgo(new Date(2026, 8, 1, 12, 0).toISOString(), now)).toBe('on Sep 1');
   });
 });

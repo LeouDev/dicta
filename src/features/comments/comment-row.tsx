@@ -8,6 +8,7 @@ import { hitTarget, spacing } from '@/constants/tokens';
 import { useTheme } from '@/hooks/use-theme';
 import type { CommentItem } from '@/types/models';
 import { compactNumber } from '@/utils/format';
+import { useNow } from '@/hooks/use-now';
 import { timeAgo } from '@/utils/time';
 
 import { flattenComments, splitMentions } from './cache';
@@ -31,7 +32,8 @@ export const CommentRow = memo(function CommentRow({ comment, handlers }: { comm
   const failed = comment.status === 'failed';
   const sent = comment.status === undefined;
   const toggleLike = () => like.mutate(!comment.likedByMe);
-  const when = comment.status === 'sending' ? 'Posting…' : timeAgo(comment.createdAt);
+  const now = useNow();
+  const when = comment.status === 'sending' ? 'Posting…' : timeAgo(comment.createdAt, now);
 
   return (
     <Pressable

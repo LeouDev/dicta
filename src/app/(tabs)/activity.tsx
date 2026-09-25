@@ -17,6 +17,7 @@ import { friendlyError } from '@/services/errors';
 import { notificationMessage } from '@/services/notifications';
 import { selectUserId, useAuth } from '@/store/auth';
 import type { NotificationItem } from '@/types/models';
+import { useNow } from '@/hooks/use-now';
 import { timeAgo } from '@/utils/time';
 
 export default function ActivityScreen() {
@@ -99,7 +100,8 @@ const NotificationRow = memo(function NotificationRow({ item, onPress }: { item:
   const theme = useTheme();
   const unread = !item.readAt;
   const message = notificationMessage(item);
-  const when = timeAgo(item.createdAt);
+  const now = useNow();
+  const when = timeAgo(item.createdAt, now);
 
   return (
     <Pressable
