@@ -256,9 +256,12 @@ insert into auth.users (id, instance_id, aud, role, email, raw_app_meta_data, ra
 values
 ${rows(users, (u) => `${q(u.id)}, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', ${q(u.email)}, '{"provider":"email","providers":["email"]}', '{}', ${ago(u.minutesAgo)}, ${ago(u.minutesAgo)}`)};
 
+-- Seed people get no welcome email.
+alter table public.profiles disable trigger profiles_after_insert_welcome;
 insert into public.profiles (id, username, display_name, bio, is_verified, created_at)
 values
 ${rows(users, (u) => `${q(u.id)}, ${q(u.username)}, ${q(u.displayName)}, ${q(u.bio)}, ${u.verified}, ${ago(u.minutesAgo)}`)};
+alter table public.profiles enable trigger profiles_after_insert_welcome;
 
 insert into public.follows (follower_id, following_id, created_at)
 values

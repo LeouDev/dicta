@@ -77,4 +77,5 @@ test('refuses to run on a database with real accounts, and never names productio
   assert.ok(sql.indexOf('raise exception') < sql.indexOf('delete from auth.users'), 'checks before deleting anything');
   assert.doesNotMatch(sql, /phusfxrnwxhsczhzucod|supabase\.co/);
   assert.match(sql, /delete from auth\.users where email like '%@seed\.dicta\.test'/);
+  assert.ok(sql.indexOf('disable trigger profiles_after_insert_welcome') < sql.indexOf('insert into public.profiles'), 'no welcome emails for seed people');
 });

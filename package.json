@@ -85,7 +85,7 @@
     "render:cards": "RENDER_OUT=.renders jest src/features/quote-card/__tests__/render.test.tsx",
     "seed": "node scripts/seed/index.mjs",
     "test:seed": "node --test scripts/seed/generate.test.mjs",
-    "test:db": "supabase db query --linked -f supabase/tests/social.sql && supabase db query --linked -f supabase/tests/push.sql"
+    "test:db": "supabase db query --linked -f supabase/tests/social.sql && supabase db query --linked -f supabase/tests/push.sql && supabase db query --linked -f supabase/tests/welcome.sql"
   },
   "private": true,
   "jest": {

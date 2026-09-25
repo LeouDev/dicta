@@ -43,6 +43,8 @@ values
   ('5eed0001-0000-4000-8000-000000000018', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'nora-quinn@seed.dicta.test', '{"provider":"email","providers":["email"]}', '{}', now() - interval '55530 minutes', now() - interval '55530 minutes'),
   ('5eed0001-0000-4000-8000-000000000019', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'sam-ellery@seed.dicta.test', '{"provider":"email","providers":["email"]}', '{}', now() - interval '55440 minutes', now() - interval '55440 minutes');
 
+-- Seed people get no welcome email.
+alter table public.profiles disable trigger profiles_after_insert_welcome;
 insert into public.profiles (id, username, display_name, bio, is_verified, created_at)
 values
   ('5eed0001-0000-4000-8000-000000000001', 'mara.vell', 'Mara Vell', 'Collecting small truths.', true, now() - interval '57600 minutes'),
@@ -70,6 +72,7 @@ values
   ('5eed0001-0000-4000-8000-000000000017', 'yusuf.kaya', 'Yusuf Kaya', 'Small steps, every day.', false, now() - interval '55620 minutes'),
   ('5eed0001-0000-4000-8000-000000000018', 'nora.quinn', 'Nora Quinn', 'Writing my way through it.', false, now() - interval '55530 minutes'),
   ('5eed0001-0000-4000-8000-000000000019', 'sam.ellery', 'Sam Ellery', 'Friend of the overthinkers.', false, now() - interval '55440 minutes');
+alter table public.profiles enable trigger profiles_after_insert_welcome;
 
 insert into public.follows (follower_id, following_id, created_at)
 values

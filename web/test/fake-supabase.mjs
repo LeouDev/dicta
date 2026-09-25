@@ -1,7 +1,7 @@
 // An in-memory Supabase behind global fetch, just enough for the website's
-// functions: posts and pushes over PostgREST, Storage (public buckets for
-// photos, the private generated-cards bucket for card images), and Expo's push
-// service.
+// functions: posts, pushes and welcome emails over PostgREST, Storage (public
+// buckets for photos, the private generated-cards bucket for card images),
+// Expo's push service and Resend.
 export const SUPABASE_URL = 'https://x.supabase.co';
 export const ORIGIN = 'https://dicta.test';
 export const POST_ID = '11111111-1111-1111-1111-111111111111';
@@ -29,13 +29,16 @@ export const storageUrl = (bucketPath) => `${SUPABASE_URL}/storage/v1/object/pub
  * with a ticket. `calls` records "METHOD path?query" for every request,
  * including ones to ORIGIN; `sent` collects the messages Expo received.
  */
-export function fakeSupabase({ posts = [post()], files = {}, pushes = {}, expo = () => ({ status: 'ok', id: 'ticket' }) } = {}) {
+export function fakeSupabase({ posts = [post()], files = {}, pushes = {}, expo = () => ({ status: 'ok', id: 'ticket' }), welcome = {}, resend = () => ({ status: 200, body: { id: 'email' } }) } = {}) {
   process.env.SUPABASE_URL = SUPABASE_URL;
   process.env.SUPABASE_ANON_KEY = 'anon';
   process.env.SUPABASE_SERVICE_ROLE_KEY = 'service';
   const db = {
     posts: new Map(posts.map((p) => [p.id, structuredClone(p)])),
     pushes: new Map(Object.entries(pushes)),
+    welcome: new Map(Object.entries(welcome)),
+    welcomed: new Set(),
+    emails: [],
     sent: [],
     removedTokens: [],
     files: new Map(Object.entries(files).map(([path, bytes]) => [path, { bytes, created_at: new Date().toISOString() }])),
@@ -50,6 +53,12 @@ export function fakeSupabase({ posts = [post()], files = {}, pushes = {}, expo =
     const method = (init.method ?? 'GET').toUpperCase();
     db.calls.push(`${method} ${url.pathname}${url.search}`);
     if (url.origin === ORIGIN) return new Response(null, { status: 202 });
+    if (url.origin === 'https://api.resend.com') {
+      const email = JSON.parse(init.body);
+      db.emails.push({ ...email, authorization: init.headers.Authorization });
+      const { status, body } = resend(email);
+      return json(body, status);
+    }
     if (url.origin === 'https://exp.host') {
       const messages = JSON.parse(init.body);
       db.sent.push(...messages);
@@ -73,6 +82,18 @@ export function fakeSupabase({ posts = [post()], files = {}, pushes = {}, expo =
       const push = db.pushes.get(p_id) ?? null;
       db.pushes.delete(p_id);
       return json(push);
+    }
+    if (url.pathname === '/rest/v1/rpc/claim_welcome') {
+      if (!service) return json({ message: 'permission denied' }, 401);
+      const { p_user } = JSON.parse(init.body);
+      if (!db.welcome.has(p_user) || db.welcomed.has(p_user)) return json(null);
+      db.welcomed.add(p_user);
+      return json({ email: db.welcome.get(p_user) });
+    }
+    if (url.pathname === '/rest/v1/welcome_emails' && method === 'DELETE') {
+      if (!service) return json({ message: 'permission denied' }, 401);
+      db.welcomed.delete(url.searchParams.get('user_id').replace('eq.', ''));
+      return new Response(null, { status: 204 });
     }
     if (url.pathname === '/rest/v1/push_tokens' && method === 'DELETE') {
       if (!service) return json({ message: 'permission denied' }, 401);

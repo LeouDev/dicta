@@ -111,3 +111,21 @@ export async function removePushTokens(tokens) {
   const res = await fetch(`${url}/rest/v1/push_tokens?token=in.(${list})`, { method: 'DELETE', headers: keyHeaders(service) });
   if (!res.ok) throw new Error(`Couldn't remove push tokens (${res.status}).`);
 }
+
+/** The address to welcome, claimed so it's sent once (claim_welcome), or null. */
+export async function claimWelcome(id) {
+  const { url, service } = env();
+  const res = await fetch(`${url}/rest/v1/rpc/claim_welcome`, {
+    method: 'POST',
+    headers: { ...keyHeaders(service), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ p_user: id }),
+  });
+  if (!res.ok) throw new Error(`Couldn't claim the welcome email for ${id} (${res.status}).`);
+  return res.json();
+}
+
+/** Undoes a claim whose email couldn't be sent, so it can be sent later. */
+export async function releaseWelcome(id) {
+  const { url, service } = env();
+  await fetch(`${url}/rest/v1/welcome_emails?user_id=eq.${id}`, { method: 'DELETE', headers: keyHeaders(service) });
+}

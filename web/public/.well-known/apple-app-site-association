@@ -2,8 +2,19 @@
   "applinks": {
     "details": [
       {
-        "appIDs": ["Z5643XKUTZ.com.leoudev.dicta"],
-        "components": [{ "/": "/post/*", "comment": "Shared quotes open in the app" }]
+        "appIDs": [
+          "Z5643XKUTZ.com.leoudev.dicta"
+        ],
+        "components": [
+          {
+            "/": "/",
+            "comment": "The site's home opens the app (the welcome email's Open Dicta button)"
+          },
+          {
+            "/": "/post/*",
+            "comment": "Shared quotes open in the app"
+          }
+        ]
       }
     ]
   }

@@ -53,6 +53,14 @@ Set it up in the Supabase dashboard, not with `supabase config push`: on 2026-09
 5. **Rate limit**: Authentication → Rate Limits starts at 30 emails an hour with custom SMTP, which is fine for the beta (Resend's free plan caps at 100 a day).
 6. **Templates**: Authentication → Emails → Templates. Paste the subject and HTML from `supabase/templates` into Confirm signup (`confirm-signup.html`, "Confirm your email for Dicta"), Reset password (`reset-password.html`, "Reset your Dicta password") and Change email address (`email-change.html`, "Confirm your new email for Dicta").
 
+### Welcome email
+
+Supabase Auth has no welcome template, so Dicta sends one itself, once, when someone finishes creating their profile (after confirming their email, or right after Sign in with Apple). A database trigger calls `/api/welcome`, which sends `web/emails/welcome.html` through Resend: subject "Welcome to Dicta", replies to support@air-rally.com. Its Open Dicta button links to the site's home, which opens the app when it's installed (apple-app-site-association; iOS picks up the change within about a day).
+
+**Needs you:** add `RESEND_API_KEY` (a Resend key with sending access) to the Vercel project's production environment, then redeploy. Until it's there, nothing is sent, and people who sign up in the meantime don't get one later. The sender is `Dicta <hello@auth.air-rally.com>`. To see it before the domain is verified, also set `WELCOME_FROM` to `Dicta <onboarding@resend.dev>`: Resend then delivers only to your own Resend account's address, so create a test account with that address. Remove `WELCOME_FROM` once the domain is verified.
+
+Hidden Sign in with Apple addresses (`@privaterelay.appleid.com`) are skipped: Apple only forwards mail from domains registered in Apple Developer → Certificates, IDs & Profiles → Services → Sign in with Apple for Email Communication. Register auth.air-rally.com there, then remove the skip in `web/api/welcome.js`.
+
 Before anyone runs `supabase config push` later, copy these settings into `supabase/config.toml` (password as `env(SUPABASE_AUTH_SMTP_PASS)`) and reconcile the other differences `config diff` lists.
 
 Links keep Supabase's `{{ .ConfirmationURL }}`: Supabase verifies the token and redirects to `dicta://auth-callback` or `dicta://reset-password` with a PKCE `code`, which the app exchanges. Site URL is `dicta://`; `dicta://**` and `exp+dicta://**` are allowed redirects.
