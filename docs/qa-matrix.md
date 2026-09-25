@@ -8,7 +8,7 @@ PASS = exercised end to end this phase. NOT TESTED = not run this phase; the rea
 | --- | --- | --- |
 | Authentication | PASS | Session restored across cold starts. A fresh email sign-in wasn't re-run: the test account's password isn't known to me. |
 | Apple Sign In | NOT TESTED | Needs an Apple ID on a device. |
-| Email confirmation | PASS | 2026-09-26, TestFlight build 2 on your iPhone: sign-up with a new address, the email's link opened Dicta and moved on to profile setup (build 1 stayed on "Confirming your email"). From build 4, an address that already has an account says so instead of waiting for an email. |
+| Email confirmation | PASS | 2026-09-26, TestFlight build 2 on your iPhone: sign-up with a new address, the email's link opened Dicta and moved on to profile setup (build 1 stayed on "Confirming your email"). Build 4 on your iPhone: an address that already has an account says so ("An account with this email already exists. Try signing in.") instead of waiting for an email. |
 | Password reset | PASS (email) | 2026-09-26: a reset email reached Gmail through Resend. Not yet started from "Forgot password?" on a phone, which is what makes the link work. |
 | Profile | PASS | Own and other profiles; post, follower and following counts updated after deleting posts, following, blocking and unblocking. |
 | Publishing | PASS | Six posts in six scripts across Editorial, Midnight, Typewriter and Minimal. Artwork stored 0.7–1.7 s after publishing; keys match the website's. |
@@ -28,8 +28,9 @@ PASS = exercised end to end this phase. NOT TESTED = not run this phase; the rea
 | Copy Link | NOT TESTED | The link format (`/post/<id>`) was checked on the website; the button wasn't tapped. |
 | Instagram / Facebook Stories | PASS (Instagram) | 2026-09-26, TestFlight build 3 on your iPhone: Instagram's story editor opened with the card as a sticker over its blurred copy, and accepted the Meta app ID (you're the Meta app's admin; other people's accounts not tried yet). Pasting into Instagram's Link sticker brought the post's link. Facebook Stories not tried yet. In the simulator the pasteboard held the sticker (PNG 1208 × 1478, transparent corners), background (JPEG 1080 × 1920), app ID and link. |
 | Threads / X | PASS (Threads) | 2026-09-26, build 3 on your iPhone: the Threads app opened a new thread with the quote and a link preview showing the card. X not tried on the phone yet; its URL has a unit test. |
-| Tab bar (Liquid Glass) | PASS (simulator) | 2026-09-26, iOS 26.5 simulator: floating glass capsule over the feed, the selection bubble moves between tabs, Create and the profile photo kept, light and dark. Lists scroll clear of it. |
-| Profile cover photo | PASS (simulator) | 2026-09-26: Alven added a cover in Edit profile (uploaded to avatars/<uid>/cover-….jpg, saved to profiles.cover_url); the profile shows it behind the new left-aligned header, light and dark. |
+| Tab bar (Liquid Glass) | PASS | 2026-09-26, build 4 on your iPhone (dark mode, over photo cards), and the iOS 26.5 simulator: floating glass capsule over the feed, the selection bubble moves between tabs, Create and the profile photo kept, light and dark. Lists scroll clear of it. |
+| Profile cover photo | PASS | 2026-09-26, build 4 on your iPhone: you set a cover and the new left-aligned header shows it. In the simulator, Alven added a cover in Edit profile (uploaded to avatars/<uid>/cover-….jpg, saved to profiles.cover_url); the profile shows it behind the new left-aligned header, light and dark. |
+| App icon | PASS | Build 4 on your iPhone: the App Library shows the new icon (the pen emblem, no wordmark). |
 | Share sheet | PASS | Build 3 on your iPhone, dark mode: Instagram, Facebook, Threads, X, Save and Copy link all show, labels fit. |
 | Deep links | PASS | `dicta://user/…` opens the profile; a push opens the post and then its comments, from the foreground and from a cold start. Universal links were verified on your iPhone earlier. |
 | Website | PASS | Page, card and preview for every production post. The first post's new card finished in the background about 70 s later (Paper texture, CPU). |
