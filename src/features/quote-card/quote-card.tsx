@@ -3,7 +3,7 @@ import { memo, useMemo } from 'react';
 import { View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { useCardFonts } from './fonts';
-import { cardSize, isDeviceFrame, unitScale } from './geometry';
+import { cardSize, showsAvatar, unitScale } from './geometry';
 import { useSkImage } from './images';
 import { layoutCard } from './layout';
 import { QuoteCanvas } from './quote-canvas';
@@ -23,10 +23,6 @@ export interface QuoteCardProps {
   watermark?: boolean;
   style?: StyleProp<ViewStyle>;
 }
-
-/** Whether the card shows the author's photo (header or notification panel). */
-export const showsAvatar = (design: QuoteDesign) =>
-  design.frame === 'notification' || (design.header.show && design.header.avatar && !isDeviceFrame(design.frame));
 
 /**
  * The one component every surface uses to show a card: feed, profile grid,

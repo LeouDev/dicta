@@ -4,6 +4,10 @@
   "type": "module",
   "description": "dicta-orcin.vercel.app: shared quote pages, universal links and App Store pages",
   "scripts": {
-    "test": "node --test"
+    "build": "node card/build.mjs",
+    "test": "npm run build && node --test"
+  },
+  "dependencies": {
+    "@vercel/functions": "^3.9.9"
   }
 }

@@ -53,10 +53,12 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
+    "@expo-google-fonts/noto-color-emoji": "^0.4.6",
     "@testing-library/react-native": "^14.0.1",
     "@types/jest": "^29.5.14",
     "@types/node": "^26.6.2",
     "@types/react": "~19.2.2",
+    "esbuild": "^0.28.2",
     "eslint": "^9.0.0",
     "eslint-config-expo": "~57.0.2",
     "jest": "^29.7.0",

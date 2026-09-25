@@ -81,7 +81,7 @@ src/
   store/          Zustand stores (auth session)
   types/          Generated Supabase types + app models
   utils/          Pure helpers (validation, formatting), unit tested
-web/              dicta-orcin.vercel.app (Vercel project root): shared quote pages, universal links, App Store pages
+web/              dicta-orcin.vercel.app (Vercel project root): shared quote pages, card images drawn by the app's renderer, universal links, App Store pages
   api/post.js     /post/<id>: server-rendered quote page with link-preview tags
   public/         home, privacy, terms, support, 404, .well-known/apple-app-site-association
 supabase/
@@ -157,11 +157,14 @@ Tables: `profiles`, `posts`, `post_designs` (the structured card design as JSONB
 
 ## Website
 
-`web/` is deployed by the Vercel project `dicta2/dicta` (root directory `web`) on every push to `main`, at https://dicta-orcin.vercel.app. It needs `SUPABASE_URL` and `SUPABASE_ANON_KEY` in the project's environment variables.
+`web/` is deployed by the Vercel project `dicta2/dicta` (root directory `web`) on every push to `main`, at https://dicta-orcin.vercel.app. It needs `SUPABASE_URL`, `SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY` (server only, for storing card images) in the project's environment variables.
 
-- **Shared links:** Copy link in the app produces `https://dicta-orcin.vercel.app/post/<id>`. With Dicta installed, iOS opens it in the app (universal links via `ios.associatedDomains` and the `apple-app-site-association` file). Otherwise the page shows the quote with an Open in Dicta button, and link previews show the quote.
+- **Shared links:** Copy link in the app produces `https://dicta-orcin.vercel.app/post/<id>`. With Dicta installed, iOS opens it in the app (universal links via `ios.associatedDomains` and the `apple-app-site-association` file). Otherwise the page shows the post's artwork with an Open in Dicta button.
+- **One renderer.** The website doesn't restyle cards. `web/card/build.mjs` bundles the app's own card engine (`src/features/quote-card`: layout, Skia canvas, textures, fonts) for Node, where it draws on CanvasKit, React Native Skia's web build. Vercel builds it on every deploy (the install step runs `npm ci` at the repo root), so the website always draws with the renderer from the same commit as the app. A server render of a card matches the iOS export to within about 1.4/255 per pixel.
+- **Card images, drawn once:** `/card/<id>.jpg` (the card, 1080 wide) and `/card/<id>/og.jpg` (1200 × 630 link preview: the card on the app's paper color) are drawn on first request and stored in the `generated-cards` bucket as `<author>/<post>-<key>.jpg`; `posts.card_image_path` points at the current card. The key hashes everything drawn (renderer build, text, design, the author's name, handle, photo and badge), so a change is redrawn automatically; until then the page shows the previous drawing. The app asks for the drawing right after publishing (`/api/card?id=…&warm=1`), deleting a post or the account removes the images, and older versions are removed a day after a redraw.
+- **Draw times:** most templates draw in under 4 s on CPU; Paper, Mottle, Concrete and Canvas textures take about 15–25 s at 1080 px, so the link preview is drawn first at its own, smaller size (about 3 s).
 - **App Store Connect:** use `/privacy` for the privacy policy URL and `/support` for the support URL.
-- **Tests:** `cd web && npm test` (Node's built-in runner) checks the shared page against version 1 and 2 designs and hand-written JSON.
+- **Tests:** `cd web && npm test` builds the renderer, draws all 18 templates in all 4 formats, and checks the card endpoint and post page against an in-memory Supabase.
 
 ## Building for iOS
 

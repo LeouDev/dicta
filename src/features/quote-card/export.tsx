@@ -2,10 +2,10 @@ import { ImageFormat, drawAsImage } from '@shopify/react-native-skia';
 import { File, Paths } from 'expo-file-system';
 
 import { loadCardFonts } from './fonts';
+import { showsAvatar } from './geometry';
 import { loadSkImage } from './images';
 import { layoutCard } from './layout';
 import { QuoteCanvas } from './quote-canvas';
-import { showsAvatar } from './quote-card';
 import type { CardAuthor, Format, QuoteDesign } from './types';
 
 export const EXPORT_OPTIONS: { format: Format; label: string; detail: string }[] = [

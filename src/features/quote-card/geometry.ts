@@ -2,7 +2,7 @@
  * Pure layout math for quote cards: no Skia, so it runs (and is tested) anywhere.
  * Values follow Templates.md; sizes are px unless a name says otherwise.
  */
-import { CANVASES, DESIGN_WIDTH, type Canvas, type Format, type Frame, type Overlay, type VerticalAlign } from './types';
+import { CANVASES, DESIGN_WIDTH, type Canvas, type Format, type Frame, type Overlay, type QuoteDesign, type VerticalAlign } from './types';
 
 export interface Size {
   width: number;
@@ -29,6 +29,10 @@ export function cardSize(format: Format, canvas: Canvas, width: number): Size {
 export const unitScale = (width: number) => width / DESIGN_WIDTH;
 
 export const isDeviceFrame = (frame: Frame) => frame === 'pager' || frame === 'lcd';
+
+/** Whether the card shows the author's photo (header or notification panel). */
+export const showsAvatar = (design: Pick<QuoteDesign, 'frame' | 'header'>) =>
+  design.frame === 'notification' || (design.header.show && design.header.avatar && !isDeviceFrame(design.frame));
 
 export interface Insets {
   left: number;

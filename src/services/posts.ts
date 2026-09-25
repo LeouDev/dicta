@@ -6,7 +6,12 @@ import { parseQuoteDesign } from '@/features/quote-card/serialize';
 import type { QuoteDesign } from '@/features/quote-card/types';
 import { supabase } from '@/lib/supabase';
 import type { Json } from '@/types/database';
-import type { FeedPost, PostAuthor } from '@/types/models';
+import type { FeedPost } from '@/types/models';
+
+import { AUTHOR_SELECT, toAuthor } from './author';
+import { prepareCardImage } from './web';
+
+export { AUTHOR_SELECT, toAuthor };
 
 export const PAGE_SIZE = 12;
 
@@ -15,8 +20,6 @@ export interface FeedCursor {
   id: string;
 }
 
-export const AUTHOR_SELECT = 'id, username, display_name, avatar_url, is_verified';
-
 // liked_by_me / saved_by_me are computed fields (SQL functions on the posts row).
 const POST_SELECT =
   'id, text, topic, created_at, like_count, comment_count, share_count, save_count, liked_by_me, saved_by_me, ' +
@@ -24,16 +27,6 @@ const POST_SELECT =
   'design:post_designs(design)';
 
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
-
-export function toAuthor(row: Record<string, unknown>): PostAuthor {
-  return {
-    id: String(row.id),
-    username: String(row.username ?? ''),
-    displayName: String(row.display_name ?? ''),
-    avatarUrl: typeof row.avatar_url === 'string' ? row.avatar_url : null,
-    isVerified: row.is_verified === true,
-  };
-}
 
 /** Normalizes one PostgREST row; rows with a missing author are dropped. */
 export function toFeedPost(row: unknown): FeedPost | null {
@@ -169,13 +162,18 @@ export async function publishPost({ userId, text, design, topic }: NewPost) {
     p_background_image_path: published.background.type === 'image' ? published.background.path : undefined,
   });
   if (error) throw error;
+  prepareCardImage(data);
   return data;
 }
 
-/** Deletes a post (likes, comments, saves cascade) and its uploaded photo, if any. */
+/** Deletes a post (likes, comments, saves cascade), its uploaded photo and its website images. */
 export async function deletePost(post: FeedPost) {
   const { error } = await supabase.from('posts').delete().eq('id', post.id);
   if (error) throw error;
   const bg = post.design.background;
   if (bg.type === 'image' && bg.path) await supabase.storage.from('post-images').remove([bg.path]);
+  // The website stores each version of the card as <author>/<post id>-<version>.jpg (web/api/card.js).
+  const { data: cards } = await supabase.storage.from('generated-cards').list(post.author.id, { search: `${post.id}-` });
+  const paths = (cards ?? []).filter((file) => file.name.startsWith(`${post.id}-`)).map((file) => `${post.author.id}/${file.name}`);
+  if (paths.length) await supabase.storage.from('generated-cards').remove(paths);
 }

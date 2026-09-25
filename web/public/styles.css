@@ -74,20 +74,15 @@ p, ul { margin: 0; }
 .shared.empty { text-align: center; padding-block: 18vh; gap: 24px; }
 .shared.empty h1 { font-size: 1.8rem; }
 .card-frame { width: 100%; margin: 0; container-type: inline-size; }
+/* The post's artwork (a stored image), with the app's feed corners: the design's radius on a 1080-wide card. */
 .card {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 6cqw;
+  display: block;
   width: 100%;
-  border-radius: 18px;
-  background: var(--bg);
-  color: var(--ink);
+  height: auto;
+  border-radius: calc(var(--card-radius) * 100cqw / 1080);
+  background: var(--card-bg);
   box-shadow: 0 10px 24px rgba(26, 23, 20, 0.1);
-  overflow: hidden;
 }
-.card blockquote { margin: 0 auto; width: 100%; white-space: pre-line; overflow-wrap: break-word; }
-.card figcaption { color: var(--meta); font: 600 3.4cqw/1.3 var(--sans); text-align: center; }
 .author { display: flex; align-items: center; gap: 12px; color: var(--text); text-decoration: none; }
 .author img, .author .initial { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
 .author .initial { display: grid; place-items: center; background: var(--rule); color: var(--accent); font-family: var(--serif); font-size: 1.2rem; }

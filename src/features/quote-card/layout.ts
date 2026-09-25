@@ -116,7 +116,7 @@ function paragraph(text: string, o: TextOptions, fonts: SkTypefaceFontProvider, 
   );
   builder.pushStyle({
     color: Skia.Color(o.color),
-    fontFamilies: [o.face],
+    fontFamilies: [o.face, ...fallbackFamilies],
     fontSize: o.size,
     letterSpacing: (o.letterSpacing ?? 0) * o.size,
     ...(o.lineHeight ? { heightMultiplier: o.lineHeight, halfLeading: true } : {}),
@@ -128,6 +128,15 @@ function paragraph(text: string, o: TextOptions, fonts: SkTypefaceFontProvider, 
   return p;
 }
 
+// Families to try for characters a card face lacks, such as emoji. Empty in the
+// app, where iOS falls back to its system fonts; the website's renderer, which
+// has no system fonts, registers its own.
+let fallbackFamilies: string[] = [];
+export function setFallbackFamilies(families: string[]) {
+  fallbackFamilies = families;
+  widths.clear();
+}
+
 // Word widths at 100px, per face and tracking. Widths scale linearly with size,
 // so the fit search is arithmetic after the first measurement.
 const widths = new Map<string, number>();
@@ -136,7 +145,11 @@ function measureWord(fonts: SkTypefaceFontProvider, face: string, letterSpacing:
   let w = widths.get(key);
   if (w === undefined) {
     if (widths.size > 5000) widths.clear();
-    w = paragraph(word, { face, size: 100, color: '#000000', letterSpacing }, fonts, UNLIMITED).getLongestLine();
+    const measured = paragraph(word, { face, size: 100, color: '#000000', letterSpacing }, fonts, UNLIMITED);
+    w = measured.getLongestLine();
+    // Only the width is kept. Free the paragraph now: the website's renderer
+    // (CanvasKit) never garbage-collects it.
+    measured.dispose();
     widths.set(key, w);
   }
   return w;

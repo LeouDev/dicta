@@ -1,11 +1,41 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "cd .. && npm ci --ignore-scripts --no-audit --no-fund && cd web && npm ci --no-audit --no-fund",
+  "buildCommand": "npm run build",
+  "outputDirectory": "public",
   "cleanUrls": true,
-  "rewrites": [{ "source": "/post/:id", "destination": "/api/post?id=:id" }],
+  "functions": {
+    "api/card.js": {
+      "includeFiles": "card/dist/**",
+      "maxDuration": 300
+    },
+    "api/post.js": {
+      "includeFiles": "card/dist/{design.mjs,version.mjs}"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/post/:id",
+      "destination": "/api/post?id=:id"
+    },
+    {
+      "source": "/card/:id/og.jpg",
+      "destination": "/api/card?id=:id&kind=og"
+    },
+    {
+      "source": "/card/:id.jpg",
+      "destination": "/api/card?id=:id"
+    }
+  ],
   "headers": [
     {
       "source": "/.well-known/apple-app-site-association",
-      "headers": [{ "key": "Content-Type", "value": "application/json" }]
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/json"
+        }
+      ]
     }
   ]
 }
