@@ -39,6 +39,7 @@
 - ✅ Screenshots: five uploaded 2026-09-26 at 1284 × 2778 (the 6.5-inch slot; it rejected 1320 × 2868 there). The 1320 × 2868 set is in `~/Downloads/Dicta App Store screenshots/` for the optional 6.9-inch slot.
 - ✅ Subtitle, promotional text, description, keywords, categories (Social Networking, Graphics & Design), content rights, copyright, review contact and notes entered 2026-09-26 from docs/app-store-listing.md. Price: free. Release: manual, after approval.
 - ✅ Availability: every storefront except China mainland, which needs an ICP filing number (removed 2026-09-26).
-- ⚠️ Digital Services Act trader status (App Information): trader or not is your call.
+- ✅ Digital Services Act compliance completed 2026-09-26 (Business → Compliance: Active).
+- ✅ Free Apps Agreement active until 18 Aug 2027. The Paid Apps Agreement and its legal-entity banner only matter for paid apps or in-app purchases; Dicta has neither. ⚠️ Renew the Apple Developer Program membership before 18 Aug 2027, or the app leaves the App Store.
 - ✅ Build 5 (terms agreement at profile setup, blocked-word message, readable tab bar) uploaded and selected for version 1.0.
 - ⚠️ Optional: a custom domain. `dicta-orcin.vercel.app` works for the beta; a real domain reads better in shared links and gives you a sending domain for email. Moving means updating `ios.associatedDomains`, `WEB_ORIGIN` (src/services/web.ts), and the two URLs in the push/purge triggers.
