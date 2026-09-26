@@ -1,6 +1,6 @@
-# QA matrix: Phase 6 (2026-09-25)
+# QA matrix: Phase 6 (2026-09-25, device checks 2026-09-26)
 
-Run on the iPhone 17e simulator (iOS 26.5) with a fresh development build, signed in as **A** = Alven (@leoualven.comendador). **B** = @galileouuu, whose side was checked in the database. All test posts, comments and the like were removed afterwards; the one test report stays in `reports` (status `open`, details "qa test report from phase 6, please ignore") so you can see it.
+Every area has now passed. The device checks ran on your iPhone with TestFlight builds 1–4 on 2026-09-26; the rest ran on the iPhone 17e simulator (iOS 26.5) with a fresh development build, signed in as **A** = Alven (@leoualven.comendador). **B** = @galileouuu, whose side was checked in the database. All test posts, comments and the like were removed afterwards; the one test report stays in `reports` (status `open`, details "qa test report from phase 6, please ignore") so you can see it.
 
 PASS = exercised end to end this phase. NOT TESTED = not run this phase; the reason is given. No failures remain: the one found (the feed) is fixed and re-checked.
 
@@ -43,7 +43,7 @@ PASS = exercised end to end this phase. NOT TESTED = not run this phase; the rea
 | Logout | PASS | 2026-09-26, build 4 on your iPhone, before signing up a throwaway account. |
 | Delete account | PASS | 2026-09-26, build 4 on your iPhone with a throwaway account (+test4): back to the welcome screen. The database then had no account for that address, and no storage files or profiles belonging to any deleted account. |
 | Dark mode | PASS | Profile and feed in dark appearance. |
-| VoiceOver | NOT TESTED | Labels exist (for example "posted 5 minutes ago"); needs a device. |
+| VoiceOver | PASS | 2026-09-26, build 4 on your iPhone: cards, posts and buttons read out sensibly. |
 | Keyboard | PASS | Comment box sits above the keyboard; the report form scrolls "Send report" above it. |
 | Photos permission | PASS | 2026-09-26, build 4 on your iPhone: the prompt appears when Dicta first needs the library, with the reviewed wording (library and add-only). |
 | Offline / error states | PASS | 2026-09-26, build 4 on your iPhone in airplane mode: signing in shows "You seem to be offline. Check your connection and try again." and nothing breaks. The feed and posting use the same message; they weren't tried offline. |
