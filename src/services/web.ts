@@ -2,6 +2,8 @@
 const WEB_ORIGIN = 'https://dicta-orcin.vercel.app';
 
 export const postLink = (postId: string) => `${WEB_ORIGIN}/post/${postId}`;
+export const TERMS_URL = `${WEB_ORIGIN}/terms`;
+export const PRIVACY_URL = `${WEB_ORIGIN}/privacy`;
 
 /**
  * Asks the website to draw the post's card image now (the post page and link

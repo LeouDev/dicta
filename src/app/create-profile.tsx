@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Linking, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/ui/button';
 import { Screen } from '@/components/ui/screen';
@@ -13,6 +13,7 @@ import { queryKeys } from '@/lib/query-keys';
 import { signOut } from '@/services/auth';
 import { friendlyError } from '@/services/errors';
 import { createProfile } from '@/services/profiles';
+import { PRIVACY_URL, TERMS_URL } from '@/services/web';
 import { useAuth } from '@/store/auth';
 import { suggestUsername } from '@/utils/validation';
 
@@ -49,7 +50,23 @@ export default function CreateProfileScreen() {
         submitting={create.isPending}
         error={error}
         onSubmit={(values) => create.mutate(values)}
-        footer={<Button label="Use a different account" variant="ghost" size="md" onPress={() => signOut().catch(() => {})} />}
+        footer={
+          <>
+            {/* Apple asks that people agree to terms that rule out objectionable content and abuse. */}
+            <Text variant="caption" color="textTertiary" align="center" style={styles.terms}>
+              By continuing, you agree to Dicta’s{' '}
+              <Text variant="caption" color="accent" onPress={() => Linking.openURL(TERMS_URL)} accessibilityRole="link">
+                Terms of Use
+              </Text>
+              , including zero tolerance for abuse and objectionable content, and our{' '}
+              <Text variant="caption" color="accent" onPress={() => Linking.openURL(PRIVACY_URL)} accessibilityRole="link">
+                Privacy Policy
+              </Text>
+              .
+            </Text>
+            <Button label="Use a different account" variant="ghost" size="md" onPress={() => signOut().catch(() => {})} />
+          </>
+        }
       />
     </Screen>
   );
@@ -57,4 +74,5 @@ export default function CreateProfileScreen() {
 
 const styles = StyleSheet.create({
   header: { gap: spacing.sm, marginTop: spacing.xl, marginBottom: spacing.lg },
+  terms: { paddingHorizontal: spacing.md },
 });
