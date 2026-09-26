@@ -123,6 +123,10 @@ export function BottomTabBar({ state, descriptors, navigation }: BottomTabBarPro
     <View pointerEvents="box-none" style={[styles.wrap, { bottom }]}>
       <GlassView
         isInteractive
+        // Glass darkens over dark content, but these icons don't flip like the
+        // system's do: a tint of the page color keeps them readable on anything.
+        colorScheme={scheme}
+        tintColor={scheme === 'dark' ? 'rgba(18, 17, 16, 0.55)' : 'rgba(247, 243, 236, 0.72)'}
         onLayout={(e) => setSlotWidth((e.nativeEvent.layout.width - BAR_PADDING * 2) / SLOTS)}
         style={[styles.bar, !GLASS && [styles.raised, { backgroundColor: theme.surfaceRaised, borderColor: theme.hairline }]]}>
         {slotWidth > 0 && (
