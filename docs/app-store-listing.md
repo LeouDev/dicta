@@ -103,7 +103,7 @@ The feed makes the minimum **13+**, which matches the Terms ("at least 13").
 
 ```text
 1. Screen recording
-Unlisted video, recorded on an iPhone running the latest iOS: https://youtu.be/ybB7KfPeC3o
+Unlisted video, recorded on an iPhone running the latest iOS: https://youtu.be/ZC6x5jPEHCo
 It starts at launch and shows signing up (with the confirmation email), creating and sharing a post, liking and commenting, reporting a post, blocking a person, signing out and back in, and deleting the account.
 
 2. Purpose and audience
