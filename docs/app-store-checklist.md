@@ -25,21 +25,18 @@
 
 - ✅ Sign in with Apple next to email sign-in.
 - ✅ Account deletion in the app: Settings → Delete account, which removes posts, comments, likes, follows, saves, photos and card images, and purges the website at once.
-- ✅ User-generated content (Guideline 1.2): report quotes, comments and people (8 reasons); block from any post or profile; blocked people's posts disappear immediately; terms list what's not allowed; contact info is published (`support@air-rally.com`).
-- ⚠️ Apple expects the terms to state zero tolerance for objectionable content and abusive users, and that reports are acted on within 24 hours. That's a commitment only you can make; if you do, add it to `web/public/terms.html`.
+- ✅ User-generated content (Guideline 1.2): a server-side filter rejects slurs and explicit sexual terms in quotes, signatures, comments, names and bios (since 2026-09-26); report quotes, comments and people (8 reasons); block from any post or profile; blocked people's posts disappear immediately; new users agree to the Terms when they create their profile; contact info is published (`support@air-rally.com`).
+- ✅ The Terms state zero tolerance for objectionable content and abusive users, and that reports are reviewed within 24 hours (added 2026-09-26). ⚠️ Keep that promise: check reports daily (below).
 - ⬜ A moderation routine. Reports land in the `reports` table (Supabase → Table editor, `status = 'open'`). To take a post down everywhere, including the website, instantly: `update posts set status = 'removed' where id = '<post id>';` then set the report's `status` to `actioned`. To remove a person, delete their user under Authentication → Users (their content goes with them). There's no in-app admin tool.
-- ⬜ A demo account for App Review (email and password, with a few posts and follows) in App Store Connect → App Review Information. Not a personal account.
-- ⬜ Age rating questionnaire: answer "user-generated content: yes". The terms and privacy policy say Dicta isn't for children under 13.
+- ⬜ A demo account for App Review: sign up with a fresh address (e.g. your Gmail with `+review`), finish the profile, follow a few people so the feed has posts, then put the email and password in App Store Connect → App Review Information. Not a personal account.
+- ⬜ Age rating questionnaire: answers in docs/app-store-listing.md; the feed makes it 13+, which matches the terms.
 
 ## App Store Connect listing
 
 - ✅ App record created 2026-09-26: **Dicta: Thoughts as Art** ("Dicta" alone was taken; the name under the icon stays Dicta), English (U.S.), `com.leoudev.dicta`, SKU `dicta-ios`.
 - ✅ Privacy policy URL `https://dicta-orcin.vercel.app/privacy` (now lists push tokens, Expo and Apple). Support URL `https://dicta-orcin.vercel.app/support`. Terms at `/terms` (or use Apple's standard EULA).
-- ⬜ App Privacy answers, all used for app functionality, all linked to the user, none for tracking:
-  - Contact info: email address; name (display name).
-  - User content: photos (profile photo, card backgrounds); other user content (quotes, comments).
-  - Identifiers: user ID.
-  - Not collected: location, contacts, browsing history, purchases, diagnostics, advertising data. No tracking.
-- ⬜ Screenshots: 6.9-inch iPhone (1320 × 2868) at least; the simulator's iPhone 17 Pro Max gives that size.
-- ⬜ Subtitle, description, keywords, category (Social Networking or Lifestyle), copyright line.
+- ⬜ App Privacy answers: the table in docs/app-store-listing.md (all app functionality, linked to the user, no tracking).
+- ✅ Screenshots: five at 1320 × 2868 (6.9-inch) made 2026-09-26 in `~/Downloads/Dicta App Store screenshots/`. ⬜ Upload them in order.
+- ✅ Subtitle, promotional text, description, keywords, categories, copyright and review notes: docs/app-store-listing.md. ⬜ Paste them in.
+- ⬜ Build 5 for the submission: the first with the terms agreement at profile setup, the blocked-word message and the readable tab bar.
 - ⚠️ Optional: a custom domain. `dicta-orcin.vercel.app` works for the beta; a real domain reads better in shared links and gives you a sending domain for email. Moving means updating `ios.associatedDomains`, `WEB_ORIGIN` (src/services/web.ts), and the two URLs in the push/purge triggers.
