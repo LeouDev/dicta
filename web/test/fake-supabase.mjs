@@ -1,5 +1,5 @@
 // An in-memory Supabase behind global fetch, just enough for the website's
-// functions: posts, pushes and welcome emails over PostgREST, Storage (public
+// functions: posts, pushes, welcome emails and reports over PostgREST, Storage (public
 // buckets for photos, the private generated-cards bucket for card images),
 // Expo's push service and Resend.
 export const SUPABASE_URL = 'https://x.supabase.co';
@@ -29,7 +29,7 @@ export const storageUrl = (bucketPath) => `${SUPABASE_URL}/storage/v1/object/pub
  * with a ticket. `calls` records "METHOD path?query" for every request,
  * including ones to ORIGIN; `sent` collects the messages Expo received.
  */
-export function fakeSupabase({ posts = [post()], files = {}, pushes = {}, expo = () => ({ status: 'ok', id: 'ticket' }), welcome = {}, resend = () => ({ status: 200, body: { id: 'email' } }) } = {}) {
+export function fakeSupabase({ posts = [post()], files = {}, pushes = {}, expo = () => ({ status: 'ok', id: 'ticket' }), welcome = {}, reports = {}, resend = () => ({ status: 200, body: { id: 'email' } }) } = {}) {
   process.env.SUPABASE_URL = SUPABASE_URL;
   process.env.SUPABASE_ANON_KEY = 'anon';
   process.env.SUPABASE_SERVICE_ROLE_KEY = 'service';
@@ -38,6 +38,8 @@ export function fakeSupabase({ posts = [post()], files = {}, pushes = {}, expo =
     pushes: new Map(Object.entries(pushes)),
     welcome: new Map(Object.entries(welcome)),
     welcomed: new Set(),
+    reports: new Map(Object.entries(reports)),
+    idempotency: new Map(),
     emails: [],
     sent: [],
     removedTokens: [],
@@ -55,8 +57,12 @@ export function fakeSupabase({ posts = [post()], files = {}, pushes = {}, expo =
     if (url.origin === ORIGIN) return new Response(null, { status: 202 });
     if (url.origin === 'https://api.resend.com') {
       const email = JSON.parse(init.body);
-      db.emails.push({ ...email, authorization: init.headers.Authorization });
+      // Like Resend: a repeated idempotency key sends nothing (409 if the email changed).
+      const key = init.headers['Idempotency-Key'];
+      if (key && db.idempotency.has(key)) return db.idempotency.get(key) === init.body ? json({ id: 'email' }) : json({ name: 'invalid_idempotent_request' }, 409);
+      db.emails.push({ ...email, authorization: init.headers.Authorization, idempotencyKey: key });
       const { status, body } = resend(email);
+      if (key && status < 300) db.idempotency.set(key, init.body);
       return json(body, status);
     }
     if (url.origin === 'https://exp.host') {
@@ -94,6 +100,11 @@ export function fakeSupabase({ posts = [post()], files = {}, pushes = {}, expo =
       if (!service) return json({ message: 'permission denied' }, 401);
       db.welcomed.delete(url.searchParams.get('user_id').replace('eq.', ''));
       return new Response(null, { status: 204 });
+    }
+    if (url.pathname === '/rest/v1/reports') {
+      if (!service) return json({ message: 'permission denied for table reports' }, 401);
+      const row = db.reports.get(url.searchParams.get('id')?.replace('eq.', ''));
+      return json(row ? [structuredClone(row)] : []);
     }
     if (url.pathname === '/rest/v1/push_tokens' && method === 'DELETE') {
       if (!service) return json({ message: 'permission denied' }, 401);

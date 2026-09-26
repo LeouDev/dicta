@@ -1,7 +1,9 @@
--- Backend tests for the content filter: a blocked word can't be posted in a
--- quote, a card signature, a comment, a display name or a bio, whatever the
--- case or with a plural "s"; ordinary text and longer words that merely
--- contain one can. ROLLED BACK: nothing persists.
+-- Backend tests for moderation. The content filter: a blocked word can't be
+-- posted in a quote, a card signature, a comment, a display name or a bio,
+-- whatever the case or with a plural "s"; ordinary text and longer words that
+-- merely contain one can. Report alerts: a new report asks the website to
+-- email the moderator. ROLLED BACK: nothing persists, and pg_net sends nothing
+-- (it only sends after a commit).
 --   npm run test:db
 begin;
 
@@ -50,10 +52,18 @@ begin
 
   -- Counters and other columns still update on existing rows.
   update public.profiles set avatar_url = null where id = me;
+
+  -- Filing a report works as in the app (the alert rides along).
+  insert into public.reports (reporter_id, post_id, reason, details) values (me, post, 'spam', 'test report');
 end $$;
 
 reset role;
 do $$ begin
+  assert exists (select 1 from net.http_request_queue q
+                 join public.reports r on r.id::text = convert_from(q.body, 'utf8')::jsonb ->> 'id'
+                 where q.url = 'https://dicta-orcin.vercel.app/api/report-alert'
+                   and r.reporter_id = '00000000-0000-4000-a000-00000000000d'),
+    'a new report asks the website to email the moderator';
   assert not has_table_privilege('authenticated', 'private.blocked_terms', 'select'), 'the list is not readable by the app';
   assert not has_function_privilege('anon', 'private.is_objectionable(text)', 'execute'), 'visitors cannot probe the list';
 end $$;

@@ -129,3 +129,22 @@ export async function releaseWelcome(id) {
   const { url, service } = env();
   await fetch(`${url}/rest/v1/welcome_emails?user_id=eq.${id}`, { method: 'DELETE', headers: keyHeaders(service) });
 }
+
+const REPORT_SELECT =
+  'id,reason,details,status,created_at,post_id,comment_id,reported_user_id,' +
+  'reporter:profiles!reports_reporter_id_fkey(username),' +
+  'person:profiles!reports_reported_user_id_fkey(username),' +
+  'post:posts(text,author:profiles!posts_author_id_fkey(username)),' +
+  'comment:comments(body,author:profiles!comments_author_id_fkey(username))';
+
+/** A report with what it points at, read with the service role (reports are private), or null. */
+export async function fetchReport(id) {
+  const { url, service } = env();
+  const res = await fetch(`${url}/rest/v1/reports?id=eq.${id}&select=${REPORT_SELECT}`, { headers: keyHeaders(service) });
+  if (!res.ok) throw new Error(`Couldn't load report ${id} (${res.status}).`);
+  const [row] = await res.json();
+  return row ?? null;
+}
+
+/** The dashboard's SQL editor for this project, where the alert's commands are run. */
+export const sqlEditorUrl = () => `https://supabase.com/dashboard/project/${new URL(env().url).hostname.split('.')[0]}/sql/new`;
