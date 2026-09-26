@@ -2,7 +2,7 @@
 
 ✅ done in the repo · ⬜ needs you · ⚠️ your decision.
 
-**Submitted:** version 1.0 (build 5) went to App Review on 26 September 2026 at 09:08 (submission `cc9a008d-25d5-4992-be05-547c18dd3517`). Release is manual: after approval it waits as Pending Developer Release until you press Release This Version. While it's in review, keep the demo account, the website and the database as they are: the reviewer runs build 5 against them.
+**Submitted:** version 1.0 (build 5) went to App Review on 26 September 2026 at 09:08 (submission `cc9a008d-25d5-4992-be05-547c18dd3517`). At 12:56 Apple asked for more information (Guideline 2.1, standard for new developer accounts): a screen recording and six answers. They were sent at 13:58 (docs/app-store-listing.md, with an unlisted YouTube recording), copied into the Notes, and the submission is Waiting for Review again. Release is manual: after approval it waits as Pending Developer Release until you press Release This Version. While it's in review, keep the demo account, the website and the database as they are: the reviewer runs build 5 against them.
 
 ## Build
 
