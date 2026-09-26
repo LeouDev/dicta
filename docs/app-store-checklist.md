@@ -1,6 +1,8 @@
 # App Store and TestFlight checklist: Dicta 1.0
 
-✅ done in the repo · ⬜ needs you · ⚠️ your decision. Nothing has been submitted.
+✅ done in the repo · ⬜ needs you · ⚠️ your decision.
+
+**Submitted:** version 1.0 (build 5) went to App Review on 26 September 2026 at 09:08 (submission `cc9a008d-25d5-4992-be05-547c18dd3517`). Release is manual: after approval it waits as Pending Developer Release until you press Release This Version. While it's in review, keep the demo account, the website and the database as they are: the reviewer runs build 5 against them.
 
 ## Build
 
