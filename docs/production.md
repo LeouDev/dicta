@@ -67,6 +67,36 @@ Links keep Supabase's `{{ .ConfirmationURL }}`: Supabase verifies the token and 
 - **Threads and X:** a new post with the quote (up to 200 characters) and the post's link, whose preview shows the card. Their app opens when installed, the website otherwise.
 - **If Instagram says "The app you shared from doesn't currently support sharing to Stories",** it didn't accept the app ID: check the Meta app (switching it to Live needs the privacy policy URL).
 
+## Moderation
+
+The Terms promise that reports are reviewed within 24 hours, so check once a day: Supabase dashboard → project DICTA → **SQL Editor**, run the query below (save it as "Open reports" to reuse it). The same rows are in **Table Editor → reports** (filter `status` = `open`), but without the reported text.
+
+```sql
+select r.created_at, r.reason, r.details,
+       reporter.username as reported_by,
+       coalesce(po.text, c.body) as reported_text,
+       coalesce(post_author.username, comment_author.username, person.username) as author,
+       r.id as report_id, r.post_id, r.comment_id, r.reported_user_id
+from reports r
+join profiles reporter on reporter.id = r.reporter_id
+left join posts po on po.id = r.post_id
+left join profiles post_author on post_author.id = po.author_id
+left join comments c on c.id = r.comment_id
+left join profiles comment_author on comment_author.id = c.author_id
+left join profiles person on person.id = r.reported_user_id
+where r.status = 'open'
+order by r.created_at;
+```
+
+Then, for each report, one of:
+
+- **Take a post down** (hidden everywhere, the website included, within seconds): `update posts set status = 'removed' where id = '<post_id>';`
+- **Remove a comment:** `delete from comments where id = '<comment_id>';`
+- **Remove a person** (their posts and comments go with them): Authentication → Users → find them → Delete user. Their uploaded photos stay in Storage (the app deletes them only when people delete their own account); for an objectionable photo, also delete it in Storage → `post-images` or `avatars` → the folder named after their user ID.
+- **Close the report:** `update reports set status = 'actioned' where id = '<report_id>';` (or `'dismissed'` when nothing breaks the Terms).
+
+To add a word to the automatic filter: `insert into private.blocked_terms values ('word');` (lowercase letters and digits; a plural "s" is caught too).
+
 ## Development seed
 
 `npx supabase start` (needs Docker) creates a local database and loads `supabase/seed.sql`: 25 fictional people, 77 original quotes (some in Chinese, Japanese, Korean, Arabic and Russian), follows, likes, comments, replies and saves. `npm run seed` regenerates the file and reloads it into the local database; `SEED_KEEP_USERS=1` keeps your own local accounts. It can't reach production: the CLI is only called with `--local`, and the SQL refuses to run on any database that has accounts outside `@seed.dicta.test`. Seed accounts have no password. Never run `supabase db reset --linked` or `db push --include-seed`.
