@@ -28,7 +28,7 @@
 - ✅ User-generated content (Guideline 1.2): a server-side filter rejects slurs and explicit sexual terms in quotes, signatures, comments, names and bios (since 2026-09-26); report quotes, comments and people (8 reasons); block from any post or profile; blocked people's posts disappear immediately; new users agree to the Terms when they create their profile; contact info is published (`support@air-rally.com`).
 - ✅ The Terms state zero tolerance for objectionable content and abusive users, and that reports are reviewed within 24 hours (added 2026-09-26). ⚠️ Keep that promise: check reports daily (below).
 - ⬜ A moderation routine. Reports land in the `reports` table (Supabase → Table editor, `status = 'open'`). To take a post down everywhere, including the website, instantly: `update posts set status = 'removed' where id = '<post id>';` then set the report's `status` to `actioned`. To remove a person, delete their user under Authentication → Users (their content goes with them). There's no in-app admin tool.
-- ⬜ A demo account for App Review: sign up with a fresh address (e.g. your Gmail with `+review`), finish the profile, follow a few people so the feed has posts, then put the email and password in App Store Connect → App Review Information. Not a personal account.
+- ✅ Demo account for App Review (your Gmail with `+review`), checked 2026-09-26: email confirmed, profile set up, follows 3 people, 9 posts in its feed. Its sign-in is in App Store Connect → App Review Information.
 - ✅ Age rating set 2026-09-26: 13+ in 171 countries (16+ in two, A16 Brazil, 15+ Korea; 9+ on iOS before 26), with the Terms as the age suitability URL.
 
 ## App Store Connect listing
