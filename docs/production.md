@@ -69,7 +69,7 @@ Links keep Supabase's `{{ .ConfirmationURL }}`: Supabase verifies the token and 
 
 ## Moderation
 
-The Terms promise that reports are reviewed within 24 hours, so check once a day: Supabase dashboard → project DICTA → **SQL Editor**, run the query below (save it as "Open reports" to reuse it). The same rows are in **Table Editor → reports** (filter `status` = `open`), but without the reported text.
+The Terms promise that reports are reviewed within 24 hours. Every new report emails support@air-rally.com within seconds (web/api/report-alert.js; set `REPORT_ALERT_TO` on Vercel to send it elsewhere), with the reported text and the exact commands to act on it. As a backstop, check once a day: Supabase dashboard → project DICTA → **SQL Editor**, run the query below (save it as "Open reports" to reuse it). The same rows are in **Table Editor → reports** (filter `status` = `open`), but without the reported text.
 
 ```sql
 select r.created_at, r.reason, r.details,
