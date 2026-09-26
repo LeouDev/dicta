@@ -40,6 +40,7 @@ PASS = exercised end to end this phase. NOT TESTED = not run this phase; the rea
 | Block | PASS | Follows both ways and notifications between A and B removed; B's posts left A's feed; B listed in Blocked accounts. |
 | Unblock | PASS | Unblocked; following again works. |
 | Report | PASS | Row in `reports`: reason, details, post, status `open`. |
+| Report alert | PASS | 2026-09-26: a test report filed on your iPhone emailed support@air-rally.com at once and landed in your inbox, with the reason, note, reported text and the commands to act on it. |
 | Logout | PASS | 2026-09-26, build 4 on your iPhone, before signing up a throwaway account. |
 | Delete account | PASS | 2026-09-26, build 4 on your iPhone with a throwaway account (+test4): back to the welcome screen. The database then had no account for that address, and no storage files or profiles belonging to any deleted account. |
 | Dark mode | PASS | Profile and feed in dark appearance. |
