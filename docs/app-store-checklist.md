@@ -29,14 +29,16 @@
 - ✅ The Terms state zero tolerance for objectionable content and abusive users, and that reports are reviewed within 24 hours (added 2026-09-26). ⚠️ Keep that promise: check reports daily (below).
 - ⬜ A moderation routine. Reports land in the `reports` table (Supabase → Table editor, `status = 'open'`). To take a post down everywhere, including the website, instantly: `update posts set status = 'removed' where id = '<post id>';` then set the report's `status` to `actioned`. To remove a person, delete their user under Authentication → Users (their content goes with them). There's no in-app admin tool.
 - ⬜ A demo account for App Review: sign up with a fresh address (e.g. your Gmail with `+review`), finish the profile, follow a few people so the feed has posts, then put the email and password in App Store Connect → App Review Information. Not a personal account.
-- ⬜ Age rating questionnaire: answers in docs/app-store-listing.md; the feed makes it 13+, which matches the terms.
+- ✅ Age rating set 2026-09-26: 13+ in 171 countries (16+ in two, A16 Brazil, 15+ Korea; 9+ on iOS before 26), with the Terms as the age suitability URL.
 
 ## App Store Connect listing
 
 - ✅ App record created 2026-09-26: **Dicta: Thoughts as Art** ("Dicta" alone was taken; the name under the icon stays Dicta), English (U.S.), `com.leoudev.dicta`, SKU `dicta-ios`.
 - ✅ Privacy policy URL `https://dicta-orcin.vercel.app/privacy` (now lists push tokens, Expo and Apple). Support URL `https://dicta-orcin.vercel.app/support`. Terms at `/terms` (or use Apple's standard EULA).
-- ⬜ App Privacy answers: the table in docs/app-store-listing.md (all app functionality, linked to the user, no tracking).
-- ✅ Screenshots: five, made 2026-09-26 in `~/Downloads/Dicta App Store screenshots/`: 1284 × 2778 for the 6.5-inch slot App Store Connect shows (it rejected 1320 × 2868 there), and 1320 × 2868 for the optional 6.9-inch slot. ⬜ Upload them in order.
-- ✅ Subtitle, promotional text, description, keywords, categories, copyright and review notes: docs/app-store-listing.md. ⬜ Paste them in.
-- ⬜ Build 5 for the submission: the first with the terms agreement at profile setup, the blocked-word message and the readable tab bar.
+- ✅ App Privacy published 2026-09-26: 7 data types (docs/app-store-listing.md), all app functionality, linked to the user, no tracking.
+- ✅ Screenshots: five uploaded 2026-09-26 at 1284 × 2778 (the 6.5-inch slot; it rejected 1320 × 2868 there). The 1320 × 2868 set is in `~/Downloads/Dicta App Store screenshots/` for the optional 6.9-inch slot.
+- ✅ Subtitle, promotional text, description, keywords, categories (Social Networking, Graphics & Design), content rights, copyright, review contact and notes entered 2026-09-26 from docs/app-store-listing.md. Price: free. Release: manual, after approval.
+- ⬜ Availability: untick China mainland (it needs an ICP filing number).
+- ⚠️ Digital Services Act trader status (App Information): trader or not is your call.
+- ✅ Build 5 (terms agreement at profile setup, blocked-word message, readable tab bar) uploaded and selected for version 1.0.
 - ⚠️ Optional: a custom domain. `dicta-orcin.vercel.app` works for the beta; a real domain reads better in shared links and gives you a sending domain for email. Moving means updating `ios.associatedDomains`, `WEB_ORIGIN` (src/services/web.ts), and the two URLs in the push/purge triggers.
