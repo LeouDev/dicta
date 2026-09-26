@@ -40,8 +40,8 @@ PASS = exercised end to end this phase. NOT TESTED = not run this phase; the rea
 | Block | PASS | Follows both ways and notifications between A and B removed; B's posts left A's feed; B listed in Blocked accounts. |
 | Unblock | PASS | Unblocked; following again works. |
 | Report | PASS | Row in `reports`: reason, details, post, status `open`. |
-| Logout | NOT TESTED | Would sign out the test account (password unknown). Removing the push token on logout has a unit test. |
-| Delete account | NOT TESTED | Destructive; needs a throwaway account, which needs email (SMTP). The website purge now comes from the database trigger, which also fires for posts deleted along with an account. |
+| Logout | PASS | 2026-09-26, build 4 on your iPhone, before signing up a throwaway account. |
+| Delete account | PASS | 2026-09-26, build 4 on your iPhone with a throwaway account (+test4): back to the welcome screen. The database then had no account for that address, and no storage files or profiles belonging to any deleted account. |
 | Dark mode | PASS | Profile and feed in dark appearance. |
 | VoiceOver | NOT TESTED | Labels exist (for example "posted 5 minutes ago"); needs a device. |
 | Keyboard | PASS | Comment box sits above the keyboard; the report form scrolls "Send report" above it. |
