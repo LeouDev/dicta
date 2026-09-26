@@ -99,11 +99,12 @@ The feed makes the minimum **13+**, which matches the Terms ("at least 13").
 
 - **Sign-in required:** yes. Use the demo account (see the checklist): email and password in the sign-in fields.
 - **Contact:** your name, phone and email.
-- **Notes** (3,134 of 4,000 bytes; the same text answered Apple's Guideline 2.1 "Information Needed" request of 26 September 2026, which asked for it in both the reply and the Notes, with a screen recording attached to the reply):
+- **Notes** (3,166 of 4,000 bytes; the same text answered Apple's Guideline 2.1 "Information Needed" request of 26 September 2026, which asked for it in both the reply and the Notes, with a screen recording, linked as an unlisted YouTube video):
 
 ```text
 1. Screen recording
-Attached: a recording on an iPhone running the latest iOS. It starts at launch and shows signing up (with the confirmation email), creating and sharing a post, liking and commenting, reporting a post, blocking a person, signing out and back in, and deleting the account.
+Unlisted video, recorded on an iPhone running the latest iOS: https://youtu.be/ybB7KfPeC3o
+It starts at launch and shows signing up (with the confirmation email), creating and sharing a post, liking and commenting, reporting a post, blocking a person, signing out and back in, and deleting the account.
 
 2. Purpose and audience
 Dicta is a social app where every post is a designed quote card. People write a short thought, quote or poem, choose a design (18 templates, 13 fonts, their own colors and photos) and publish it to a feed where others can like, comment, save, follow and share it. It's for people 13 and older who write or collect words: poetry, affirmations, favorite lines. Today they type in one app, design the image in another and post it somewhere else; Dicta does all three in seconds and gives the words a home of their own. It's free, with no ads and no tracking.
