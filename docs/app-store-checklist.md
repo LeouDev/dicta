@@ -19,7 +19,7 @@
 
 - ✅ Apple push key (created by EAS with the first build); a real push reached an iPhone through TestFlight on 2026-09-26.
 - ✅ Custom SMTP through Resend from air-rally.com, with DMARC, and the welcome email (docs/production.md, "Email"). Verified 2026-09-26.
-- ✅ `npm run test:db` passes on the live database (2026-09-26).
+- ✅ `npm run test:db` passes on the live database (2026-09-26), including the content filter (supabase/tests/moderation.sql). Run it as `env -u SUPABASE_ACCESS_TOKEN npm run test:db` while ~/.zshrc still exports an expired token.
 
 ## App Review requirements
 
