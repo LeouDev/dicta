@@ -1,6 +1,6 @@
 # App Store listing: Dicta 1.0
 
-Ready to paste into App Store Connect → **Dicta: Thoughts as Art**. Lengths are within Apple's limits. Screenshots: 5 at 1320 × 2868 (6.9-inch), in `~/Downloads/Dicta App Store screenshots/`, to upload in order.
+Ready to paste into App Store Connect → **Dicta: Thoughts as Art**. Lengths are within Apple's limits. Screenshots: 5, in `~/Downloads/Dicta App Store screenshots/`, to upload in order: `6.5-inch (use this)` at 1284 × 2778 for the slot App Store Connect shows, and the same five at 1320 × 2868 in `6.9-inch (optional)` for Media Manager's 6.9-inch slot.
 
 ## App Information
 

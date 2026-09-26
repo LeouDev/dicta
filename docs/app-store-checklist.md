@@ -36,7 +36,7 @@
 - ✅ App record created 2026-09-26: **Dicta: Thoughts as Art** ("Dicta" alone was taken; the name under the icon stays Dicta), English (U.S.), `com.leoudev.dicta`, SKU `dicta-ios`.
 - ✅ Privacy policy URL `https://dicta-orcin.vercel.app/privacy` (now lists push tokens, Expo and Apple). Support URL `https://dicta-orcin.vercel.app/support`. Terms at `/terms` (or use Apple's standard EULA).
 - ⬜ App Privacy answers: the table in docs/app-store-listing.md (all app functionality, linked to the user, no tracking).
-- ✅ Screenshots: five at 1320 × 2868 (6.9-inch) made 2026-09-26 in `~/Downloads/Dicta App Store screenshots/`. ⬜ Upload them in order.
+- ✅ Screenshots: five, made 2026-09-26 in `~/Downloads/Dicta App Store screenshots/`: 1284 × 2778 for the 6.5-inch slot App Store Connect shows (it rejected 1320 × 2868 there), and 1320 × 2868 for the optional 6.9-inch slot. ⬜ Upload them in order.
 - ✅ Subtitle, promotional text, description, keywords, categories, copyright and review notes: docs/app-store-listing.md. ⬜ Paste them in.
 - ⬜ Build 5 for the submission: the first with the terms agreement at profile setup, the blocked-word message and the readable tab bar.
 - ⚠️ Optional: a custom domain. `dicta-orcin.vercel.app` works for the beta; a real domain reads better in shared links and gives you a sending domain for email. Moving means updating `ios.associatedDomains`, `WEB_ORIGIN` (src/services/web.ts), and the two URLs in the push/purge triggers.
