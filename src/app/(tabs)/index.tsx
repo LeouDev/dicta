@@ -1,6 +1,6 @@
-import { FlashList } from '@shopify/flash-list';
+import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View, useWindowDimensions } from 'react-native';
 
 import { useTabBarSpace } from '@/components/bottom-tab-bar';
@@ -12,8 +12,10 @@ import { spacing } from '@/constants/tokens';
 import { CardSkeleton } from '@/features/feed/card-skeleton';
 import { PostCard } from '@/features/feed/post-card';
 import { useHomeFeed } from '@/hooks/use-posts';
+import { useTabScrollToTop } from '@/hooks/use-tab-scroll-top';
 import { useTheme } from '@/hooks/use-theme';
 import { friendlyError } from '@/services/errors';
+import type { FeedPost } from '@/types/models';
 
 export default function HomeScreen() {
   const theme = useTheme();
@@ -22,6 +24,8 @@ export default function HomeScreen() {
   const feed = useHomeFeed();
   const [pulling, setPulling] = useState(false);
   const tabBarSpace = useTabBarSpace();
+  const listRef = useRef<FlashListRef<FeedPost>>(null);
+  useTabScrollToTop(listRef);
   const posts = feed.data?.pages.flat() ?? [];
 
   const refresh = async () => {
@@ -42,6 +46,7 @@ export default function HomeScreen() {
         <EmptyState title="Couldn’t load your feed" message={friendlyError(feed.error)} actionLabel="Try again" onAction={() => feed.refetch()} />
       ) : (
         <FlashList
+          ref={listRef}
           data={posts}
           keyExtractor={(post) => post.id}
           // New posts arrive at the top: show them rather than hold the old first post in place.

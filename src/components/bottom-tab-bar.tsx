@@ -58,7 +58,8 @@ export function BottomTabBar({ state, descriptors, navigation }: BottomTabBarPro
   const placed = useRef(false);
   useEffect(() => {
     if (!slotWidth) return;
-    bubbleX.set(placed.current ? withSpring(slot * slotWidth, { damping: 20, stiffness: 240 }) : slot * slotWidth);
+    // Critically damped: quick, and it settles without bouncing past the tab.
+    bubbleX.set(placed.current ? withSpring(slot * slotWidth, { duration: 300, dampingRatio: 1 }) : slot * slotWidth);
     placed.current = true;
   }, [bubbleX, slot, slotWidth]);
   const bubbleStyle = useAnimatedStyle(() => ({ transform: [{ translateX: bubbleX.get() }] }));
@@ -122,7 +123,6 @@ export function BottomTabBar({ state, descriptors, navigation }: BottomTabBarPro
   return (
     <View pointerEvents="box-none" style={[styles.wrap, { bottom }]}>
       <GlassView
-        isInteractive
         // Glass darkens over dark content, but these icons don't flip like the
         // system's do: a tint of the page color keeps them readable on anything.
         colorScheme={scheme}

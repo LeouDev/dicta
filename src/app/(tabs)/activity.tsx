@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { router, useFocusEffect } from 'expo-router';
-import { memo, useCallback, useState } from 'react';
+import { router, useFocusEffect, useScrollToTop } from 'expo-router';
+import { memo, useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, Text as RNText, StyleSheet, View } from 'react-native';
 
 import { useTabBarSpace } from '@/components/bottom-tab-bar';
@@ -31,6 +31,8 @@ export default function ActivityScreen() {
   const { mutate: markRead } = useMarkRead();
   const [pulling, setPulling] = useState(false);
   const tabBarSpace = useTabBarSpace();
+  const listRef = useRef<FlatList<NotificationItem>>(null);
+  useScrollToTop(listRef);
   const items = notifications.data?.pages.flat() ?? [];
 
   // Leaving Activity means you've seen it: clear the badge (rows stay tinted while you're here).
@@ -67,6 +69,7 @@ export default function ActivityScreen() {
         />
       </View>
       <FlatList
+        ref={listRef}
         data={items}
         keyExtractor={(n) => n.id}
         renderItem={({ item }) => <NotificationRow item={item} onPress={open} />}

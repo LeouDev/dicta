@@ -1,7 +1,7 @@
-import { FlashList } from '@shopify/flash-list';
+import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import type { InfiniteData, UseInfiniteQueryResult } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { memo, useState, type ReactElement } from 'react';
+import { memo, useRef, useState, type ReactElement } from 'react';
 import { ActivityIndicator, StyleSheet, View, useWindowDimensions } from 'react-native';
 
 import { useTabBarSpace } from '@/components/bottom-tab-bar';
@@ -9,6 +9,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { PressableScale } from '@/components/ui/pressable-scale';
 import { radius, spacing } from '@/constants/tokens';
 import { QuoteCard } from '@/features/quote-card/quote-card';
+import { useTabScrollToTop } from '@/hooks/use-tab-scroll-top';
 import { useTheme } from '@/hooks/use-theme';
 import { friendlyError } from '@/services/errors';
 import type { FeedPost } from '@/types/models';
@@ -33,11 +34,14 @@ export function PostGrid({ query, header, empty }: PostGridProps) {
   const { width } = useWindowDimensions();
   const [pulling, setPulling] = useState(false);
   const tabBarSpace = useTabBarSpace();
+  const listRef = useRef<FlashListRef<FeedPost>>(null);
+  useTabScrollToTop(listRef);
   const items = dedupe(query.data?.pages.flat() ?? []);
   const tileWidth = (width - GRID_GUTTER * 2 - GRID_GAP) / 2;
 
   return (
     <FlashList
+      ref={listRef}
       data={items}
       masonry
       numColumns={2}

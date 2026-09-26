@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, useScrollToTop } from 'expo-router';
 import { useRef, useState, type ReactNode } from 'react';
 import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, TextInput, View, useWindowDimensions } from 'react-native';
 
@@ -152,6 +152,8 @@ function DiscoverHome() {
 function SearchResults({ query, scope }: { query: string; scope: 'all' | 'people' | 'tags' }) {
   const theme = useTheme();
   const tabBarSpace = useTabBarSpace();
+  const scrollRef = useRef<ScrollView>(null);
+  useScrollToTop(scrollRef);
   const users = useSearchUsers(query, scope !== 'tags');
   const tags = useSearchTags(query, scope !== 'people');
   const posts = useSearchPosts(scope === 'all' ? query : '');
@@ -202,6 +204,7 @@ function SearchResults({ query, scope }: { query: string; scope: 'all' | 'people
   const nothing = !loading && people.length === 0 && hashtags.length === 0;
   return (
     <ScrollView
+      ref={scrollRef}
       keyboardDismissMode="on-drag"
       keyboardShouldPersistTaps="handled"
       contentContainerStyle={[styles.results, { paddingBottom: tabBarSpace + spacing.xxl }]}>
