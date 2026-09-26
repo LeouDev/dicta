@@ -46,7 +46,7 @@ PASS = exercised end to end this phase. NOT TESTED = not run this phase; the rea
 | VoiceOver | NOT TESTED | Labels exist (for example "posted 5 minutes ago"); needs a device. |
 | Keyboard | PASS | Comment box sits above the keyboard; the report form scrolls "Send report" above it. |
 | Photos permission | PASS | 2026-09-26, build 4 on your iPhone: the prompt appears when Dicta first needs the library, with the reviewed wording (library and add-only). |
-| Offline / error states | NOT TESTED | The simulator shares the Mac's network. |
+| Offline / error states | PASS | 2026-09-26, build 4 on your iPhone in airplane mode: signing in shows "You seem to be offline. Check your connection and try again." and nothing breaks. The feed and posting use the same message; they weren't tried offline. |
 | Multilingual text | PASS | Six sentences checked in the iOS feed and composer, website card, link preview and export. Server check found zero missing glyphs. |
 | Deletion from the web | PASS | Five deletes: page, card and preview returned 404 within 2 s; pg_net logged 5 purges (204); stored files gone; no orphaned files. |
 | Seed | PASS | Generator tests (6/6). Not loaded into a database: Docker isn't installed here. |
