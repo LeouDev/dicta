@@ -38,7 +38,7 @@
 - ✅ App Privacy published 2026-09-26: 7 data types (docs/app-store-listing.md), all app functionality, linked to the user, no tracking.
 - ✅ Screenshots: five uploaded 2026-09-26 at 1284 × 2778 (the 6.5-inch slot; it rejected 1320 × 2868 there). The 1320 × 2868 set is in `~/Downloads/Dicta App Store screenshots/` for the optional 6.9-inch slot.
 - ✅ Subtitle, promotional text, description, keywords, categories (Social Networking, Graphics & Design), content rights, copyright, review contact and notes entered 2026-09-26 from docs/app-store-listing.md. Price: free. Release: manual, after approval.
-- ⬜ Availability: untick China mainland (it needs an ICP filing number).
+- ✅ Availability: every storefront except China mainland, which needs an ICP filing number (removed 2026-09-26).
 - ⚠️ Digital Services Act trader status (App Information): trader or not is your call.
 - ✅ Build 5 (terms agreement at profile setup, blocked-word message, readable tab bar) uploaded and selected for version 1.0.
 - ⚠️ Optional: a custom domain. `dicta-orcin.vercel.app` works for the beta; a real domain reads better in shared links and gives you a sending domain for email. Moving means updating `ios.associatedDomains`, `WEB_ORIGIN` (src/services/web.ts), and the two URLs in the push/purge triggers.
