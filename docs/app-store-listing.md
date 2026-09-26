@@ -99,20 +99,41 @@ The feed makes the minimum **13+**, which matches the Terms ("at least 13").
 
 - **Sign-in required:** yes. Use the demo account (see the checklist): email and password in the sign-in fields.
 - **Contact:** your name, phone and email.
-- **Notes:**
+- **Notes** (3,134 of 4,000 bytes; the same text answered Apple's Guideline 2.1 "Information Needed" request of 26 September 2026, which asked for it in both the reply and the Notes, with a screen recording attached to the reply):
 
-> Dicta is a social app where every post is a designed quote card.
->
-> The demo account follows a few people so the feed has posts. You can also create an account with email (a confirmation email is sent) or Sign in with Apple.
->
-> To try it:
-> • Create: tap + in the tab bar, write a thought, tap Design, pick a template, tap Post.
-> • Share: tap the share icon under any card. The Instagram and Facebook Stories buttons appear when those apps are installed.
-> • Delete account: Profile → Settings (gear) → Delete account.
->
-> User-generated content (Guideline 1.2):
-> • Filtering: quotes, comments, display names and bios containing slurs or explicit sexual terms are rejected by the server.
-> • Reporting: Report is in the ⋯ menu on every post and profile, and in a comment's menu (press and hold the comment). Reports reach our moderation queue and are reviewed within 24 hours; content that breaks the Terms is removed, and so are the people who post it.
-> • Blocking: Block is in the ⋯ menu on posts and profiles; blocked people's posts disappear for both sides immediately.
-> • Terms: new users agree to the Terms of Use, which state zero tolerance for objectionable content and abusive users, when they create their profile.
-> • Contact: support@air-rally.com, also on https://dicta-orcin.vercel.app/support
+```text
+1. Screen recording
+Attached: a recording on an iPhone running the latest iOS. It starts at launch and shows signing up (with the confirmation email), creating and sharing a post, liking and commenting, reporting a post, blocking a person, signing out and back in, and deleting the account.
+
+2. Purpose and audience
+Dicta is a social app where every post is a designed quote card. People write a short thought, quote or poem, choose a design (18 templates, 13 fonts, their own colors and photos) and publish it to a feed where others can like, comment, save, follow and share it. It's for people 13 and older who write or collect words: poetry, affirmations, favorite lines. Today they type in one app, design the image in another and post it somewhere else; Dicta does all three in seconds and gives the words a home of their own. It's free, with no ads and no tracking.
+
+3. How to use it
+- Sign in with the demo account in the Sign-In Information fields. It follows a few people, so the feed has posts. You can also create an account with email (a confirmation email is sent) or Sign in with Apple.
+- Create: tap + in the tab bar, write a thought, tap Design, pick a template, tap Post.
+- Share: tap the share icon under a card. The Instagram and Facebook Stories buttons appear when those apps are installed.
+- Report: the ... menu on any post or profile, or press and hold a comment.
+- Block: the ... menu on a post or profile.
+- Delete account: Profile > Settings (gear icon) > Delete account.
+
+4. External services
+- Supabase: database, sign-in (email and password, Sign in with Apple) and photo storage.
+- Vercel: the website that shows shared posts and link previews, and the server functions that send notifications, emails and moderation alerts.
+- Resend: email (sign-up confirmation, password reset, welcome, moderation alerts).
+- Expo Push Service and Apple Push Notification service: push notifications.
+- Sharing: Instagram and Facebook Stories through Meta's documented Sharing to Stories URL scheme (a Meta app ID only; no Meta SDK or login), Threads and X through their public post links.
+No AI services, analytics, advertising or payments.
+
+5. Regions
+The app works the same in every region where it's offered. It isn't offered in China mainland.
+
+6. Regulated industry or protected material
+Neither applies. People post their own words and photos (the Terms require the rights to what they post), the fonts are open source (SIL Open Font License), and reports handle any claims.
+
+User-generated content (Guideline 1.2)
+- Filtering: quotes, comments, display names and bios containing slurs or explicit sexual terms are rejected by the server.
+- Reporting: every report is emailed to the moderator at once and reviewed within 24 hours; content that breaks the Terms is removed, and so are the people who post it.
+- Blocking: blocked people's posts disappear for both sides immediately.
+- Terms: new users agree to the Terms of Use, which state zero tolerance for objectionable content and abusive users, when they create their profile.
+- Contact: support@air-rally.com, also on https://dicta-orcin.vercel.app/support
+```
