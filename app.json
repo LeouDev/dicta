@@ -13,6 +13,7 @@
       "supportsTablet": false,
       "usesAppleSignIn": true,
       "associatedDomains": [
+        "applinks:dicta.world",
         "applinks:dicta-orcin.vercel.app"
       ],
       "infoPlist": {

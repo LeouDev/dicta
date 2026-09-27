@@ -65,7 +65,7 @@ describe('publishPost', () => {
     stored.mockRejectedValueOnce(new Error('offline'));
     await publishPost({ userId: 'u1', text: 'Stay soft.', design: createDesign('editorial'), author });
     await flush();
-    expect(fetchMock).toHaveBeenCalledWith('https://dicta-orcin.vercel.app/api/card?id=post-9&warm=1');
+    expect(fetchMock).toHaveBeenCalledWith('https://dicta.world/api/card?id=post-9&warm=1');
   });
 });
 

@@ -20,7 +20,7 @@ beforeEach(() => jest.clearAllMocks());
 it('puts the sticker, background, app ID and post link on the pasteboard, then opens Instagram Stories', async () => {
   await shareToStories('instagram', images, 'p1');
   expect(mockSetItem).toHaveBeenCalledWith(
-    { 'com.instagram.sharedSticker.appID': '1083001631397605', 'public.utf8-plain-text': 'https://dicta-orcin.vercel.app/post/p1' },
+    { 'com.instagram.sharedSticker.appID': '1083001631397605', 'public.utf8-plain-text': 'https://dicta.world/post/p1' },
     { 'com.instagram.sharedSticker.stickerImage': images.sticker, 'com.instagram.sharedSticker.backgroundImage': images.background },
     300,
   );
@@ -44,7 +44,7 @@ it('opens a Threads or X post with the quote and the post’s link', async () =>
   await sharePostTo('x', 'p1', 'Stay soft.');
   const [threads, x] = openURL.mock.calls.map(([url]) => url);
   expect(threads.startsWith('https://www.threads.com/intent/post?')).toBe(true);
-  expect(params(threads)).toEqual({ text: '“Stay soft & kind.\n\nIt’s a strength.”', url: 'https://dicta-orcin.vercel.app/post/p1' });
+  expect(params(threads)).toEqual({ text: '“Stay soft & kind.\n\nIt’s a strength.”', url: 'https://dicta.world/post/p1' });
   expect(x.startsWith('https://x.com/intent/tweet?')).toBe(true);
   expect(params(x).text).toBe('“Stay soft.”');
 });
