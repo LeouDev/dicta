@@ -71,6 +71,14 @@
           "savePhotosPermission": "Dicta saves your quote cards to your photo library when you ask it to.",
           "isAccessMediaLocationEnabled": false
         }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": false,
+          "recordAudioAndroid": false,
+          "enableBackgroundPlayback": false
+        }
       ]
     ],
     "experiments": {

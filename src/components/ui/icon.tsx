@@ -52,6 +52,10 @@ const ICONS = {
   flag: { ios: 'flag', android: 'flag' },
   blocked: { ios: 'hand.raised', android: 'block' },
   bell: { ios: 'bell', android: 'notifications' },
+  sound: { ios: 'speaker.wave.2.fill', android: 'volume_up' },
+  'sound.off': { ios: 'speaker.slash.fill', android: 'volume_off' },
+  music: { ios: 'music.note', android: 'music_note' },
+  waveform: { ios: 'waveform', android: 'graphic_eq' },
 } as const satisfies Record<string, { ios: string; android: string }>;
 
 export type IconName = keyof typeof ICONS;

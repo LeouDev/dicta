@@ -17,6 +17,7 @@ import { EditableCard } from './editable-card';
 import { FontPicker } from './font-picker';
 import { LayoutControls } from './layout-controls';
 import { ProfileControls } from './profile-controls';
+import { SoundPicker } from './sound-picker';
 import { useComposer } from './store';
 import { TemplatePicker } from './template-picker';
 
@@ -26,6 +27,7 @@ const TABS = [
   { key: 'colors', label: 'Colors' },
   { key: 'background', label: 'Background' },
   { key: 'layout', label: 'Layout' },
+  { key: 'sound', label: 'Sound' },
   { key: 'profile', label: 'Profile' },
 ] as const;
 type TabKey = (typeof TABS)[number]['key'];
@@ -120,6 +122,7 @@ export function DesignStep({ author, onEditText, onShare, onPost, posting, editi
         {tab === 'colors' && <ColorControls />}
         {tab === 'background' && <BackgroundPicker />}
         {tab === 'layout' && <LayoutControls />}
+        {tab === 'sound' && <SoundPicker />}
         {tab === 'profile' && <ProfileControls author={author} />}
       </ScrollView>
     </KeyboardAvoidingView>

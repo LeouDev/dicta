@@ -13,6 +13,8 @@ import Animated, {
 
 import { Icon } from '@/components/ui/icon';
 import { QuoteCard } from '@/features/quote-card/quote-card';
+import { toggleSound, useSoundOwner } from '@/features/sound/player';
+import { SoundButton } from '@/features/sound/sound-button';
 import type { FeedPost } from '@/types/models';
 
 interface LikeableCardProps {
@@ -22,9 +24,11 @@ interface LikeableCardProps {
   onLike: () => void;
 }
 
-/** A post's QuoteCard with double-tap-to-like and a subtle heart that blooms and fades. */
+/** A post's QuoteCard with double-tap-to-like, a subtle heart that blooms and fades, and its sound if it has one. */
 export const LikeableCard = memo(function LikeableCard({ post, width, onLike }: LikeableCardProps) {
   const [burst, setBurst] = useState(0);
+  const { sound } = post.design;
+  const playing = useSoundOwner((s) => s.owner === post.id);
 
   const doubleTap = Gesture.Tap()
     .numberOfTaps(2)
@@ -42,10 +46,17 @@ export const LikeableCard = memo(function LikeableCard({ post, width, onLike }: 
         accessible
         accessibilityRole="image"
         accessibilityLabel={`${post.text.trim()} — quote card by ${post.author.displayName}`}
-        accessibilityActions={[{ name: 'like', label: post.likedByMe ? 'Liked' : 'Like' }]}
-        onAccessibilityAction={(e) => e.nativeEvent.actionName === 'like' && onLike()}>
+        accessibilityActions={[
+          { name: 'like', label: post.likedByMe ? 'Liked' : 'Like' },
+          ...(sound ? [{ name: 'sound', label: playing ? 'Stop sound' : 'Play sound' }] : []),
+        ]}
+        onAccessibilityAction={(e) => {
+          if (e.nativeEvent.actionName === 'like') onLike();
+          if (e.nativeEvent.actionName === 'sound' && sound) toggleSound(sound, post.id);
+        }}>
         <QuoteCard text={post.text} design={post.design} author={post.author} width={width} />
         <HeartBurst trigger={burst} />
+        {sound && <SoundButton sound={sound} owner={post.id} />}
       </View>
     </GestureDetector>
   );

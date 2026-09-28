@@ -3,9 +3,13 @@
  * links) and shows the quote otherwise. dicta-orcin.vercel.app, its first
  * address, still serves the same site and still opens the app.
  */
+import type { SoundId } from '@/features/quote-card/types';
+
 const WEB_ORIGIN = 'https://dicta.world';
 
 export const postLink = (postId: string) => `${WEB_ORIGIN}/post/${postId}`;
+/** A card's sound (web/public/sounds), streamed when someone plays it. */
+export const soundUrl = (sound: SoundId) => `${WEB_ORIGIN}/sounds/${sound}.m4a`;
 export const TERMS_URL = `${WEB_ORIGIN}/terms`;
 export const PRIVACY_URL = `${WEB_ORIGIN}/privacy`;
 
