@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { spacing } from '@/constants/tokens';
@@ -17,9 +18,25 @@ export function LayoutControls() {
   const design = useComposer((s) => s.design);
   const update = useComposer((s) => s.update);
   const [advanced, setAdvanced] = useState(false);
+  const moved = design.textOffset.x !== 0 || design.textOffset.y !== 0 || design.headerOffset.x !== 0 || design.headerOffset.y !== 0;
 
   return (
     <>
+      <View style={styles.hint}>
+        <Text variant="caption" color="textSecondary" style={styles.hintText}>
+          Hold and drag the text or your name on the card to move them.
+        </Text>
+        {moved && (
+          <Button
+            label="Reset"
+            variant="secondary"
+            size="sm"
+            accessibilityHint="Puts the text and your name back where the layout places them"
+            onPress={() => update({ textOffset: { x: 0, y: 0 }, headerOffset: { x: 0, y: 0 } })}
+          />
+        )}
+      </View>
+
       <SectionLabel>Format</SectionLabel>
       <Segmented options={CANVAS_OPTIONS} value={design.canvas} onChange={(canvas) => update({ canvas })} />
 
@@ -111,4 +128,6 @@ const styles = StyleSheet.create({
   pair: { flexDirection: 'row', gap: spacing.sm },
   half: { flex: 1 },
   disclosure: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, paddingVertical: spacing.md, alignSelf: 'flex-start' },
+  hint: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, minHeight: 36, marginTop: spacing.xs },
+  hintText: { flex: 1 },
 });

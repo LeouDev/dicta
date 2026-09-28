@@ -181,3 +181,25 @@ test('stories get the card as a sticker with clear margins, over a blurred 9:16 
     }
   }
 }, 600_000);
+
+test('moved text and header shift as one piece and stay on the card; a device frame keeps its quote on the screen', () => {
+  const at = (textOffset: { x: number; y: number }, headerOffset = { x: 0, y: 0 }, template: TemplateId = 'editorial') =>
+    layoutCard({ text: TEXTS.short, design: { ...createDesign(template), textOffset, headerOffset }, author, width: 1080, format: 'original', fonts });
+
+  const still = at({ x: 0, y: 0 });
+  expect(still.shift).toEqual({ text: { x: 0, y: 0 }, header: { x: 0, y: 0 } });
+
+  // At 1080 wide a design unit is a pixel. The words keep their places: the canvas translates them.
+  const moved = at({ x: 40, y: -200 }, { x: 0, y: 150 });
+  expect(moved.shift).toEqual({ text: { x: 40, y: -200 }, header: { x: 0, y: 150 } });
+  expect(moved.words.map((w) => [w.x, w.y])).toEqual(still.words.map((w) => [w.x, w.y]));
+  // Ruled paper moves with the text.
+  expect(moved.texture.phase).toBeCloseTo(still.texture.phase - 200);
+
+  // Dragged past the bottom edge, the text stops just inside it.
+  const far = at({ x: 0, y: 1920 });
+  const box = far.boxes.text!;
+  expect(box.y + box.height + far.shift.text.y).toBeCloseTo(far.height - 24);
+
+  expect(at({ x: 100, y: 100 }, { x: 0, y: 0 }, 'pager').shift.text).toEqual({ x: 0, y: 0 });
+});

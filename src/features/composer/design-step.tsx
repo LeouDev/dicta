@@ -8,12 +8,12 @@ import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { hitTarget, shadows, spacing } from '@/constants/tokens';
-import { QuoteCard } from '@/features/quote-card/quote-card';
 import { CANVASES, type CardAuthor } from '@/features/quote-card/types';
 import { useTheme } from '@/hooks/use-theme';
 
 import { BackgroundPicker } from './background-picker';
 import { ColorControls } from './color-controls';
+import { EditableCard } from './editable-card';
 import { FontPicker } from './font-picker';
 import { LayoutControls } from './layout-controls';
 import { ProfileControls } from './profile-controls';
@@ -69,9 +69,9 @@ export function DesignStep({ author, onEditText, onShare, onPost, posting }: Des
 
       <View style={styles.previewArea} onLayout={(e) => setArea(e.nativeEvent.layout)}>
         {cardWidth > 0 && (
-          <Pressable onPress={onEditText} accessibilityHint="Double tap to edit the text" style={styles.cardShadow}>
-            <QuoteCard text={text} design={design} author={author} width={cardWidth} />
-          </Pressable>
+          <View style={styles.cardShadow}>
+            <EditableCard text={text} design={design} author={author} width={cardWidth} onEditText={onEditText} />
+          </View>
         )}
       </View>
 

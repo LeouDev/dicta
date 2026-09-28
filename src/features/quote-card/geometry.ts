@@ -30,6 +30,42 @@ export const unitScale = (width: number) => width / DESIGN_WIDTH;
 
 export const isDeviceFrame = (frame: Frame) => frame === 'pager' || frame === 'lcd';
 
+/**
+ * Where a photo background is drawn: covering the card, `zoom` times larger,
+ * with `pan` (-1…1 per axis) choosing which part shows. At zoom 1 and pan 0 it's
+ * the centered "cover" crop every card had before photos could be adjusted.
+ */
+export function photoRect(image: Size, card: Size, zoom: number, panX: number, panY: number): Box {
+  'worklet';
+  const scale = Math.max(card.width / image.width, card.height / image.height) * zoom;
+  const width = image.width * scale;
+  const height = image.height * scale;
+  return { x: (panX - 1) * ((width - card.width) / 2), y: (panY - 1) * ((height - card.height) / 2), width, height };
+}
+
+/** How close a moved block may come to the card's edge, in design units (clear of the feed's rounded corners). */
+export const EDGE = 24;
+
+/**
+ * How far a dragged block moves along one axis: as asked, but no further than
+ * keeps it on the card, `margin` in from the edge. The allowed range always includes 0, so a block nobody
+ * moved stays exactly where the layout put it.
+ */
+export function keepOnCard(move: number, start: number, length: number, cardLength: number, margin = 0): number {
+  'worklet';
+  return Math.min(Math.max(move, Math.min(0, margin - start)), Math.max(0, cardLength - margin - start - length));
+}
+
+/** The smallest box around all of `boxes`, or null when there are none. */
+export function unionBox(boxes: Box[]): Box | null {
+  if (boxes.length === 0) return null;
+  const left = Math.min(...boxes.map((b) => b.x));
+  const top = Math.min(...boxes.map((b) => b.y));
+  const right = Math.max(...boxes.map((b) => b.x + b.width));
+  const bottom = Math.max(...boxes.map((b) => b.y + b.height));
+  return { x: left, y: top, width: right - left, height: bottom - top };
+}
+
 /** Whether the card shows the author's photo (header or notification panel). */
 export const showsAvatar = (design: Pick<QuoteDesign, 'frame' | 'header'>) =>
   design.frame === 'notification' || (design.header.show && design.header.avatar && !isDeviceFrame(design.frame));

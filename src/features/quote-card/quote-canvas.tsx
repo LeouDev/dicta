@@ -12,18 +12,32 @@ import {
   Skia,
   vec,
   type SkImage,
+  type Transforms3d,
 } from '@shopify/react-native-skia';
+import type { ReactNode } from 'react';
 
-import { gradientPoints, overlayStops, tornStrip } from './geometry';
+import { gradientPoints, overlayStops, photoRect, tornStrip } from './geometry';
 import type { CardLayout, HeaderLayout, PlacedParagraph, PlacedWord } from './layout';
 import { Avatar, LcdFrame, NotificationPanel, PagerFrame } from './frames';
 import { luminance } from './palettes';
 import { TEXTURE_KIND, textureBlend, textureEffect } from './textures';
+import type { Point } from './types';
+
+/** A value the editor animates on the UI thread (a Reanimated shared value). */
+type Live<T> = { value: T };
+
+/** The editor's drag and pinch, drawn live instead of the layout's saved positions. */
+export interface LiveCard {
+  text: Live<Transforms3d>;
+  header: Live<Transforms3d>;
+  photo: { x: Live<number>; y: Live<number>; width: Live<number>; height: Live<number> };
+}
 
 interface QuoteCanvasProps {
   layout: CardLayout;
   avatar: SkImage | null;
   backgroundImage: SkImage | null;
+  live?: LiveCard;
 }
 
 const VERIFIED_BLUE = '#3A7BD5';
@@ -33,22 +47,31 @@ const STRIP = '#ECE8E1';
  * Draws a laid-out card. Contains no layout logic and no async work, so the
  * exact same tree renders on screen (inside <Canvas>) and offscreen for export.
  */
-export function QuoteCanvas({ layout, avatar, backgroundImage }: QuoteCanvasProps) {
+export function QuoteCanvas({ layout, avatar, backgroundImage, live }: QuoteCanvasProps) {
   return (
     <Group>
-      <Background layout={layout} image={backgroundImage} />
+      <Background layout={layout} image={backgroundImage} live={live?.photo} />
       {layout.frame === 'pager' && <PagerFrame layout={layout} />}
       {layout.frame === 'lcd' && <LcdFrame layout={layout} />}
-      {layout.notification && <NotificationPanel n={layout.notification} avatar={avatar} />}
-      {layout.header && <Header header={layout.header} avatar={avatar} />}
+      {layout.notification && (
+        <Moved shift={layout.shift.text} live={live?.text}>
+          <NotificationPanel n={layout.notification} avatar={avatar} />
+        </Moved>
+      )}
+      {layout.header && (
+        <Moved shift={layout.shift.header} live={live?.header}>
+          <Header header={layout.header} avatar={avatar} />
+        </Moved>
+      )}
 
-      {layout.marks.map((m, i) => (
-        <Rect key={i} x={m.x} y={m.y} width={m.width} height={m.height} color={m.color} />
-      ))}
-      {layout.fill && <FilledWords layout={layout} />}
-      {layout.words.map((word, i) => (word.fill ? null : <Word key={i} word={word} />))}
-
-      {layout.signature && <Placed item={layout.signature} />}
+      <Moved shift={layout.shift.text} live={live?.text}>
+        {layout.marks.map((m, i) => (
+          <Rect key={i} x={m.x} y={m.y} width={m.width} height={m.height} color={m.color} />
+        ))}
+        {layout.fill && <FilledWords layout={layout} />}
+        {layout.words.map((word, i) => (word.fill ? null : <Word key={i} word={word} />))}
+        {layout.signature && <Placed item={layout.signature} />}
+      </Moved>
       {layout.footer && <Placed item={layout.footer} />}
       {layout.watermark && <Placed item={layout.watermark} />}
 
@@ -56,6 +79,13 @@ export function QuoteCanvas({ layout, avatar, backgroundImage }: QuoteCanvasProp
       {layout.texture.type !== 'none' && layout.texture.strength > 0 && textureEffect && <Texture layout={layout} />}
     </Group>
   );
+}
+
+/** The text or the header where the person dragged it; untouched when nobody did. */
+function Moved({ shift, live, children }: { shift: Point; live?: Live<Transforms3d>; children: ReactNode }) {
+  if (live) return <Group transform={live}>{children}</Group>;
+  if (shift.x === 0 && shift.y === 0) return <>{children}</>;
+  return <Group transform={[{ translateX: shift.x }, { translateY: shift.y }]}>{children}</Group>;
 }
 
 function Placed({ item }: { item: PlacedParagraph }) {
@@ -115,7 +145,7 @@ function VerifiedBadge({ x, y, size }: { x: number; y: number; size: number }) {
   );
 }
 
-function Background({ layout, image }: { layout: CardLayout; image: SkImage | null }) {
+function Background({ layout, image, live }: { layout: CardLayout; image: SkImage | null; live?: LiveCard['photo'] }) {
   const { background: bg, width, height } = layout;
 
   if (bg.type === 'solid') return <Fill color={bg.color} />;
@@ -148,7 +178,7 @@ function Background({ layout, image }: { layout: CardLayout; image: SkImage | nu
   const overlay = overlayStops(bg.overlay, layout.vAlign, luminance(layout.textColor) < 0.5);
   return (
     <Group>
-      {image ? <Image image={image} x={0} y={0} width={width} height={height} fit="cover" /> : <Fill color={bg.color} />}
+      {image ? <Photo image={image} layout={layout} live={live} /> : <Fill color={bg.color} />}
       {overlay && (
         <Rect x={0} y={0} width={width} height={height}>
           <LinearGradient start={vec(0, 0)} end={vec(0, height)} colors={overlay.colors} positions={overlay.positions} />
@@ -156,6 +186,16 @@ function Background({ layout, image }: { layout: CardLayout; image: SkImage | nu
       )}
     </Group>
   );
+}
+
+/** A photo background, zoomed and cropped as the person chose. */
+function Photo({ image, layout, live }: { image: SkImage; layout: CardLayout; live?: LiveCard['photo'] }) {
+  if (live) return <Image image={image} x={live.x} y={live.y} width={live.width} height={live.height} fit="fill" />;
+  const { zoom, panX, panY } = layout.background;
+  // Photos nobody adjusted draw exactly as they always have.
+  if (zoom === 1 && panX === 0 && panY === 0) return <Image image={image} x={0} y={0} width={layout.width} height={layout.height} fit="cover" />;
+  const r = photoRect({ width: image.width(), height: image.height() }, layout, zoom, panX, panY);
+  return <Image image={image} x={r.x} y={r.y} width={r.width} height={r.height} fit="fill" />;
 }
 
 function Texture({ layout }: { layout: CardLayout }) {

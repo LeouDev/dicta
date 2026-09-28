@@ -6,13 +6,49 @@ import {
   formatRatio,
   gradientPoints,
   initials,
+  keepOnCard,
   overlayStops,
   parseLinearGradient,
+  photoRect,
   tornStrip,
+  unionBox,
   unitScale,
   wave,
   withAlpha,
 } from '../geometry';
+
+describe('moving and framing', () => {
+  const card = { width: 1080, height: 1350 };
+  const wide = { width: 4000, height: 2000 };
+
+  it('frames a photo: centered cover by default, zoomed, and panned to either edge', () => {
+    // Covers the height: 2700 × 1350, centered (+ 0 turns the arithmetic's -0 into 0).
+    const cover = photoRect(wide, card, 1, 0, 0);
+    expect([cover.x, cover.y + 0, cover.width, cover.height]).toEqual([-810, 0, 2700, 1350]);
+    expect(photoRect(wide, card, 1, 1, 0).x).toBe(0);
+    expect(photoRect(wide, card, 1, -1, 0).x).toBe(-1620);
+    // Zoomed in 2×, it can also move vertically.
+    const zoomed = photoRect(wide, card, 2, 0, 1);
+    expect([zoomed.x, zoomed.y + 0, zoomed.width, zoomed.height]).toEqual([-2160, 0, 5400, 2700]);
+    expect(photoRect(wide, card, 2, 0, -1).y).toBe(-1350);
+  });
+
+  it('keeps a moved block on the card, and never moves one nobody dragged', () => {
+    expect(keepOnCard(100, 50, 200, 1080)).toBe(100);
+    expect(keepOnCard(-500, 50, 200, 1080)).toBe(-50);
+    expect(keepOnCard(2000, 50, 200, 1080)).toBe(830);
+    // A block already hanging past the edge (the wave) stays put at 0.
+    expect(keepOnCard(0, -5, 1100, 1080)).toBe(0);
+    // With a margin, it stops short of the edge, and still never moves when undragged.
+    expect(keepOnCard(2000, 50, 200, 1080, 24)).toBe(806);
+    expect(keepOnCard(0, 10, 200, 1080, 24)).toBe(0);
+  });
+
+  it('unions boxes', () => {
+    expect(unionBox([])).toBeNull();
+    expect(unionBox([{ x: 10, y: 20, width: 30, height: 40 }, { x: 0, y: 50, width: 5, height: 5 }])).toEqual({ x: 0, y: 20, width: 40, height: 40 });
+  });
+});
 
 describe('card geometry', () => {
   it('re-lays out formats instead of stretching', () => {

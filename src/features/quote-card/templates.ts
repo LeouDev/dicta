@@ -15,7 +15,7 @@ export const BASE: QuoteDesign = {
   textColor: '#9B1B1E',
   textFill: null,
   glow: null,
-  background: { type: 'solid', color: '#F3EEE5', color2: '#E6D6C0', angle: 160, image: null, overlay: 'auto' },
+  background: { type: 'solid', color: '#F3EEE5', color2: '#E6D6C0', angle: 160, image: null, overlay: 'auto', zoom: 1, panX: 0, panY: 0 },
   texture: { type: 'paper', strength: 0.4 },
   align: 'center',
   blockAlign: null,
@@ -37,6 +37,8 @@ export const BASE: QuoteDesign = {
   header: { show: true, avatar: true, name: true, username: true, verified: true, position: 'top-left', scale: 1 },
   // The spec's prototype defaulted to "— Leou"; empty signs as "— {author}" for everyone.
   signature: { show: false, text: '', style: 'script' },
+  textOffset: { x: 0, y: 0 },
+  headerOffset: { x: 0, y: 0 },
 };
 
 type Overrides = Partial<Omit<QuoteDesign, 'background' | 'texture' | 'header' | 'signature'>> & {
@@ -453,6 +455,10 @@ export function applyTemplate(design: QuoteDesign, template: TemplateId): QuoteD
     canvas: design.canvas,
     header: { ...next.header, show, avatar, name, username, verified },
     signature: { ...next.signature, show: design.signature.show, text: design.signature.text },
-    background: next.background.type === 'image' && photo ? { ...next.background, image: photo.image, path: photo.path } : next.background,
+    // The photo keeps its zoom and crop; moved text starts over, since the new template lays it out anew.
+    background:
+      next.background.type === 'image' && photo
+        ? { ...next.background, image: photo.image, path: photo.path, zoom: photo.zoom, panX: photo.panX, panY: photo.panY }
+        : next.background,
   };
 }

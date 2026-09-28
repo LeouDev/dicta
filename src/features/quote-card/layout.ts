@@ -4,6 +4,7 @@ import { FONT_LIBRARY, UI_FACES, resolveFace } from '@/constants/fonts';
 
 import { compose, flowColumns, splitParagraphs, type FlowResult } from './flow';
 import {
+  EDGE,
   alignBlock,
   cardSize,
   contentInsets,
@@ -11,7 +12,9 @@ import {
   hashString,
   initials,
   isDeviceFrame,
+  keepOnCard,
   parseLinearGradient,
+  unionBox,
   unitScale,
   wave,
   withAlpha,
@@ -20,7 +23,7 @@ import {
   type Size,
 } from './geometry';
 import { isDarkDesign } from './palettes';
-import type { CardAuthor, CardBackground, Format, Frame, QuoteDesign, TextAlign, TextureKey, VerticalAlign } from './types';
+import type { CardAuthor, CardBackground, Format, Frame, Point, QuoteDesign, TextAlign, TextureKey, VerticalAlign } from './types';
 
 export interface PlacedParagraph {
   paragraph: SkParagraph;
@@ -79,6 +82,14 @@ export interface CardLayout extends Size {
   watermark: PlacedParagraph | null;
   pager: { labels: PlacedParagraph[]; date: PlacedParagraph } | null;
   notification: NotificationLayout | null;
+  /**
+   * The text (with its signature, or the whole notification panel) and the
+   * header as laid out, before anyone moved them: what can be dragged. Null
+   * when there's nothing to move (a device frame's text stays on its screen).
+   */
+  boxes: { text: Box | null; header: Box | null };
+  /** How far they were moved, in pixels, kept on the card; drawn as a translation. */
+  shift: { text: Point; header: Point };
 }
 
 export interface LayoutInput {
@@ -204,6 +215,17 @@ export function layoutCard({ text, design, author, width, format = 'original', f
   const words = placeWords(body.flow, body.origin, design, face, fonts);
   const fillGradient = design.textFill ? parseLinearGradient(design.textFill) : null;
   const firstBody = words.find((_, i) => body.flow.words[i].role === 'body');
+  const marks = body.flow.marks.map((m) => ({ ...m, x: m.x + body.origin.x, y: m.y + body.origin.y, color: design.highlight }));
+
+  const boxes = {
+    text: isDeviceFrame(frame) ? null : (body.notification?.panel ?? textBox(words, marks, body.signature)),
+    header: body.header ? headerBox(body.header) : null,
+  };
+  const moved = (offset: Point, box: Box | null): Point =>
+    box
+      ? { x: keepOnCard(offset.x * s, box.x, box.width, size.width, EDGE * s), y: keepOnCard(offset.y * s, box.y, box.height, size.height, EDGE * s) }
+      : { x: 0, y: 0 };
+  const shift = { text: moved(design.textOffset, boxes.text), header: moved(design.headerOffset, boxes.header) };
 
   return {
     ...size,
@@ -219,10 +241,11 @@ export function layoutCard({ text, design, author, width, format = 'original', f
       unit: Math.max(0.45, s * 2),
       seed: hashString(text) % 997,
       pitch: body.fontSize * design.lineHeight,
-      phase: firstBody ? firstBody.y + (firstBody.paragraph.getLineMetrics()[0]?.baseline ?? 0) : content.y,
+      // Ruled paper follows the text, so moved lines still sit on the rules.
+      phase: (firstBody ? firstBody.y + (firstBody.paragraph.getLineMetrics()[0]?.baseline ?? 0) : content.y) + shift.text.y,
     },
     words,
-    marks: body.flow.marks.map((m) => ({ ...m, x: m.x + body.origin.x, y: m.y + body.origin.y, color: design.highlight })),
+    marks,
     fill: fillGradient
       ? {
           ...fillGradient,
@@ -235,7 +258,30 @@ export function layoutCard({ text, design, author, width, format = 'original', f
     watermark: watermark ? buildWatermark(dark, size, insets, s, frame, fonts) : null,
     pager: frame === 'pager' ? buildPagerText(size, text, design.textColor, fonts) : null,
     notification: body.notification,
+    boxes,
+    shift,
   };
+}
+
+const paragraphBox = (p: PlacedParagraph, width = p.paragraph.getLongestLine()): Box => ({ x: p.x, y: p.y, width, height: p.paragraph.getHeight() });
+
+/** The quote's words (as bobbed by the wave), highlight marks and signature. */
+function textBox(words: PlacedWord[], marks: Box[], signature: PlacedParagraph | null): Box | null {
+  return unionBox([
+    ...words.map((w) => ({ ...paragraphBox(w), y: w.y + w.dy })),
+    ...marks,
+    ...(signature ? [paragraphBox(signature, signature.width)] : []),
+  ]);
+}
+
+function headerBox(header: HeaderLayout): Box | null {
+  const { avatar, name, handle, badge } = header;
+  return unionBox([
+    ...(avatar ? [{ x: avatar.x, y: avatar.y, width: avatar.size, height: avatar.size }] : []),
+    ...(name ? [paragraphBox(name)] : []),
+    ...(handle ? [paragraphBox(handle)] : []),
+    ...(badge ? [{ x: badge.x, y: badge.y, width: badge.size, height: badge.size }] : []),
+  ]);
 }
 
 interface BodyInput {

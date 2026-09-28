@@ -4,7 +4,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BackButton } from '@/components/ui/back-button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
-import { FONT_LIBRARY, resolveFace } from '@/constants/fonts';
 import { hitTarget, spacing } from '@/constants/tokens';
 import { TEXT_MAX_LENGTH } from '@/features/quote-card/types';
 import { useTopics } from '@/hooks/use-discover';
@@ -13,19 +12,12 @@ import { showActions } from '@/lib/action-sheet';
 
 import { useComposer } from './store';
 
-// Optical sizes so every family feels equally large on the blank page.
-const SIZE_BY_CATEGORY = { serif: 30, sans: 27, mono: 22, script: 36 } as const;
-
-/** Step 1: a blank page, not a form. Written in the card's typeface as a gentle preview. */
+/** Step 1: a blank page, not a form, written in a casual mono at Threads' size; the card's typeface comes next. */
 export function WriteStep({ onNext, onClose }: { onNext: () => void; onClose: () => void }) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const text = useComposer((s) => s.text);
   const setText = useComposer((s) => s.setText);
-  const font = useComposer((s) => s.design.font);
-  const weight = useComposer((s) => s.design.weight);
-  const italic = useComposer((s) => s.design.italic);
-  const size = SIZE_BY_CATEGORY[FONT_LIBRARY[font].category];
   const canContinue = text.trim().length > 0;
   const remaining = TEXT_MAX_LENGTH - text.length;
 
@@ -60,10 +52,7 @@ export function WriteStep({ onNext, onClose }: { onNext: () => void; onClose: ()
           maxLength={TEXT_MAX_LENGTH}
           textAlignVertical="top"
           accessibilityLabel="Your thought"
-          style={[
-            styles.input,
-            { color: theme.text, fontFamily: resolveFace(font, weight, italic), fontSize: size, lineHeight: size * 1.25 },
-          ]}
+          style={[styles.input, { color: theme.text }]}
         />
         <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, spacing.sm) }]}>
           <TopicPill />
@@ -128,7 +117,8 @@ const styles = StyleSheet.create({
     borderRadius: 18,
   },
   body: { flex: 1 },
-  input: { flex: 1, paddingHorizontal: spacing.lg, paddingTop: spacing.lg },
+  // SF Mono, iOS's own monospace (Aptos Mono can't be built into an app).
+  input: { flex: 1, paddingHorizontal: spacing.lg, paddingTop: spacing.lg, fontFamily: 'ui-monospace', fontSize: 15, lineHeight: 21 },
   footer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.lg, paddingTop: spacing.sm },
   topic: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, height: 32, paddingHorizontal: spacing.sm + 4, borderRadius: 16 },
   count: { fontVariant: ['tabular-nums'] },

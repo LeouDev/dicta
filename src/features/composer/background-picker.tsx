@@ -34,7 +34,8 @@ export function BackgroundPicker() {
       const uri = await pickBackgroundPhoto();
       if (!uri) return;
       clearDraftPhotos(uri);
-      setBackground({ type: 'image', image: uri, path: undefined });
+      // A new photo starts centered.
+      setBackground({ type: 'image', image: uri, path: undefined, zoom: 1, panX: 0, panY: 0 });
     } catch {
       setPhotoError('That photo couldn’t be opened. Try another one.');
     }
@@ -110,6 +111,20 @@ export function BackgroundPicker() {
                 {photoError}
               </Text>
             )}
+            <View style={styles.hint}>
+              <Text variant="caption" color="textSecondary" style={styles.hintText}>
+                Pinch the card to zoom the photo, and drag it to choose what shows.
+              </Text>
+              {(bg.zoom !== 1 || bg.panX !== 0 || bg.panY !== 0) && (
+                <Button
+                  label="Reset"
+                  variant="secondary"
+                  size="sm"
+                  accessibilityHint="Shows the whole photo, centered"
+                  onPress={() => update({ background: { zoom: 1, panX: 0, panY: 0 } })}
+                />
+              )}
+            </View>
             <SectionLabel>Readability overlay</SectionLabel>
             <Segmented<Overlay>
               options={[
@@ -217,6 +232,8 @@ function TextureSwatch({ texture, base, dark }: { texture: TextureKey; base: str
 
 const styles = StyleSheet.create({
   body: { marginTop: spacing.md, gap: spacing.xs },
+  hint: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, minHeight: 36, marginTop: spacing.xs },
+  hintText: { flex: 1 },
   photoRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   photoThumb: { width: 56, height: 56, borderRadius: radius.sm },
   swatch: { width: SWATCH, height: SWATCH },

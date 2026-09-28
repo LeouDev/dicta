@@ -12,6 +12,7 @@ import {
   TEXTURES,
   type Canvas,
   type CardBackground,
+  type Point,
   type QuoteDesign,
 } from './types';
 
@@ -30,6 +31,10 @@ const record = (v: unknown): Raw => (isRecord(v) ? v : {});
 const num = (v: unknown, { min, max }: Limits, fallback: number) =>
   typeof v === 'number' && Number.isFinite(v) ? Math.min(max, Math.max(min, v)) : fallback;
 const bool = (v: unknown, fallback: boolean) => (typeof v === 'boolean' ? v : fallback);
+const point = (v: unknown, fallback: Point): Point => {
+  const raw = record(v);
+  return { x: num(raw.x, DESIGN_LIMITS.offsetX, fallback.x), y: num(raw.y, DESIGN_LIMITS.offsetY, fallback.y) };
+};
 const color = (v: unknown, fallback: string) => (typeof v === 'string' && HEX.test(v) ? v.toUpperCase() : fallback);
 const colorOrNull = (v: unknown, fallback: string | null) => (v === null ? null : typeof v === 'string' && HEX.test(v) ? v.toUpperCase() : fallback);
 const oneOf = <T extends string>(v: unknown, options: readonly T[], fallback: T): T => (options.includes(v as T) ? (v as T) : fallback);
@@ -57,6 +62,9 @@ function parseBackground(v: unknown, base: CardBackground): CardBackground {
     image: imageUrl(raw.image),
     ...(typeof raw.path === 'string' ? { path: raw.path } : {}),
     overlay: oneOf(raw.overlay, ['off', 'auto', 'strong'] as const, base.overlay),
+    zoom: num(raw.zoom, DESIGN_LIMITS.zoom, base.zoom),
+    panX: num(raw.panX, DESIGN_LIMITS.pan, base.panX),
+    panY: num(raw.panY, DESIGN_LIMITS.pan, base.panY),
   };
 }
 
@@ -181,5 +189,7 @@ export function parseQuoteDesign(input: unknown): QuoteDesign {
       text: typeof signature.text === 'string' ? signature.text.slice(0, SIGNATURE_MAX_LENGTH) : base.signature.text,
       style: oneOf(signature.style, ['script', 'serif', 'caps', 'note'] as const, base.signature.style),
     },
+    textOffset: point(raw.textOffset, base.textOffset),
+    headerOffset: point(raw.headerOffset, base.headerOffset),
   };
 }

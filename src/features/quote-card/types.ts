@@ -80,6 +80,16 @@ export interface CardBackground {
   /** Storage key of an uploaded photo, so it can be removed with the post. */
   path?: string;
   overlay: Overlay;
+  /** Photo only: 1 just covers the card; up to 4 zooms in. */
+  zoom: number;
+  /** Photo only: which part shows, from -1 (left/top edge) to 1 (right/bottom edge) of the room it has to move. */
+  panX: number;
+  panY: number;
+}
+
+export interface Point {
+  x: number;
+  y: number;
 }
 
 export interface QuoteDesign {
@@ -138,6 +148,9 @@ export interface QuoteDesign {
     scale: number;
   };
   signature: { show: boolean; text: string; style: SignatureStyle };
+  /** Where the person dragged the text (with its signature) and the header, in design units from where the layout puts them. */
+  textOffset: Point;
+  headerOffset: Point;
 }
 
 /** Slider ranges and clamping bounds, shared by the editor and the parser. */
@@ -155,6 +168,10 @@ export const DESIGN_LIMITS = {
   colGap: { min: 0, max: 200 },
   angle: { min: 0, max: 360 },
   headerScale: { min: 0.5, max: 1.5 },
+  offsetX: { min: -1080, max: 1080 },
+  offsetY: { min: -1920, max: 1920 },
+  zoom: { min: 1, max: 4 },
+  pan: { min: -1, max: 1 },
 } as const;
 
 export const TEXT_MAX_LENGTH = 500;

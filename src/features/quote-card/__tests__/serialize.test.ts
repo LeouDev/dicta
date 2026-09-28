@@ -51,6 +51,23 @@ describe('parseQuoteDesign', () => {
     expect(parseQuoteDesign({ ...base, background: { type: 'video' } }).background.type).toBe('image');
   });
 
+  it('reads moved text and header, and photo framing, clamped', () => {
+    const d = parseQuoteDesign({
+      version: 2,
+      textOffset: { x: 120.5, y: -99999 },
+      headerOffset: { x: 'left', y: 40 },
+      background: { type: 'image', image: 'https://x.co/p.jpg', zoom: 9, panX: -0.4, panY: 'up' },
+    });
+    expect(d.textOffset).toEqual({ x: 120.5, y: DESIGN_LIMITS.offsetY.min });
+    expect(d.headerOffset).toEqual({ x: 0, y: 40 });
+    expect(d.background).toMatchObject({ zoom: DESIGN_LIMITS.zoom.max, panX: -0.4, panY: 0 });
+    // Designs saved before these existed read as untouched.
+    const old = parseQuoteDesign({ version: 2, template: 'minimal' });
+    expect(old.textOffset).toEqual({ x: 0, y: 0 });
+    expect(old.headerOffset).toEqual({ x: 0, y: 0 });
+    expect(old.background).toMatchObject({ zoom: 1, panX: 0, panY: 0 });
+  });
+
   it('caps the signature length', () => {
     const d = parseQuoteDesign({ ...createDesign('journal'), signature: { show: true, text: 'x'.repeat(200) } });
     expect(d.signature.text).toHaveLength(60);
@@ -143,5 +160,19 @@ describe('templates', () => {
     });
 
     expect(applyTemplate(custom, 'photograph').background).toMatchObject({ type: 'image', image: 'file:///p.jpg', path: 'u/p.jpg' });
+  });
+
+  it('applyTemplate keeps the photo framing but lays moved text out anew', () => {
+    const photo = createDesign('photograph');
+    const framed = {
+      ...photo,
+      background: { ...photo.background, image: 'file:///p.jpg', zoom: 2, panX: 0.5, panY: -1 },
+      textOffset: { x: 40, y: -300 },
+      headerOffset: { x: 0, y: 120 },
+    };
+    const next = applyTemplate(framed, 'photograph');
+    expect(next.background).toMatchObject({ zoom: 2, panX: 0.5, panY: -1 });
+    expect(next.textOffset).toEqual({ x: 0, y: 0 });
+    expect(next.headerOffset).toEqual({ x: 0, y: 0 });
   });
 });
