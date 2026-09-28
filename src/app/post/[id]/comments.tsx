@@ -20,7 +20,7 @@ import { UserAvatar } from '@/components/user-avatar';
 import { radius, spacing, typography } from '@/constants/tokens';
 import { flattenComments } from '@/features/comments/cache';
 import { CommentRow, Replies, type CommentHandlers } from '@/features/comments/comment-row';
-import { useAddComment, useComments, useDeleteComment } from '@/features/comments/use-comments';
+import { useAddComment, useComments, useDeleteComment, useMentionSuggestions } from '@/features/comments/use-comments';
 import { openReport } from '@/features/safety/report-sheet';
 import { useMyProfile } from '@/hooks/use-my-profile';
 import { usePost } from '@/hooks/use-posts';
@@ -52,6 +52,8 @@ export default function CommentsScreen() {
   const listRef = useRef<FlatList<CommentItem>>(null);
   const keyboard = useKeyboardOverlap();
   const body = draft.trim();
+  const people = useMentionSuggestions(draft);
+  const pick = (username: string) => setDraft((d) => d.replace(/@[a-z0-9_.]*$/i, `@${username} `));
 
   const handlers: CommentHandlers = {
     onReply: (comment) => {
@@ -161,6 +163,24 @@ export default function CommentsScreen() {
           styles.composer,
           { borderTopColor: theme.hairline, paddingBottom: keyboard === null ? Math.max(insets.bottom, spacing.sm) : keyboard + spacing.sm },
         ]}>
+        {people.map((person) => (
+          <Pressable
+            key={person.id}
+            onPress={() => pick(person.username)}
+            accessibilityRole="button"
+            accessibilityLabel={`Mention ${person.display_name}, @${person.username}`}
+            style={styles.person}>
+            <UserAvatar uri={person.avatar_url} name={person.display_name} size={28} />
+            <View style={styles.personName}>
+              <Text variant="subhead" numberOfLines={1}>
+                {person.display_name}
+              </Text>
+              <Text variant="caption" color="textSecondary" numberOfLines={1}>
+                @{person.username}
+              </Text>
+            </View>
+          </Pressable>
+        ))}
         {replyTo && (
           <View style={styles.replying}>
             <Text variant="caption" color="textSecondary">
@@ -237,6 +257,8 @@ const styles = StyleSheet.create({
   list: { flexGrow: 1, paddingVertical: spacing.sm },
   loading: { paddingVertical: spacing.xl },
   composer: { borderTopWidth: StyleSheet.hairlineWidth, paddingTop: spacing.sm, paddingHorizontal: spacing.md, gap: spacing.xs },
+  person: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: 6, paddingHorizontal: spacing.xs },
+  personName: { flex: 1 },
   replying: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.xs },
   inputRow: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.sm },
   field: {

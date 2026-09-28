@@ -164,17 +164,56 @@ export async function publishPost({ userId, text, design, topic, author }: NewPo
     p_background_image_path: published.background.type === 'image' ? published.background.path : undefined,
   });
   if (error) throw error;
-  // The website's image and link preview, drawn here in the background. If that
-  // fails, the website draws them itself.
+  drawCardImages({ postId: data, authorId: userId, text: text.trim(), design: published, author });
+  return data;
+}
+
+interface PostEdit extends NewPost {
+  postId: string;
+  /** The uploaded photo the post showed until now, removed once nothing uses it. */
+  previousPhoto: string | null;
+}
+
+/** Saves new words and a new design over one of your posts. Returns them as stored. */
+export async function updatePost({ postId, previousPhoto, userId, text, design, topic, author }: PostEdit) {
+  if (!userId) throw new Error('Sign in to edit.');
+  const problem = validatePost(text, design);
+  if (problem) throw new Error(problem);
+
+  const saved = parseQuoteDesign(await uploadBackground(userId, design));
+  const photo = saved.background.type === 'image' ? (saved.background.path ?? null) : null;
+  const edit = { text: text.trim(), topic: topic ?? null, design: saved };
+  // Words first: the content filter rejects those most often, and then nothing has changed.
+  const words = await supabase.from('posts').update({ text: edit.text, topic: edit.topic }).eq('id', postId).select('id').single();
+  if (words.error) throw words.error;
+  const look = await supabase
+    .from('post_designs')
+    .update({ template: saved.template, design: saved as unknown as Json, background_image_path: photo })
+    .eq('post_id', postId)
+    .select('post_id')
+    .single();
+  if (look.error) throw look.error;
+
+  if (previousPhoto && previousPhoto !== photo && !(await isPhotoInUse(previousPhoto))) {
+    await supabase.storage.from('post-images').remove([previousPhoto]);
+  }
+  drawCardImages({ postId, authorId: userId, text: edit.text, design: saved, author });
+  return edit;
+}
+
+/**
+ * The website's image and link preview for this version of a post, drawn here
+ * in the background. If that fails, the website draws them itself.
+ */
+function drawCardImages(post: Parameters<typeof import('./card-images').storeCardImages>[0]) {
   Promise.resolve()
     .then(() => {
       // Required lazily: it brings in Skia, which the other services (and their tests) don't load.
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { storeCardImages } = require('./card-images') as typeof import('./card-images');
-      return storeCardImages({ postId: data, authorId: userId, text: text.trim(), design: published, author });
+      return storeCardImages(post);
     })
-    .catch(() => prepareCardImage(data));
-  return data;
+    .catch(() => prepareCardImage(post.postId));
 }
 
 /** Deletes a post (likes, comments, saves cascade), its uploaded photo and its website images. */

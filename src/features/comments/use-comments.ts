@@ -1,13 +1,15 @@
-import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Crypto from 'expo-crypto';
 import * as Haptics from 'expo-haptics';
 
 import { toast } from '@/components/toast';
 import { commentsRemovedBy, withCommentDelta, withCommentLike, withReplyDelta } from '@/features/social/reducers';
+import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import { useMyProfile } from '@/hooks/use-my-profile';
 import { patchComment, patchPost } from '@/lib/cache';
 import { queryKeys } from '@/lib/query-keys';
 import { addComment, deleteComment, fetchComments, fetchReplies, nextCommentCursor } from '@/services/comments';
+import { searchProfiles } from '@/services/discover';
 import { friendlyError } from '@/services/errors';
 import type { FeedCursor } from '@/services/posts';
 import { setCommentLike } from '@/services/social';
@@ -15,7 +17,23 @@ import { selectUserId, useAuth } from '@/store/auth';
 import type { CommentItem } from '@/types/models';
 import { profileToAuthor } from '@/types/models';
 
-import { appendComment, type CommentPages } from './cache';
+import { appendComment, typedMention, type CommentPages } from './cache';
+
+/** People to mention while an @handle is being typed at the end of a comment (search already leaves out blocked people). */
+export function useMentionSuggestions(draft: string) {
+  const userId = useAuth(selectUserId);
+  const typing = typedMention(draft);
+  const handle = useDebouncedValue(typing, 150);
+  const people = useQuery({
+    queryKey: queryKeys.searchUsers(handle),
+    queryFn: () => searchProfiles(handle),
+    enabled: handle !== '',
+    // Keeps the list steady while the next letters are searched.
+    placeholderData: keepPreviousData,
+    staleTime: 60_000,
+  });
+  return typing ? (people.data ?? []).filter((p) => p.id !== userId).slice(0, 4) : [];
+}
 
 export function useComments(postId: string) {
   return useInfiniteQuery({

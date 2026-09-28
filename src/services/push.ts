@@ -4,8 +4,8 @@ import { supabase } from '@/lib/supabase';
 
 /**
  * Push notifications. The database queues a push when someone follows, likes,
- * comments or replies (never for your own actions, and once per thing), and
- * the website sends it through Expo to every device registered here.
+ * comments, replies or mentions you (never for your own actions, and once per
+ * thing), and the website sends it through Expo to every device registered here.
  */
 export type PushPermission = 'granted' | 'undetermined' | 'denied';
 

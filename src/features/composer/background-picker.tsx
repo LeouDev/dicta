@@ -33,9 +33,9 @@ export function BackgroundPicker() {
     try {
       const uri = await pickBackgroundPhoto();
       if (!uri) return;
-      clearDraftPhotos(uri);
       // A new photo starts centered.
       setBackground({ type: 'image', image: uri, path: undefined, zoom: 1, panX: 0, panY: 0 });
+      clearDraftPhotos();
     } catch {
       setPhotoError('That photo couldn’t be opened. Try another one.');
     }

@@ -24,7 +24,7 @@ const LABELS: Record<PushKind, string> = {
   follows: 'New followers',
   likes: 'Likes on your quotes',
   comments: 'Comments on your quotes',
-  replies: 'Replies to your comments',
+  replies: 'Replies and mentions',
 };
 
 export default function NotificationSettingsScreen() {
@@ -58,7 +58,7 @@ export default function NotificationSettingsScreen() {
       {permission.value === 'undetermined' && (
         <View style={[styles.card, styles.notice, { backgroundColor: theme.surface }]}>
           <Text variant="subhead" color="textSecondary">
-            Dicta can tell you when someone follows you, likes your quotes, comments or replies.
+            Dicta can tell you when someone follows you, likes your quotes, comments, replies or mentions you.
           </Text>
           <Button label="Turn on notifications" size="md" onPress={turnOn} />
         </View>

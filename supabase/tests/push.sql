@@ -99,7 +99,8 @@ do $$ begin
           where type = 'reply' and recipient_id = '00000000-0000-4000-a000-00000000000b') = 1, 'a reply queues a push';
   assert exists (select 1 from public.notifications
                  where type = 'mention' and recipient_id = '00000000-0000-4000-a000-00000000000a'), 'the mention reached Activity';
-  assert not exists (select 1 from public.push_deliveries where type = 'mention'), 'mentions are not pushed';
+  assert (select count(*) from public.push_deliveries
+          where type = 'mention' and recipient_id = '00000000-0000-4000-a000-00000000000a') = 1, 'a mention queues a push';
 end $$;
 
 -- ── Claiming: once, with the right words and screen ────────────────────
@@ -108,7 +109,9 @@ declare
   v_like uuid := (select id from public.push_deliveries where type = 'like' and recipient_id = '00000000-0000-4000-a000-00000000000a');
   v_follow uuid := (select id from public.push_deliveries where type = 'follow' and recipient_id = '00000000-0000-4000-a000-00000000000a');
   v_comment uuid := (select id from public.push_deliveries where type = 'comment' and recipient_id = '00000000-0000-4000-a000-00000000000a');
+  v_mention uuid := (select id from public.push_deliveries where type = 'mention' and recipient_id = '00000000-0000-4000-a000-00000000000a');
   v_post uuid := (select id from public.posts where author_id = '00000000-0000-4000-a000-00000000000a' and text = 'Stay soft.');
+  v_bens_post uuid := (select id from public.posts where author_id = '00000000-0000-4000-a000-00000000000b' and text = 'Ben''s own words.');
   v_push jsonb;
 begin
   v_push := public.claim_push(v_like);
@@ -123,6 +126,10 @@ begin
   v_push := public.claim_push(v_comment);
   assert v_push ->> 'body' = 'Ben Test commented: “This one stays with me.”', 'comment: ' || (v_push ->> 'body');
   assert v_push ->> 'then' = '/post/' || v_post || '/comments', 'a comment opens the comments';
+
+  v_push := public.claim_push(v_mention);
+  assert v_push ->> 'body' = 'Ben Test mentioned you: “@test_ana what do you think?”', 'mention: ' || (v_push ->> 'body');
+  assert v_push ->> 'then' = '/post/' || v_bens_post || '/comments', 'a mention opens the comments';
 end $$;
 
 -- ── A like taken back before its push goes out sends nothing ───────────
@@ -165,6 +172,26 @@ do $$ begin
   assert public.claim_push((select d.id from public.push_deliveries d join public.comments c on c.id = d.comment_id
                             where c.author_id = '00000000-0000-4000-a000-00000000000b' and c.body = 'Another thought.')) is null,
     'kinds someone turned off are not pushed';
+end $$;
+
+-- ── Blocking: nothing pushes between the two, even what arrives later ──
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"00000000-0000-4000-a000-00000000000a","role":"authenticated"}';
+insert into public.blocks (blocker_id, blocked_id) values ('00000000-0000-4000-a000-00000000000a', '00000000-0000-4000-a000-00000000000b');
+-- Ben can still mention Ana under his own post (mentions follow the replies switch, still on).
+set local request.jwt.claims = '{"sub":"00000000-0000-4000-a000-00000000000b","role":"authenticated"}';
+insert into public.comments (post_id, author_id, body)
+select id, '00000000-0000-4000-a000-00000000000b', '@test_ana are you there?' from public.posts
+where author_id = '00000000-0000-4000-a000-00000000000b' and text = 'Ben''s own words.';
+reset role;
+do $$
+declare
+  v_after_block uuid := (select d.id from public.push_deliveries d join public.comments c on c.id = d.comment_id
+                         where d.type = 'mention' and d.actor_id = '00000000-0000-4000-a000-00000000000b'
+                           and c.body = '@test_ana are you there?');
+begin
+  assert v_after_block is not null, 'the mention was queued';
+  assert public.claim_push(v_after_block) is null, 'nobody is pushed by someone they blocked';
 end $$;
 
 -- ── Devices ────────────────────────────────────────────────────────────

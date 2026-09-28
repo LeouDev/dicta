@@ -38,10 +38,12 @@ interface DesignStepProps {
   onShare: () => void;
   onPost: () => void;
   posting: boolean;
+  /** Saving changes to a published post rather than posting a new one. */
+  editing?: boolean;
 }
 
 /** Step 2: the card is always visible and every control updates it instantly. */
-export function DesignStep({ author, onEditText, onShare, onPost, posting }: DesignStepProps) {
+export function DesignStep({ author, onEditText, onShare, onPost, posting, editing = false }: DesignStepProps) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const text = useComposer((s) => s.text);
@@ -63,7 +65,13 @@ export function DesignStep({ author, onEditText, onShare, onPost, posting }: Des
           <Pressable onPress={onShare} accessibilityRole="button" accessibilityLabel="Share as image" hitSlop={8} style={styles.iconButton}>
             <Icon name="share" size={20} color={theme.text} />
           </Pressable>
-          <Button label="Post" size="sm" onPress={onPost} loading={posting} accessibilityHint="Publishes your card" />
+          <Button
+            label={editing ? 'Save' : 'Post'}
+            size="sm"
+            onPress={onPost}
+            loading={posting}
+            accessibilityHint={editing ? 'Saves your changes to the post' : 'Publishes your card'}
+          />
         </View>
       </View>
 

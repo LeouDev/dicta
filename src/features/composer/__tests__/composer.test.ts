@@ -1,4 +1,5 @@
 import { createDesign } from '@/features/quote-card/templates';
+import { post } from '@/test-utils/fixtures';
 
 import { validatePost } from '../validate';
 
@@ -81,5 +82,34 @@ describe('composer store', () => {
     );
     await useComposer.persist.rehydrate();
     expect(useComposer.getState().design).toMatchObject({ version: 2, template: 'midnight', font: 'typewriter', canvas: '1:1' });
+  });
+});
+
+describe('editing a post', () => {
+  beforeEach(() => useComposer.getState().reset());
+  const onDisk = () => useComposer.persist.getOptions().partialize!(useComposer.getState());
+
+  it('sets the draft aside, keeps it on disk, and brings it back', () => {
+    useComposer.getState().setText('My draft');
+    useComposer.getState().startEdit(post({ id: 'p7', text: 'As posted.', topic: 'love', design: createDesign('midnight') }));
+    expect(useComposer.getState()).toMatchObject({ text: 'As posted.', topic: 'love', editing: { postId: 'p7', photoPath: null } });
+    expect(useComposer.getState().design.template).toBe('midnight');
+    expect(onDisk()).toMatchObject({ text: 'My draft', topic: null });
+
+    useComposer.getState().endEdit();
+    expect(useComposer.getState()).toMatchObject({ text: 'My draft', editing: null, saved: null });
+    expect(useComposer.getState().design.template).toBe('editorial');
+    expect(onDisk()).toMatchObject({ text: 'My draft' });
+  });
+
+  it('remembers the uploaded photo, and forgets one the card no longer shows', () => {
+    const photo = { ...createDesign('photograph').background, image: 'https://x/a.jpg', path: 'u1/a.jpg' };
+    useComposer.getState().startEdit(post({ design: { ...createDesign('photograph'), background: photo } }));
+    expect(useComposer.getState().editing?.photoPath).toBe('u1/a.jpg');
+    useComposer.getState().endEdit();
+
+    useComposer.getState().startEdit(post({ design: { ...createDesign('editorial'), background: { ...photo, type: 'solid' } } }));
+    expect(useComposer.getState().editing?.photoPath).toBeNull();
+    expect(useComposer.getState().design.background).toMatchObject({ type: 'solid', image: null });
   });
 });

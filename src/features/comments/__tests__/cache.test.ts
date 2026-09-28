@@ -1,6 +1,6 @@
 import { comment, pages } from '@/test-utils/fixtures';
 
-import { appendComment, flattenComments, splitMentions, type CommentPages } from '../cache';
+import { appendComment, flattenComments, splitMentions, typedMention, type CommentPages } from '../cache';
 
 describe('appendComment', () => {
   it('starts a conversation when nothing is cached yet', () => {
@@ -45,5 +45,15 @@ describe('splitMentions', () => {
   it('ignores handles that are too short and plain text', () => {
     expect(splitMentions('hi @al')).toEqual([{ text: 'hi @al', mention: false }]);
     expect(splitMentions('no mentions here')).toEqual([{ text: 'no mentions here', mention: false }]);
+  });
+});
+
+describe('typedMention', () => {
+  it('is the handle being typed at the end, once it has two letters', () => {
+    expect(typedMention('love this @ma')).toBe('ma');
+    expect(typedMention('@mara.v')).toBe('mara.v');
+    expect(typedMention('love this @m')).toBe('');
+    expect(typedMention('love this @mara ')).toBe('');
+    expect(typedMention('email@mara')).toBe('');
   });
 });

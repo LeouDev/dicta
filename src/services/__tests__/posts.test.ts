@@ -2,12 +2,13 @@ import { createDesign } from '@/features/quote-card/templates';
 import { post } from '@/test-utils/fixtures';
 
 import { storeCardImages } from '../card-images';
-import { deletePost, publishPost } from '../posts';
+import { deletePost, publishPost, updatePost } from '../posts';
 
 // Records what the service asks Supabase for; generated-cards holds "<author>/<file>" names.
 const mockLog: string[] = [];
 const mockCards = new Set<string>();
 let mockPhotoUsers = 0;
+const mockUpdateErrors: Record<string, { message: string }> = {};
 
 jest.mock('../card-images', () => ({ storeCardImages: jest.fn(() => Promise.resolve()) }));
 
@@ -17,6 +18,16 @@ jest.mock('@/lib/supabase', () => ({
     from: (table: string) => ({
       delete: () => ({ eq: (_: string, id: string) => (mockLog.push(`delete ${table} ${id}`), Promise.resolve({ error: null })) }),
       select: () => ({ eq: (_: string, path: string) => (mockLog.push(`count ${table} ${path}`), Promise.resolve({ count: mockPhotoUsers, error: null })) }),
+      update: (values: object) => ({
+        eq: (_: string, id: string) => ({
+          select: () => ({
+            single: () => {
+              mockLog.push(`update ${table} ${id} ${Object.keys(values).join(',')}`);
+              return Promise.resolve({ data: {}, error: mockUpdateErrors[table] ?? null });
+            },
+          }),
+        }),
+      }),
     }),
     storage: {
       from: (bucket: string) => ({
@@ -43,6 +54,7 @@ beforeEach(() => {
   mockLog.length = 0;
   mockCards.clear();
   mockPhotoUsers = 0;
+  for (const table in mockUpdateErrors) delete mockUpdateErrors[table];
   fetchMock.mockClear();
   stored.mockReset().mockResolvedValue(undefined);
   global.fetch = fetchMock as unknown as typeof fetch;
@@ -97,5 +109,45 @@ describe('deletePost', () => {
     mockPhotoUsers = 0;
     await deletePost(withPhoto);
     expect(mockLog).toContain('remove post-images u1/photo.jpg');
+  });
+});
+
+describe('updatePost', () => {
+  const photo = (path: string) => ({ ...createDesign('photograph').background, image: `https://x/${path}`, path });
+
+  it('saves the words, then the design, and redraws the website’s images', async () => {
+    const design = createDesign('midnight');
+    const saved = await updatePost({ postId: 'p1', previousPhoto: null, userId: 'u1', text: '  New words.  ', design, topic: 'love', author });
+    expect(saved).toEqual({ text: 'New words.', topic: 'love', design });
+    expect(mockLog).toEqual(['update posts p1 text,topic', 'update post_designs p1 template,design,background_image_path']);
+    await flush();
+    expect(stored).toHaveBeenCalledWith({ postId: 'p1', authorId: 'u1', text: 'New words.', design, author });
+  });
+
+  it('changes nothing else when the words are rejected', async () => {
+    mockUpdateErrors.posts = { message: 'objectionable_content' };
+    await expect(updatePost({ postId: 'p1', previousPhoto: null, userId: 'u1', text: 'Words.', design: createDesign('editorial'), author })).rejects.toEqual(
+      mockUpdateErrors.posts,
+    );
+    expect(mockLog).toEqual(['update posts p1 text,topic']);
+    await flush();
+    expect(stored).not.toHaveBeenCalled();
+  });
+
+  it('removes the photo it replaced, unless another post still uses it', async () => {
+    const design = { ...createDesign('photograph'), background: photo('u1/new.jpg') };
+    await updatePost({ postId: 'p1', previousPhoto: 'u1/new.jpg', userId: 'u1', text: 'Same photo.', design, author });
+    expect(mockLog.some((line) => line.startsWith('count') || line.startsWith('remove'))).toBe(false);
+
+    mockLog.length = 0;
+    mockPhotoUsers = 1;
+    await updatePost({ postId: 'p1', previousPhoto: 'u1/old.jpg', userId: 'u1', text: 'New photo.', design, author });
+    expect(mockLog).toContain('count post_designs u1/old.jpg');
+    expect(mockLog.some((line) => line.startsWith('remove'))).toBe(false);
+
+    mockLog.length = 0;
+    mockPhotoUsers = 0;
+    await updatePost({ postId: 'p1', previousPhoto: 'u1/old.jpg', userId: 'u1', text: 'No photo.', design: createDesign('editorial'), author });
+    expect(mockLog).toContain('remove post-images u1/old.jpg');
   });
 });

@@ -8,6 +8,7 @@ import { contrastWith, readableTextFor } from '@/features/quote-card/palettes';
 import { parseQuoteDesign } from '@/features/quote-card/serialize';
 import { applyTemplate, createDesign } from '@/features/quote-card/templates';
 import { TEXT_MAX_LENGTH, type CardBackground, type QuoteDesign, type TemplateId } from '@/features/quote-card/types';
+import type { FeedPost } from '@/types/models';
 
 /** A partial design where nested groups (background, texture, header, signature) merge too. */
 export type DesignPatch = Partial<Omit<QuoteDesign, 'background' | 'texture' | 'header' | 'signature'>> & {
@@ -28,11 +29,21 @@ export function mergeDesign(design: QuoteDesign, patch: DesignPatch): QuoteDesig
   };
 }
 
-interface ComposerState {
+interface Draft {
   text: string;
   design: QuoteDesign;
   /** Optional Discover topic (topics.slug). */
   topic: string | null;
+}
+
+interface ComposerState extends Draft {
+  /** The published post being edited, if any. Meanwhile the draft waits in `saved`, and that's what stays on disk. */
+  editing: { postId: string; photoPath: string | null } | null;
+  saved: Draft | null;
+  /** Opens a published post in the composer, setting the draft aside. */
+  startEdit: (post: Pick<FeedPost, 'id' | 'text' | 'design' | 'topic'>) => void;
+  /** Leaves the post, saved or not, and brings the draft back. */
+  endEdit: () => void;
   setText: (text: string) => void;
   setTopic: (topic: string | null) => void;
   update: (patch: DesignPatch) => void;
@@ -66,7 +77,7 @@ const draftStorage: StateStorage = {
   },
 };
 
-const fresh = () => ({ text: '', design: createDesign('editorial'), topic: null });
+const fresh = () => ({ text: '', design: createDesign('editorial'), topic: null, editing: null, saved: null });
 
 export const useComposer = create<ComposerState>()(
   persist(
@@ -83,15 +94,29 @@ export const useComposer = create<ComposerState>()(
         }),
       chooseTemplate: (template) => set((s) => ({ design: applyTemplate(s.design, template) })),
       reset: () => set(fresh()),
+      startEdit: (post) =>
+        set((s) => {
+          const bg = post.design.background;
+          const photo = bg.type === 'image';
+          return {
+            editing: { postId: post.id, photoPath: photo ? (bg.path ?? null) : null },
+            saved: { text: s.text, design: s.design, topic: s.topic },
+            text: post.text,
+            // A photo the card no longer shows may be gone, so choosing Photo again picks a new one.
+            design: photo ? post.design : { ...post.design, background: { ...bg, image: null, path: undefined } },
+            topic: post.topic,
+          };
+        }),
+      endEdit: () => set((s) => ({ ...s.saved, editing: null, saved: null })),
     }),
     {
       name: 'dicta.composer.draft',
       version: 1,
       storage: createJSONStorage(() => draftStorage),
-      partialize: ({ text, design, topic }) => ({ text, design, topic }),
+      partialize: ({ text, design, topic, editing, saved }): Draft => (editing && saved ? saved : { text, design, topic }),
       // Drafts may come from an older app version (including v1 designs): validate on the way in.
       merge: (persisted, current) => {
-        const p = (persisted ?? {}) as Partial<Pick<ComposerState, 'text' | 'design' | 'topic'>>;
+        const p = (persisted ?? {}) as Partial<Draft>;
         return {
           ...current,
           text: typeof p.text === 'string' ? p.text.slice(0, TEXT_MAX_LENGTH) : '',

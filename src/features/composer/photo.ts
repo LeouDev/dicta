@@ -3,6 +3,8 @@ import { Directory, File, Paths } from 'expo-file-system';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 
+import { useComposer } from './store';
+
 const MAX_WIDTH = 1600;
 const draftsDir = () => new Directory(Paths.document, 'draft-photos');
 
@@ -27,11 +29,14 @@ export async function pickBackgroundPhoto(): Promise<string | null> {
   return destination.uri;
 }
 
-/** Deletes draft photos other than `keep` (after publishing, discarding, or replacing). */
-export function clearDraftPhotos(keep?: string | null) {
+/** Deletes draft photos the composer no longer holds (after publishing, discarding, replacing or editing). */
+export function clearDraftPhotos() {
   const dir = draftsDir();
   if (!dir.exists) return;
+  // The card on screen, and the draft set aside while a post is edited.
+  const { design, saved } = useComposer.getState();
+  const keep = [design.background.image, saved?.design.background.image];
   for (const entry of dir.list()) {
-    if (entry instanceof File && entry.uri !== keep) entry.delete();
+    if (entry instanceof File && !keep.includes(entry.uri)) entry.delete();
   }
 }

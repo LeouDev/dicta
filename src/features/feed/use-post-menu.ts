@@ -1,6 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { router } from 'expo-router';
 
 import { toast } from '@/components/toast';
+import { useComposer } from '@/features/composer/store';
 import { openReport } from '@/features/safety/report-sheet';
 import { openShare } from '@/features/share/share-sheet';
 import { useBlock } from '@/hooks/use-safety';
@@ -12,7 +14,7 @@ import { deletePost } from '@/services/posts';
 import { selectUserId, useAuth } from '@/store/auth';
 import type { FeedPost } from '@/types/models';
 
-/** The "⋯" menu for a post: share; delete your own; report or block someone else's. */
+/** The "⋯" menu for a post: share; edit or delete your own; report or block someone else's. */
 export function usePostMenu() {
   const client = useQueryClient();
   const userId = useAuth(selectUserId);
@@ -33,6 +35,13 @@ export function usePostMenu() {
     if (post.author.id === userId) {
       showActions([
         share,
+        {
+          label: 'Edit post',
+          onPress: () => {
+            useComposer.getState().startEdit(post);
+            router.push('/create');
+          },
+        },
         {
           label: 'Delete post',
           destructive: true,

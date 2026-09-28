@@ -24,13 +24,15 @@ What a purge can't reach: a browser that already loaded the image keeps its own 
 
 Deleting a post also deletes its uploaded background photo unless another post still uses it.
 
+Editing a post (⋯ → Edit post) changes its words and design in place. Its artwork URLs carry the card's version, so they change at once; the page itself shows the edit within 5 minutes (`s-maxage=300`). A photo the edit replaced is deleted unless another post still uses it. There's no "edited" label: that would need a new column.
+
 ## Push notifications
 
-New followers, likes, comments and replies (never your own actions; mentions and comment likes stay in Activity):
+New followers, likes, comments, replies and @mentions in comments (never your own actions, and nothing between two people when either has blocked the other; comment likes stay in Activity). Mentions follow the Replies switch, which the app calls "Replies and mentions":
 
 1. A notification row is created by the existing triggers.
 2. `private.queue_push` records it in `push_deliveries`, whose unique key (recipient, actor, kind, post, comment) makes like → unlike → like push once, and, if the recipient has a device, calls `https://dicta-orcin.vercel.app/api/push` through pg_net.
-3. `/api/push` calls `claim_push`, which marks the push sent as it reads it (so each goes out at most once), skips it if the notification is gone or that kind is turned off, and returns the text, the devices and the screen to open. It sends through Expo and deletes devices Expo reports as `DeviceNotRegistered`.
+3. `/api/push` calls `claim_push`, which marks the push sent as it reads it (so each goes out at most once), skips it if the notification is gone, either person has blocked the other, or that kind is turned off, and returns the text, the devices and the screen to open. It sends through Expo and deletes devices Expo reports as `DeviceNotRegistered`.
 
 The app asks for permission from Activity (never at launch) and in Settings → Notifications, which also has a switch per kind. Tokens are registered while signed in, removed on sign-out, and move to whoever signs in last on a device. Tapping a push opens the follower, or the post and then its comments, from the foreground or a cold start.
 

@@ -38,7 +38,7 @@ export function PushPrompt() {
     <View style={[styles.card, { backgroundColor: theme.surface }]}>
       <Text variant="headline">Don’t miss a reply</Text>
       <Text variant="subhead" color="textSecondary">
-        Get a notification when someone follows you, likes your quotes, comments or replies.
+        Get a notification when someone follows you, likes your quotes, comments, replies or mentions you.
       </Text>
       <Button label="Turn on notifications" size="md" loading={asking} onPress={turnOn} style={styles.button} />
     </View>

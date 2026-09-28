@@ -44,3 +44,8 @@ export function splitMentions(text: string): { text: string; mention: boolean }[
   if (last < text.length) parts.push({ text: text.slice(last), mention: false });
   return parts;
 }
+
+/** The @handle being typed at the end of a comment (at least two letters, as search needs), or ''. */
+export function typedMention(draft: string): string {
+  return /(?:^|\s)@([a-z0-9_.]{2,30})$/i.exec(draft)?.[1] ?? '';
+}
