@@ -22,7 +22,7 @@ interface EditableCardProps {
   onEditText: () => void;
 }
 
-type Part = 'text' | 'header';
+type Part = 'text' | 'header' | 'photo';
 
 /** Room around a small target (the header) that still picks it up. */
 const SLOP = 12;
@@ -38,8 +38,8 @@ const clamp = (v: number, min: number, max: number) => {
 
 /**
  * The editor's card: the same layout and canvas as QuoteCard, and
- * - hold and drag the text or the header to move it,
- * - pinch a photo background to zoom it, drag it to choose what shows,
+ * - drag the text or the header to move it, or anywhere else to choose what a photo shows,
+ * - pinch a photo background to zoom it,
  * - tap to edit the text.
  * Moves follow the finger on the UI thread and are saved when it lifts.
  */
@@ -80,79 +80,84 @@ export function EditableCard({ text, design, author, width, onEditText }: Editab
   const photoHeight = useDerivedValue(() => frame.get().height);
 
   const pickUp = () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-  const place = (part: Part, x: number, y: number) => update(part === 'text' ? { textOffset: { x: x / s, y: y / s } } : { headerOffset: { x: x / s, y: y / s } });
+  const place = (part: Exclude<Part, 'photo'>, x: number, y: number) => update(part === 'text' ? { textOffset: { x: x / s, y: y / s } } : { headerOffset: { x: x / s, y: y / s } });
   const frameAs = (next: { zoom: number; panX: number; panY: number }) => update({ background: next });
 
   const boxes = layout?.boxes ?? { text: null, header: null };
   const edge = EDGE * s;
+  const isPhoto = design.background.type === 'image' && photo !== null;
   const dragging = useSharedValue<Part | null>(null);
   const from = useSharedValue<Point>({ x: 0, y: 0 });
-  const move = Gesture.Pan()
-    .activateAfterLongPress(300)
-    // One finger: two are always a pinch, even when they rest a moment first.
-    .maxPointers(1)
+  const down = useSharedValue<Point>({ x: 0, y: 0 });
+  // How far the finger went before iOS called it a drag, which its translation leaves out.
+  const lag = useSharedValue<Point>({ x: 0, y: 0 });
+  // A drag moves what the finger lands on: the header, the text, or else the photo.
+  const drag = Gesture.Pan()
+    .averageTouches(true)
+    .onBegin((e) => {
+      const part = inside(boxes.header, headerShift.get(), e.x, e.y) ? 'header' : inside(boxes.text, textShift.get(), e.x, e.y) ? 'text' : 'photo';
+      dragging.set(part === 'photo' && !isPhoto ? null : part);
+      down.set({ x: e.x, y: e.y });
+    })
     .onStart((e) => {
-      const header = headerShift.get();
-      const body = textShift.get();
-      const part = inside(boxes.header, header, e.x, e.y) ? 'header' : inside(boxes.text, body, e.x, e.y) ? 'text' : null;
-      dragging.set(part);
-      if (!part) return;
-      from.set(part === 'text' ? body : header);
-      runOnJS(pickUp)();
+      lag.set({ x: e.x - down.get().x - e.translationX, y: e.y - down.get().y - e.translationY });
+      const part = dragging.get();
+      if (part === 'photo') from.set({ x: view.get().panX, y: view.get().panY });
+      else if (part) {
+        from.set(part === 'text' ? textShift.get() : headerShift.get());
+        runOnJS(pickUp)();
+      }
     })
     .onUpdate((e) => {
       const part = dragging.get();
-      const box = part === 'text' ? boxes.text : part === 'header' ? boxes.header : null;
-      if (!box) return;
       const start = from.get();
-      const next = {
-        x: keepOnCard(start.x + e.translationX, box.x, box.width, size.width, edge),
-        y: keepOnCard(start.y + e.translationY, box.y, box.height, size.height, edge),
-      };
-      (part === 'text' ? textShift : headerShift).set(next);
+      const dx = e.translationX + lag.get().x;
+      const dy = e.translationY + lag.get().y;
+      if (part === 'photo') {
+        const v = view.get();
+        // The room the photo has to move at this zoom: pan ±1 reaches its edges.
+        const centered = photoRect(image, size, v.zoom, 0, 0);
+        const roomX = -centered.x;
+        const roomY = -centered.y;
+        view.set({
+          ...v,
+          panX: roomX > 0 ? clamp(start.x + dx / roomX, -1, 1) : 0,
+          panY: roomY > 0 ? clamp(start.y + dy / roomY, -1, 1) : 0,
+        });
+        return;
+      }
+      const box = part === 'text' ? boxes.text : part === 'header' ? boxes.header : null;
+      // Two fingers are a pinch: the words stay where they are.
+      if (!box || e.numberOfPointers > 1) return;
+      (part === 'text' ? textShift : headerShift).set({
+        x: keepOnCard(start.x + dx, box.x, box.width, size.width, edge),
+        y: keepOnCard(start.y + dy, box.y, box.height, size.height, edge),
+      });
     })
     .onEnd(() => {
       const part = dragging.get();
-      if (!part) return;
-      const at = (part === 'text' ? textShift : headerShift).get();
-      dragging.set(null);
-      runOnJS(place)(part, at.x, at.y);
-    });
+      if (part === 'photo') runOnJS(frameAs)(view.get());
+      else if (part) {
+        const at = (part === 'text' ? textShift : headerShift).get();
+        runOnJS(place)(part, at.x, at.y);
+      }
+    })
+    .onFinalize(() => dragging.set(null));
 
-  // Photo backgrounds: pinch to zoom, drag to choose which part shows.
-  const isPhoto = design.background.type === 'image' && photo !== null;
+  // Photo backgrounds: pinch to zoom (and two fingers pan it too, through the drag).
   const zoomFrom = useSharedValue(1);
-  const panFrom = useSharedValue<Point>({ x: 0, y: 0 });
   const pinch = Gesture.Pinch()
     .enabled(isPhoto)
     .onStart(() => zoomFrom.set(view.get().zoom))
     .onUpdate((e) => view.set({ ...view.get(), zoom: clamp(zoomFrom.get() * e.scale, DESIGN_LIMITS.zoom.min, DESIGN_LIMITS.zoom.max) }))
-    .onEnd(() => runOnJS(frameAs)(view.get()));
-  const pan = Gesture.Pan()
-    .enabled(isPhoto)
-    .averageTouches(true)
-    .onStart(() => panFrom.set({ x: view.get().panX, y: view.get().panY }))
-    .onUpdate((e) => {
-      const v = view.get();
-      // The room the photo has to move at this zoom: pan ±1 reaches its edges.
-      const centered = photoRect(image, size, v.zoom, 0, 0);
-      const roomX = -centered.x;
-      const roomY = -centered.y;
-      view.set({
-        ...v,
-        panX: roomX > 0 ? clamp(panFrom.get().x + e.translationX / roomX, -1, 1) : 0,
-        panY: roomY > 0 ? clamp(panFrom.get().y + e.translationY / roomY, -1, 1) : 0,
-      });
-    })
     .onEnd(() => runOnJS(frameAs)(view.get()));
 
   const tap = Gesture.Tap().onEnd((_e, success) => {
     if (success) runOnJS(onEditText)();
   });
 
-  // Two fingers always zoom the photo. One finger: a hold picks up the text or
-  // header, a drag frames the photo, a tap edits.
-  const gesture = Gesture.Simultaneous(pinch, Gesture.Exclusive(move, pan, tap));
+  // Pinching works alongside a drag; a tap is only a tap when nothing was dragged.
+  const gesture = Gesture.Simultaneous(pinch, Gesture.Exclusive(drag, tap));
 
   return (
     <GestureDetector gesture={gesture}>

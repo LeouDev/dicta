@@ -113,7 +113,7 @@ export function BackgroundPicker() {
             )}
             <View style={styles.hint}>
               <Text variant="caption" color="textSecondary" style={styles.hintText}>
-                Pinch the card to zoom the photo, and drag it to choose what shows.
+                Pinch the card to zoom the photo. Drag outside the words to choose what shows.
               </Text>
               {(bg.zoom !== 1 || bg.panX !== 0 || bg.panY !== 0) && (
                 <Button

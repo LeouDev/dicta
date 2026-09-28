@@ -13,11 +13,14 @@ PASS = exercised end to end this phase. NOT TESTED = not run this phase; the rea
 | Profile | PASS | Own and other profiles; post, follower and following counts updated after deleting posts, following, blocking and unblocking. |
 | Publishing | PASS | Six posts in six scripts across Editorial, Midnight, Typewriter and Minimal. Artwork stored 0.7–1.7 s after publishing; keys match the website's. |
 | Drafts | PASS | 2026-09-26, build 4 on your iPhone. |
+| Card editor: moving and zooming | PASS (simulator) | 2026-09-28: the words and the name follow a drag at once (no hold) and stop at the card's edges; a drag outside them moves the photo; pinching zooms it, also after two fingers rest first, and leaves the words where they are; a tap still opens the text; Reset under Layout and Background. Not yet tried on a phone. |
+| Edit post | PASS (simulator) | 2026-09-28: ⋯ on your own post offers Edit post; the editor opens with the post and Save; discarding leaves the post as it was and brings the draft back, photo included. Saving an edit is covered by unit tests only (it would change a live post). |
 | Feed | PASS after fix | **Found:** new posts landed above the visible area (FlashList kept the old first post in place). Fixed and re-checked. Timestamps went "11m" → "18m" with no refetch. |
 | Likes | PASS | Like → row, count 1, B notified, push queued. Unlike → row and notification removed. Re-like pushes nothing new (database test). |
 | Double tap | PASS | 2026-09-26, build 4 on your iPhone: double-tapping a card likes it. (The simulator tool can't tap twice within 260 ms.) |
 | Comments | PASS | Comment → row, count 1, B notified, push queued. Deleting it removed the notification and reset the count. |
 | Replies | PASS | Backend only: reply notification and push in the database test. Reply UI not re-run. |
+| Mentions | PASS | 2026-09-28: @ and two letters in a comment suggest people, and tapping one fills in the handle (simulator, nothing posted). The mention push, and no push between people when either blocked the other, pass the database test on the live database. Not yet received on a phone. |
 | Follows | PASS | Re-follow from B's profile: A following, B's follower count 1, B notified. |
 | Saves | PASS | 2026-09-26, build 4 on your iPhone. |
 | Activity | PASS | A's side: push prompt card, empty state. B's rows exist in the database; B's badge needs B's phone. |
@@ -58,9 +61,8 @@ PASS = exercised end to end this phase. NOT TESTED = not run this phase; the rea
 
 | Suite | Result |
 | --- | --- |
-| Jest (app) | 222 / 222 in 22 suites, including the frozen 13-card render fingerprint |
-| Website (`cd web && npm test`) | 34 / 34 |
+| Jest (app) | 244 / 244 in 26 suites (2026-09-28), including the frozen 13-card render fingerprint |
+| Website (`cd web && npm test`) | 44 / 44 (2026-09-28) |
 | Seed (`npm run test:seed`) | 6 / 6 |
-| Database (`supabase/tests/push.sql`, `welcome.sql`) | Passed on the live database (2026-09-26), in rolled-back transactions |
-| Database (`supabase/tests/social.sql`) | Passed on the live database (2026-09-26) |
+| Database (`supabase/tests/social.sql`, `push.sql`, `welcome.sql`, `moderation.sql`) | Passed on the live database (2026-09-28, after the mention-push fix), in rolled-back transactions |
 | TypeScript / ESLint / expo-doctor | Clean / 0 errors (2 old warnings) / 21 of 21 checks |

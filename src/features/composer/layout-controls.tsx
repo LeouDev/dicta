@@ -24,7 +24,7 @@ export function LayoutControls() {
     <>
       <View style={styles.hint}>
         <Text variant="caption" color="textSecondary" style={styles.hintText}>
-          Hold and drag the text or your name on the card to move them.
+          Drag the text or your name on the card to move them.
         </Text>
         {moved && (
           <Button
