@@ -29,7 +29,7 @@ export const storageUrl = (bucketPath) => `${SUPABASE_URL}/storage/v1/object/pub
  * with a ticket. `calls` records "METHOD path?query" for every request,
  * including ones to ORIGIN; `sent` collects the messages Expo received.
  */
-export function fakeSupabase({ posts = [post()], files = {}, pushes = {}, expo = () => ({ status: 'ok', id: 'ticket' }), welcome = {}, reports = {}, resend = () => ({ status: 200, body: { id: 'email' } }) } = {}) {
+export function fakeSupabase({ posts = [post()], files = {}, pushes = {}, expo = () => ({ status: 'ok', id: 'ticket' }), welcome = {}, reports = {}, resend = () => ({ status: 200, body: { id: 'email' } }), onAppStore = false } = {}) {
   process.env.SUPABASE_URL = SUPABASE_URL;
   process.env.SUPABASE_ANON_KEY = 'anon';
   process.env.SUPABASE_SERVICE_ROLE_KEY = 'service';
@@ -65,6 +65,7 @@ export function fakeSupabase({ posts = [post()], files = {}, pushes = {}, expo =
       if (key && status < 300) db.idempotency.set(key, init.body);
       return json(body, status);
     }
+    if (url.origin === 'https://itunes.apple.com') return json({ resultCount: onAppStore ? 1 : 0, results: [] });
     if (url.origin === 'https://exp.host') {
       const messages = JSON.parse(init.body);
       db.sent.push(...messages);

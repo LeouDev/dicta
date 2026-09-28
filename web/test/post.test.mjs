@@ -5,6 +5,7 @@ import { test } from 'node:test';
 import { ORIGIN, POST_ID, fakeSupabase, post } from './fake-supabase.mjs';
 
 const { GET } = await import('../api/post.js');
+const { listing } = await import('../lib/app-store.js');
 const { cardKey, toAuthor } = await import('../card/dist/design.mjs');
 
 async function render() {
@@ -74,4 +75,19 @@ test('404s for missing posts (tagged, so a purge clears them) and bad ids', asyn
   assert.equal(missing.headers.get('vercel-cache-tag'), `post-${POST_ID}`);
   const bad = await GET(new Request(`${ORIGIN}/api/post?id=nope`));
   assert.equal(bad.status, 404);
+});
+
+test('Safari’s app banner opens this post; the App Store button waits for the listing', async () => {
+  listing.checkedAt = 0;
+  fakeSupabase({ onAppStore: false });
+  let { html } = await render();
+  assert.equal(meta(html, 'apple-itunes-app'), `app-id=6816172939, app-argument=${ORIGIN}/post/${POST_ID}`);
+  assert.doesNotMatch(html, /apps\.apple\.com/);
+  assert.match(html, /coming soon to the App Store/);
+
+  listing.checkedAt = 0;
+  fakeSupabase({ onAppStore: true });
+  ({ html } = await render());
+  assert.match(html, /<a class="button secondary" href="https:\/\/apps\.apple\.com\/app\/id6816172939">Get Dicta on the App Store<\/a>/);
+  assert.doesNotMatch(html, /coming soon/);
 });

@@ -3,6 +3,7 @@
 // the app. Posts are read with the public anon key, so database rules apply. The page is
 // cached with the post's tags, so deleting the post purges it at once (purge.js).
 import { cardKey, cardSize, parseQuoteDesign, toAuthor } from '../card/dist/design.mjs';
+import { APP_ID, APP_STORE_URL, isOnAppStore } from '../lib/app-store.js';
 import { postTag } from '../lib/cache.js';
 import { fetchPost, isConfigured } from '../lib/supabase.js';
 
@@ -29,6 +30,7 @@ export async function GET(request) {
     return page(502, shell({ title: 'Dicta', body: missing('This quote couldn’t be loaded. Please try again.') }));
   }
   if (!post) return notFound(url.origin, id);
+  const onAppStore = await isOnAppStore();
 
   // The version in the image URLs changes whenever anything on the card does.
   const version = cardKey({ text: post.text, design: post.design, author: toAuthor(post.author) });
@@ -44,6 +46,7 @@ export async function GET(request) {
       title,
       head: `
     <link rel="canonical" href="${canonical}">
+    <meta name="apple-itunes-app" content="app-id=${APP_ID}, app-argument=${canonical}">
     <meta name="description" content="${esc(excerpt(post.text, 200))}">
     <meta property="og:type" content="article">
     <meta property="og:site_name" content="Dicta">
@@ -66,7 +69,7 @@ export async function GET(request) {
       </a>
       <div class="actions">
         <a class="button" href="dicta://post/${id}">Open in Dicta</a>
-        <p class="note">Dicta is coming soon to the App Store.</p>
+        ${onAppStore ? `<a class="button secondary" href="${APP_STORE_URL}">Get Dicta on the App Store</a>` : '<p class="note">Dicta is coming soon to the App Store.</p>'}
       </div>
     </main>`,
     }),
