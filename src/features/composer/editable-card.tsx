@@ -39,7 +39,7 @@ const clamp = (v: number, min: number, max: number) => {
 /**
  * The editor's card: the same layout and canvas as QuoteCard, and
  * - drag the text or the header to move it, or anywhere else to choose what a photo shows,
- * - pinch a photo background to zoom it,
+ * - pinch the text or the header to resize it, or anywhere else to zoom a photo,
  * - tap to edit the text.
  * Moves follow the finger on the UI thread and are saved when it lifts.
  */
@@ -82,22 +82,28 @@ export function EditableCard({ text, design, author, width, onEditText }: Editab
   const pickUp = () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   const place = (part: Exclude<Part, 'photo'>, x: number, y: number) => update(part === 'text' ? { textOffset: { x: x / s, y: y / s } } : { headerOffset: { x: x / s, y: y / s } });
   const frameAs = (next: { zoom: number; panX: number; panY: number }) => update({ background: next });
+  const resize = (part: Exclude<Part, 'photo'>, value: number) => update(part === 'text' ? { size: value } : { header: { scale: value } });
 
   const boxes = layout?.boxes ?? { text: null, header: null };
   const edge = EDGE * s;
   const isPhoto = design.background.type === 'image' && photo !== null;
+  const wordsAt = (x: number, y: number) => {
+    'worklet';
+    return inside(boxes.header, headerShift.get(), x, y) ? 'header' : inside(boxes.text, textShift.get(), x, y) ? 'text' : null;
+  };
   const dragging = useSharedValue<Part | null>(null);
   const from = useSharedValue<Point>({ x: 0, y: 0 });
   const down = useSharedValue<Point>({ x: 0, y: 0 });
   // How far the finger went before iOS called it a drag, which its translation leaves out.
   const lag = useSharedValue<Point>({ x: 0, y: 0 });
+  const pinched = useSharedValue(false);
   // A drag moves what the finger lands on: the header, the text, or else the photo.
   const drag = Gesture.Pan()
     .averageTouches(true)
     .onBegin((e) => {
-      const part = inside(boxes.header, headerShift.get(), e.x, e.y) ? 'header' : inside(boxes.text, textShift.get(), e.x, e.y) ? 'text' : 'photo';
-      dragging.set(part === 'photo' && !isPhoto ? null : part);
+      dragging.set(wordsAt(e.x, e.y) ?? (isPhoto ? 'photo' : null));
       down.set({ x: e.x, y: e.y });
+      pinched.set(false);
     })
     .onStart((e) => {
       lag.set({ x: e.x - down.get().x - e.translationX, y: e.y - down.get().y - e.translationY });
@@ -127,8 +133,9 @@ export function EditableCard({ text, design, author, width, onEditText }: Editab
         return;
       }
       const box = part === 'text' ? boxes.text : part === 'header' ? boxes.header : null;
-      // Two fingers are a pinch: the words stay where they are.
-      if (!box || e.numberOfPointers > 1) return;
+      // Two fingers are a pinch: the words stay where they are until the fingers lift.
+      if (e.numberOfPointers > 1) pinched.set(true);
+      if (!box || pinched.get()) return;
       (part === 'text' ? textShift : headerShift).set({
         x: keepOnCard(start.x + dx, box.x, box.width, size.width, edge),
         y: keepOnCard(start.y + dy, box.y, box.height, size.height, edge),
@@ -144,20 +151,44 @@ export function EditableCard({ text, design, author, width, onEditText }: Editab
     })
     .onFinalize(() => dragging.set(null));
 
-  // Photo backgrounds: pinch to zoom (and two fingers pan it too, through the drag).
-  const zoomFrom = useSharedValue(1);
+  // A pinch resizes what it's on: the name, the words, or else a photo (zoomed; two
+  // fingers pan it too, through the drag). With no photo, it resizes the words.
+  const textSize = design.size;
+  const headerScale = design.header.scale;
+  const pinching = useSharedValue<Part>('text');
+  const sizeFrom = useSharedValue(1);
+  const sizeNow = useSharedValue(1);
   const pinch = Gesture.Pinch()
-    .enabled(isPhoto)
-    .onStart(() => zoomFrom.set(view.get().zoom))
-    .onUpdate((e) => view.set({ ...view.get(), zoom: clamp(zoomFrom.get() * e.scale, DESIGN_LIMITS.zoom.min, DESIGN_LIMITS.zoom.max) }))
-    .onEnd(() => runOnJS(frameAs)(view.get()));
+    .onStart((e) => {
+      const part = wordsAt(e.focalX, e.focalY) ?? (isPhoto ? 'photo' : 'text');
+      pinching.set(part);
+      sizeFrom.set(part === 'photo' ? view.get().zoom : part === 'header' ? headerScale : textSize);
+      sizeNow.set(sizeFrom.get());
+    })
+    .onUpdate((e) => {
+      const part = pinching.get();
+      if (part === 'photo') {
+        view.set({ ...view.get(), zoom: clamp(sizeFrom.get() * e.scale, DESIGN_LIMITS.zoom.min, DESIGN_LIMITS.zoom.max) });
+        return;
+      }
+      const limits = part === 'header' ? DESIGN_LIMITS.headerScale : DESIGN_LIMITS.size;
+      // Whole units (hundredths for the name), so the card lays out again only when the size really changes.
+      const steps = part === 'header' ? 100 : 1;
+      const next = Math.round(clamp(sizeFrom.get() * e.scale, limits.min, limits.max) * steps) / steps;
+      if (next === sizeNow.get()) return;
+      sizeNow.set(next);
+      runOnJS(resize)(part, next);
+    })
+    .onEnd(() => {
+      if (pinching.get() === 'photo') runOnJS(frameAs)(view.get());
+    });
 
   const tap = Gesture.Tap().onEnd((_e, success) => {
     if (success) runOnJS(onEditText)();
   });
 
-  // Pinching works alongside a drag; a tap is only a tap when nothing was dragged.
-  const gesture = Gesture.Simultaneous(pinch, Gesture.Exclusive(drag, tap));
+  // Pinching works alongside a drag; a tap is only a tap when nothing was pinched or dragged.
+  const gesture = Gesture.Exclusive(Gesture.Simultaneous(pinch, drag), tap);
 
   return (
     <GestureDetector gesture={gesture}>
