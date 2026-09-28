@@ -68,6 +68,11 @@ Links keep Supabase's `{{ .ConfirmationURL }}`: Supabase verifies the token and 
 - **Links in stories:** tappable attribution links are for Meta's partners, so a post's link goes along as text, ready to paste into Instagram's Link sticker.
 - **Threads and X:** a new post with the quote (up to 200 characters) and the post's link, whose preview shows the card. Their app opens when installed, the website otherwise.
 - **If Instagram says "The app you shared from doesn't currently support sharing to Stories",** it didn't accept the app ID: check the Meta app (switching it to Live needs the privacy policy URL).
+- **Opening shared links:** a dicta.world/post link opens the post in Dicta (1.0.1 and later) from Messages, Mail, Notes and apps that open links in Safari, and the website otherwise. Instagram, Threads and Facebook load links in their own browser, which never hands them to an app; there the page's **Open in Dicta** button (`dicta://`) opens it. In Safari, post pages also show Apple's app banner, whose Open goes to the post. **Get Dicta on the App Store** appears next to Open in Dicta by itself once Apple's lookup lists the app (web/lib/app-store.js); until then the page says it's coming soon.
+
+## Sound
+
+A card can carry one of seven public-domain sounds (`design.sound`: rain, ocean, birds, stream, café, piano, mellow), chosen under **Sound** in the editor. They're in `web/public/sounds`, sources in its `CREDITS.txt`: one-minute loops leveled to -24 dBFS (the two music pieces play whole), about 0.7 MB each. The app streams them from dicta.world/sounds and the post page plays them with a button. Nothing plays on its own: people tap the speaker on the card. Sounds play with the silent switch on (someone asked to hear them) and stop when you leave the screen or the app; there's no background audio and no microphone permission (expo-audio's plugin is set that way in app.json). Version 1.0 ignores the field and shows the card silently, and shares to Stories carry only the image.
 
 ## Moderation
 

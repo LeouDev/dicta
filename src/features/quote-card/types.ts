@@ -151,7 +151,14 @@ export interface QuoteDesign {
   /** Where the person dragged the text (with its signature) and the header, in design units from where the layout puts them. */
   textOffset: Point;
   headerOffset: Point;
+  /** A sound people can tap to play with the card. */
+  sound: SoundId | null;
 }
+
+/** Sounds a card can carry: public-domain loops the website serves (web/public/sounds/<id>.m4a). */
+export const SOUNDS = { rain: 'Rain', ocean: 'Ocean', birds: 'Birds', stream: 'Stream', cafe: 'Café', piano: 'Piano', mellow: 'Mellow' } as const;
+export type SoundId = keyof typeof SOUNDS;
+export const SOUND_IDS = Object.keys(SOUNDS) as SoundId[];
 
 /** Slider ranges and clamping bounds, shared by the editor and the parser. */
 export const DESIGN_LIMITS = {

@@ -39,6 +39,7 @@ export const BASE: QuoteDesign = {
   signature: { show: false, text: '', style: 'script' },
   textOffset: { x: 0, y: 0 },
   headerOffset: { x: 0, y: 0 },
+  sound: null,
 };
 
 type Overrides = Partial<Omit<QuoteDesign, 'background' | 'texture' | 'header' | 'signature'>> & {
@@ -455,6 +456,7 @@ export function applyTemplate(design: QuoteDesign, template: TemplateId): QuoteD
     canvas: design.canvas,
     header: { ...next.header, show, avatar, name, username, verified },
     signature: { ...next.signature, show: design.signature.show, text: design.signature.text },
+    sound: design.sound,
     // The photo keeps its zoom and crop; moved text starts over, since the new template lays it out anew.
     background:
       next.background.type === 'image' && photo

@@ -1,0 +1,19 @@
+Sounds a Dicta card can carry. All are public domain (CC0), from Wikimedia
+Commons; none needs credit, but here they are. Each ambient sound is a
+one-minute loop cut from the recording, leveled to -24 dBFS; the two music
+pieces are whole, leveled.
+
+rain.m4a    "Light Rain Distant Thunder July 5th 2016" by kvgarlic (Freesound 349454)
+            https://commons.wikimedia.org/wiki/File:Light_Rain_Distant_Thunder_July_5th_2016.wav
+ocean.m4a   "Ocean Waves on a Tropical Beach" by Jarrod Stanley
+            https://commons.wikimedia.org/wiki/File:Ocean_Waves_on_a_Tropical_Beach.ogg
+birds.m4a   "Birds chirping in a garden" by Akum20
+            https://commons.wikimedia.org/wiki/File:Birds_chirping_in_a_garden.ogg
+stream.m4a  "stream-river-water-up-close" by jackthemurray (Freesound 433589)
+            https://commons.wikimedia.org/wiki/File:433589_jackthemurray_stream-river-water-up-close.wav
+cafe.m4a    "Cafe ambiance" by Marble Toast
+            https://commons.wikimedia.org/wiki/File:Cafe_ambiance.ogg
+piano.m4a   Erik Satie, Gymnopédie No. 1, performed by Teknopazzo
+            https://commons.wikimedia.org/wiki/File:Gymnopedie_No._1..ogg
+mellow.m4a  "Mellow Cafe Vibe" by John Bartmann
+            https://commons.wikimedia.org/wiki/File:John_Bartmann_-_Mellow_Cafe_Vibe.ogg

@@ -175,4 +175,12 @@ describe('templates', () => {
     expect(next.textOffset).toEqual({ x: 0, y: 0 });
     expect(next.headerOffset).toEqual({ x: 0, y: 0 });
   });
+
+  it('a card keeps its sound through template changes, and only known sounds are read', () => {
+    const rainy = { ...createDesign('editorial'), sound: 'rain' as const };
+    expect(applyTemplate(rainy, 'midnight').sound).toBe('rain');
+    expect(parseQuoteDesign(rainy).sound).toBe('rain');
+    expect(parseQuoteDesign({ ...rainy, sound: 'thunder' }).sound).toBeNull();
+    expect(parseQuoteDesign({ template: 'minimal' }).sound).toBeNull();
+  });
 });

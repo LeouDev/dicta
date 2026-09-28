@@ -8,6 +8,7 @@ import {
   DESIGN_VERSION,
   FRAMES,
   SIGNATURE_MAX_LENGTH,
+  SOUND_IDS,
   TEMPLATE_IDS,
   TEXTURES,
   type Canvas,
@@ -191,5 +192,6 @@ export function parseQuoteDesign(input: unknown): QuoteDesign {
     },
     textOffset: point(raw.textOffset, base.textOffset),
     headerOffset: point(raw.headerOffset, base.headerOffset),
+    sound: oneOfOrNull(raw.sound, SOUND_IDS, null),
   };
 }

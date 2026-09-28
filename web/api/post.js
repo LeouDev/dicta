@@ -2,7 +2,7 @@
 // /card, see card.js), <meta> tags so link previews show that artwork too, and a way into
 // the app. Posts are read with the public anon key, so database rules apply. The page is
 // cached with the post's tags, so deleting the post purges it at once (purge.js).
-import { cardKey, cardSize, parseQuoteDesign, toAuthor } from '../card/dist/design.mjs';
+import { SOUNDS, cardKey, cardSize, parseQuoteDesign, toAuthor } from '../card/dist/design.mjs';
 import { APP_ID, APP_STORE_URL, isOnAppStore } from '../lib/app-store.js';
 import { postTag } from '../lib/cache.js';
 import { fetchPost, isConfigured } from '../lib/supabase.js';
@@ -63,6 +63,7 @@ export async function GET(request) {
       body: `
     <main class="shared">
       ${artwork(post, alt, `${url.origin}/card/${id}.jpg?v=${version}`)}
+      ${soundButton(parseQuoteDesign(post.design).sound)}
       <a class="author" href="dicta://user/${esc(post.author.username)}">
         ${post.author.avatar_url ? `<img src="${esc(post.author.avatar_url)}" alt="" width="40" height="40">` : `<span class="initial">${esc(name.slice(0, 1).toUpperCase())}</span>`}
         <span><strong>${esc(name)}</strong><span class="handle">@${esc(post.author.username)}</span></span>
@@ -85,6 +86,27 @@ function artwork(post, alt, src) {
       <figure class="card-frame" style="--card-bg: ${esc(design.background.color)}; --card-radius: ${design.radius}">
         <img class="card" src="${esc(src)}" width="${CARD_WIDTH}" height="${height}" alt="${esc(alt)}" fetchpriority="high">
       </figure>`;
+}
+
+/** The card's sound, if it has one: browsers only play sound after a tap, so it's a button. */
+function soundButton(sound) {
+  if (!sound) return '';
+  const name = SOUNDS[sound];
+  return `
+      <button class="sound" type="button" aria-pressed="false" data-src="/sounds/${sound}.m4a">Play sound · ${esc(name)}</button>
+      <script>
+        (() => {
+          const button = document.querySelector('.sound');
+          const audio = new Audio(button.dataset.src);
+          audio.loop = true;
+          button.addEventListener('click', () => {
+            const start = audio.paused;
+            if (start) audio.play(); else audio.pause();
+            button.setAttribute('aria-pressed', String(start));
+            button.textContent = (start ? 'Stop sound · ' : 'Play sound · ') + ${JSON.stringify(name)};
+          });
+        })();
+      </script>`;
 }
 
 const missing = (message) => `

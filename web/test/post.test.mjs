@@ -77,6 +77,17 @@ test('404s for missing posts (tagged, so a purge clears them) and bad ids', asyn
   assert.equal(bad.status, 404);
 });
 
+test('offers the card’s sound as a play button, and nothing for cards without one', async () => {
+  fakeSupabase({ posts: [post({ design: { version: 2, template: 'minimal', sound: 'rain' } })] });
+  const { html } = await render();
+  assert.match(html, /<button class="sound" type="button" aria-pressed="false" data-src="\/sounds\/rain\.m4a">Play sound · Rain<\/button>/);
+
+  for (const design of [{ version: 2, template: 'minimal' }, { version: 2, template: 'minimal', sound: '../../etc' }]) {
+    fakeSupabase({ posts: [post({ design })] });
+    assert.doesNotMatch((await render()).html, /class="sound"/);
+  }
+});
+
 test('Safari’s app banner opens this post; the App Store button waits for the listing', async () => {
   listing.checkedAt = 0;
   fakeSupabase({ onAppStore: false });
