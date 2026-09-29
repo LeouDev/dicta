@@ -1,4 +1,4 @@
-# App Store listing: Dicta 1.0
+# App Store listing: Dicta 1.0.1
 
 Ready to paste into App Store Connect → **Dicta: Thoughts as Art**. Lengths are within Apple's limits. Screenshots: 5, in `~/Downloads/Dicta App Store screenshots/`, to upload in order: `6.5-inch (use this)` at 1284 × 2778 for the slot App Store Connect shows, and the same five at 1320 × 2868 in `6.9-inch (optional)` for Media Manager's 6.9-inch slot.
 
@@ -10,11 +10,11 @@ Ready to paste into App Store Connect → **Dicta: Thoughts as Art**. Lengths ar
 | Subtitle (30) | Turn your words into art |
 | Primary category | Social Networking |
 | Secondary category | Graphics & Design |
-| Privacy Policy URL | https://dicta-orcin.vercel.app/privacy |
+| Privacy Policy URL | https://dicta.world/privacy |
 | Content rights | Yes, it shows third-party content (people's posts); the Terms give Dicta the rights it needs |
 | Age rating | 13+ (answers below) |
 
-## Version 1.0
+## Version 1.0.1
 
 **Promotional text** (170)
 
@@ -31,6 +31,7 @@ Ready to paste into App Store Connect → **Dicta: Thoughts as Art**. Lengths ar
 > DESIGNED, NOT JUST TYPED
 > • 18 templates, from paper-and-ink Editorial to Midnight, Typewriter, Pager and Photograph
 > • 13 hand-picked fonts, your own colors, gradients and photos
+> • Add a sound to your card: rain, ocean, birds, café, piano and more
 > • Cards lay themselves out: the text sizes itself to fit, in any language, from English to Chinese and Arabic
 >
 > A FEED OF THOUGHTS
@@ -54,16 +55,16 @@ Ready to paste into App Store Connect → **Dicta: Thoughts as Art**. Lengths ar
 >
 > Dicta shows no ads and doesn't track you.
 >
-> Terms of Use: https://dicta-orcin.vercel.app/terms
-> Privacy Policy: https://dicta-orcin.vercel.app/privacy
+> Terms of Use: https://dicta.world/terms
+> Privacy Policy: https://dicta.world/privacy
 
 | Field | Value |
 | --- | --- |
-| Support URL | https://dicta-orcin.vercel.app/support |
-| Marketing URL | https://dicta-orcin.vercel.app |
+| Support URL | https://dicta.world/support |
+| Marketing URL | https://dicta.world |
 | Copyright | 2026 Leou Alven Comendador |
 | Price | Free |
-| Build | Build 5 (the first with the terms agreement and the filter message; see the checklist) |
+| Build | 1.0.1 (8): everything in build 5 plus moving, resizing and zooming on the card, sound, Edit post, @mentions and dicta.world links (see the checklist) |
 
 ## App Privacy
 
@@ -99,7 +100,7 @@ The feed makes the minimum **13+**, which matches the Terms ("at least 13").
 
 - **Sign-in required:** yes. Use the demo account (see the checklist): email and password in the sign-in fields.
 - **Contact:** your name, phone and email.
-- **Notes** (3,154 of 4,000 bytes; the same text answered Apple's Guideline 2.1 "Information Needed" request of 26 September 2026 (reply sent at 13:58), which asked for it in both the reply and the Notes, with a screen recording, linked as an unlisted YouTube video):
+- **Notes** (3,587 of 4,000 characters; the answers Apple asked for on 26 September 2026 under Guideline 2.1 (reply sent at 13:58, with an unlisted YouTube screen recording), plus "New in this build" for 1.0.1 (8), submitted on 30 September 2026):
 
 ```text
 1. Screen recording
@@ -136,5 +137,10 @@ User-generated content (Guideline 1.2)
 - Reporting: every report is emailed to the moderator at once and reviewed within 24 hours; content that breaks the Terms is removed, and so are the people who post it.
 - Blocking: blocked people's posts disappear for both sides immediately.
 - Terms: new users agree to the Terms of Use, which state zero tolerance for objectionable content and abusive users, when they create their profile.
-- Contact: support@air-rally.com, also on https://dicta-orcin.vercel.app/support
+- Contact: support@air-rally.com, also on https://dicta.world/support
+
+New in this build
+- Sound: in the editor's Sound tab you can add a sound to a card; people tap the speaker on the card to hear it. The sounds are public-domain (CC0) recordings from Wikimedia Commons, with sources at https://dicta.world/sounds/CREDITS.txt. Nothing plays on its own, and the app doesn't use the microphone.
+- Edit post: the ... menu on your own post.
+- Mentions: type @ in a comment to mention someone, who gets a notification.
 ```
