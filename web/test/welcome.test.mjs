@@ -27,9 +27,9 @@ test('sends the welcome email once, filled in', async () => {
   assert.equal(email.to, 'mara@example.com');
   assert.equal(email.reply_to, 'support@air-rally.com');
   assert.equal(email.subject, 'Welcome to Dicta');
-  assert.match(email.html, /href="https:\/\/dicta-orcin\.vercel\.app\/"/);
+  assert.match(email.html, /href="https:\/\/dicta\.world\/"/);
   assert.match(email.html, /created a Dicta account with mara@example\.com\./);
-  assert.match(email.html, /src="https:\/\/dicta-orcin\.vercel\.app\/email\/emblem\.png"/);
+  assert.match(email.html, /src="https:\/\/dicta\.world\/email\/emblem\.png"/);
   assert.doesNotMatch(email.html, /\{\{/, 'no placeholder left');
 
   // Claimed: a repeat (a retry, or anyone else) sends nothing.

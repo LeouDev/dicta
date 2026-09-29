@@ -12,7 +12,7 @@ import { claimWelcome, isConfigured, releaseWelcome } from '../lib/supabase.js';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const TEMPLATE = readFileSync(new URL('../emails/welcome.html', import.meta.url), 'utf8');
 // The site's root opens Dicta when it's installed (apple-app-site-association).
-const SITE = 'https://dicta-orcin.vercel.app/';
+const SITE = 'https://dicta.world/';
 
 const escapeHtml = (text) => text.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 
