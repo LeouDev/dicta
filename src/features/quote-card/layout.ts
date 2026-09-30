@@ -194,8 +194,10 @@ export function layoutCard({ text, design, author, width, format = 'original', f
   const face = resolveFace(design.font, design.weight, design.italic);
   const columns = compose(design, splitParagraphs(text));
   const hiScale = format === 'story' && !isDeviceFrame(frame) ? 1.15 : 1;
-  const flowAt = (fontSize: number, blockWidth: number) =>
-    flowColumns(columns, {
+  // The arch bends running text (not highlight bars or columns); at full strength its circle is as wide as the card.
+  const bend = design.composition === 'flow' || design.composition === 'kicker' ? design.arch / size.width : 0;
+  const flowAt = (fontSize: number, blockWidth: number) => {
+    const flow = flowColumns(columns, {
       size: fontSize,
       width: blockWidth,
       colGap: design.colGap * s,
@@ -208,14 +210,15 @@ export function layoutCard({ text, design, author, width, format = 'original', f
       balance: design.balance,
       measure: (w, lang) => measureWord(fonts, face, design.letterSpacing, w, lang),
     });
+    // An arched line's ends dip below it: leave room under the text for the deepest a full-width line goes.
+    return bend > 0 ? { ...flow, height: flow.height + (bend * (blockWidth / 2) ** 2) / 2 } : flow;
+  };
 
   const body =
     frame === 'notification'
       ? layoutNotification({ design, author, fonts, size, s, content, flowAt, hiScale })
       : layoutPlain({ design, author, fonts, s, content, dark, flowAt, hiScale });
 
-  // The arch bends running text (not highlight bars or columns); at full strength its circle is as wide as the card.
-  const bend = design.composition === 'flow' || design.composition === 'kicker' ? design.arch / size.width : 0;
   const words = placeWords(body.flow, body.origin, design, face, fonts, bend);
   const fillGradient = design.textFill ? parseLinearGradient(design.textFill) : null;
   const firstBody = words.find((_, i) => body.flow.words[i].role === 'body');

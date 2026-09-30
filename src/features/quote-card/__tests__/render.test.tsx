@@ -219,8 +219,6 @@ test('the arch bends each line down toward its ends, and off it changes nothing'
   expect(last.dy).toBeGreaterThan(middle);
   expect(first.rotate).toBeLessThan(0);
   expect(last.rotate).toBeGreaterThan(0);
-  // The words keep their places on the line; only the drawing bends.
-  expect(arched.words.map((w) => [w.x, w.y])).toEqual(flat.words.map((w) => [w.x, w.y]));
 
   // Highlight bars and columns keep their lines straight.
   expect(card(0.7, 'book').words.every((w) => w.dy === 0 && w.rotate === 0)).toBe(true);

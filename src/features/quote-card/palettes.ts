@@ -10,7 +10,7 @@ export interface NamedColor {
 
 export const TEXT_COLORS: NamedColor[] = [
   { name: 'Burgundy', value: '#9B1B1E' },
-  { name: 'Maroon', value: '#6B1426' },
+  { name: 'Maroon', value: '#8B0000' },
   { name: 'Ink', value: '#141414' },
   { name: 'White', value: '#FFFFFF' },
   { name: 'Cream', value: '#EFE8DA' },
