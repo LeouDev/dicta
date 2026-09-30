@@ -92,9 +92,17 @@ function Placed({ item }: { item: PlacedParagraph }) {
   return <Paragraph paragraph={item.paragraph} x={item.x} y={item.y} width={item.width} />;
 }
 
-/** A word, tilted and bobbed by the editorial wave when the design has curve. */
+/** A word, tilted and bobbed by the editorial wave when the design has curve; on an arch, drawn letter by letter. */
 function Word({ word }: { word: PlacedWord }) {
-  const text = <Paragraph paragraph={word.paragraph} x={word.x} y={word.y} width={word.width} />;
+  const text = word.letters ? (
+    <>
+      {word.letters.map((letter, i) => (
+        <Word key={i} word={letter} />
+      ))}
+    </>
+  ) : (
+    <Paragraph paragraph={word.paragraph} x={word.x} y={word.y} width={word.width} />
+  );
   if (word.rotate === 0 && word.dy === 0) return text;
   return (
     <Group origin={word.pivot} transform={[{ translateY: word.dy }, { rotate: word.rotate }]}>

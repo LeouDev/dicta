@@ -104,8 +104,10 @@ describe.each(Object.entries(TEXTS))('%s text', (label, text) => {
         expect(layout.words.length).toBe(text.split(/\s+/).length);
 
         const inset = contentInsets({ format, frame: design.frame, size: layout, scale: layout.scale, padding: design.padding, topOffset: design.topOffset });
-        for (const word of layout.words) {
-          // The editorial wave tilts and bobs words a little past their boxes.
+        // What's drawn: each word, or on an arch each of its letters (dropped by the arch on top of the word's bob).
+        const drawn = layout.words.flatMap((word) => (word.letters ?? []).map((l) => ({ ...l, dy: word.dy + l.dy })).concat(word.letters ? [] : [word]));
+        for (const word of drawn) {
+          // The editorial wave and the arch tilt and drop words a little past their boxes.
           const lean = word.paragraph.getHeight() * 0.15 + 2;
           expect(word.x).toBeGreaterThanOrEqual(inset.left - lean);
           expect(word.x + word.paragraph.getLongestLine()).toBeLessThanOrEqual(layout.width - inset.right + lean);
@@ -204,24 +206,30 @@ test('moved text and header shift as one piece and stay on the card; a device fr
   expect(at({ x: 100, y: 100 }, { x: 0, y: 0 }, 'pager').shift.text).toEqual({ x: 0, y: 0 });
 });
 
-test('the arch bends each line down toward its ends, and off it changes nothing', () => {
+test('the arch bends each line, and each word on it, down toward its ends; off, it changes nothing', () => {
   const card = (arch: number, template: TemplateId = 'minimal') =>
     layoutCard({ text: TEXTS.long, design: { ...createDesign(template), curve: 0, arch }, author, width: 1080, format: 'original', fonts });
-  const flat = card(0);
-  expect(flat.words.every((w) => w.dy === 0 && w.rotate === 0)).toBe(true);
+  const straight = (layout: Layout.CardLayout) => layout.words.every((w) => w.dy === 0 && w.rotate === 0 && !w.letters);
+  expect(straight(card(0))).toBe(true);
 
   const arched = card(0.7);
   const line = arched.words.filter((w) => w.y === arched.words[0].y);
   expect(line.length).toBeGreaterThan(2);
-  const [first, last] = [line[0], line[line.length - 1]];
-  const middle = Math.min(...line.map((w) => w.dy));
-  expect(first.dy).toBeGreaterThan(middle);
-  expect(last.dy).toBeGreaterThan(middle);
+  // Drawn letter by letter, the letters on the curve and upright to it.
+  const letters = line.flatMap((w) => w.letters ?? []);
+  expect(letters.length).toBeGreaterThan(line.length * 2);
+  const [first, last] = [letters[0], letters[letters.length - 1]];
+  const top = Math.min(...letters.map((l) => l.dy));
+  expect(first.dy).toBeGreaterThan(top);
+  expect(last.dy).toBeGreaterThan(top);
   expect(first.rotate).toBeLessThan(0);
   expect(last.rotate).toBeGreaterThan(0);
+  // The word itself bends: its letters tilt more the further out they are.
+  const end = line[line.length - 1].letters!;
+  expect(end[end.length - 1].rotate).toBeGreaterThan(end[0].rotate);
 
   // Highlight bars and columns keep their lines straight.
-  expect(card(0.7, 'book').words.every((w) => w.dy === 0 && w.rotate === 0)).toBe(true);
+  expect(straight(card(0.7, 'book'))).toBe(true);
 });
 
 test('balanced lines break the same way in the feed as in an export', () => {

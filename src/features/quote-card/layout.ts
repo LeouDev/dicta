@@ -40,6 +40,8 @@ export interface PlacedWord extends PlacedParagraph {
   pivot: { x: number; y: number };
   /** Painted with the design's text gradient. */
   fill: boolean;
+  /** On an arch, the word drawn letter by letter along the curve instead of as one paragraph. */
+  letters?: PlacedWord[];
 }
 
 export interface AvatarLayout {
@@ -107,6 +109,10 @@ export interface LayoutInput {
 
 const SK_ALIGN: Record<TextAlign, SkTextAlign> = { left: SkTextAlign.Left, center: SkTextAlign.Center, right: SkTextAlign.Right };
 const UNLIMITED = 100_000;
+
+// Words the arch can bend letter by letter: Latin, Greek and Cyrillic, with their punctuation. Joined or
+// composed scripts (Arabic, Devanagari) and emoji only look right shaped whole, so those words tilt as one.
+const LETTERWISE = /^[\u0021-\u024F\u0370-\u03FF\u0400-\u04FF\u2010-\u205E]{2,}$/;
 const CREAM = '#F3EEE5';
 
 interface TextOptions {
@@ -420,25 +426,26 @@ function placeWords(
   return flow.words.map((w) => {
     const color = w.role === 'kicker' ? (design.kickerColor ?? design.textColor) : w.role === 'highlight' ? (design.highlightText ?? design.textColor) : design.textColor;
     const fill = filled && w.role !== 'kicker';
-    const p = paragraph(
-      w.text,
-      {
-        face,
-        size: w.size,
-        color: fill ? '#FFFFFF' : color,
-        letterSpacing: design.letterSpacing,
-        lineHeight: w.lineHeight / w.size,
-        ...(design.glow ? { shadows: [{ color: design.glow, blur: w.size * 0.14 }, { color: design.glow, blur: w.size * 0.4 }] } : {}),
-        ...(w.rtl ? { rtl: true } : {}),
-        ...(w.lang ? { lang: w.lang } : {}),
-      },
-      fonts,
-      UNLIMITED,
-    );
+    const style: TextOptions = {
+      face,
+      size: w.size,
+      color: fill ? '#FFFFFF' : color,
+      letterSpacing: design.letterSpacing,
+      lineHeight: w.lineHeight / w.size,
+      ...(design.glow ? { shadows: [{ color: design.glow, blur: w.size * 0.14 }, { color: design.glow, blur: w.size * 0.4 }] } : {}),
+      ...(w.rtl ? { rtl: true } : {}),
+      ...(w.lang ? { lang: w.lang } : {}),
+    };
+    const p = paragraph(w.text, style, fonts, UNLIMITED);
     const x = origin.x + w.x;
     const y = origin.y + w.y;
+    const middle = middles.get(w.y) ?? 0;
     const { rotate, dy } = wave(w.index, design.curve);
-    const bent = bend > 0 ? arch(w.x + w.width / 2 - (middles.get(w.y) ?? 0), bend) : { rotate: 0, dy: 0 };
+    // The arch bends the word itself: each letter sits on the curve, upright to it, where the word's shaping put it.
+    const boxes = bend > 0 && !w.rtl && LETTERWISE.test(w.text) ? [...w.text].map((_, i) => p.getRectsForRange(i, i + 1)[0]) : [];
+    const letterwise = boxes.length > 0 && boxes.every(Boolean);
+    const bent = bend > 0 && !letterwise ? arch(w.x + w.width / 2 - middle, bend) : { rotate: 0, dy: 0 };
+    const baseline = letterwise ? (p.getLineMetrics()[0]?.baseline ?? w.lineHeight) : 0;
     return {
       paragraph: p,
       x,
@@ -450,6 +457,25 @@ function placeWords(
       // Skia rotates around the pivot first, then applies the bob.
       pivot: { x: x + w.width / 2, y: y + w.lineHeight / 2 },
       fill,
+      ...(letterwise
+        ? {
+            letters: [...w.text].map((char, i) => {
+              const box = boxes[i];
+              const center = w.x + box.x + box.width / 2;
+              const on = arch(center - middle, bend);
+              return {
+                paragraph: paragraph(char, style, fonts, UNLIMITED),
+                x: x + box.x,
+                y,
+                width: box.width + w.size,
+                rotate: on.rotate,
+                dy: on.dy,
+                pivot: { x: origin.x + center, y: y + baseline },
+                fill,
+              };
+            }),
+          }
+        : {}),
     };
   });
 }
