@@ -78,7 +78,8 @@ export interface CardLayout extends Size {
   texture: { type: TextureKey; strength: number; unit: number; seed: number; pitch: number; phase: number };
   words: PlacedWord[];
   marks: (Box & { color: string })[];
-  fill: { boxes: Box[]; angle: number; colors: string[]; positions: number[] } | null;
+  /** `reach`: how far past the boxes the gradient paints, for arched lines. */
+  fill: { boxes: Box[]; reach: number; angle: number; colors: string[]; positions: number[] } | null;
   header: HeaderLayout | null;
   signature: PlacedParagraph | null;
   footer: PlacedParagraph | null;
@@ -122,6 +123,8 @@ interface TextOptions {
   face: string;
   size: number;
   color: string;
+  /** False shapes letters one by one (no fi, fl, ff ligatures), for words drawn letter by letter. */
+  ligatures?: false;
   align?: TextAlign;
   letterSpacing?: number;
   lineHeight?: number;
@@ -150,6 +153,7 @@ function paragraph(text: string, o: TextOptions, fonts: SkTypefaceFontProvider, 
     fontSize: o.size,
     letterSpacing: (o.letterSpacing ?? 0) * o.size,
     ...(o.lineHeight ? { heightMultiplier: o.lineHeight, halfLeading: true } : {}),
+    ...(o.ligatures === false ? { fontFeatures: [{ name: 'liga', value: 0 }, { name: 'clig', value: 0 }] } : {}),
     ...(o.shadows ? { shadows: o.shadows.map((s) => ({ color: Skia.Color(s.color), offset: { x: 0, y: 0 }, blurRadius: s.blur })) } : {}),
   });
   builder.addText(text);
@@ -274,7 +278,11 @@ export function layoutCard({ text, design, author, width, format = 'original', f
     fill: fillGradient
       ? {
           ...fillGradient,
-          boxes: body.flow.boxes.filter((b) => b.role !== 'kicker' && b.role !== 'tail').map((b) => ({ x: b.x + body.origin.x, y: b.y + body.origin.y, width: b.width, height: b.height })),
+          boxes: body.flow.boxes
+            .filter((b) => b.role !== 'kicker' && b.role !== 'tail')
+            .map((b) => ({ x: b.x + body.origin.x, y: b.y + body.origin.y, width: b.width, height: b.height })),
+          // Arched lines dip and tilt past their paragraphs' boxes: the gradient paints that much further out.
+          reach: bend > 0 && arched('body') ? (bend * (body.flow.boxes[0]?.width ?? 0) ** 2) / 8 + body.fontSize : 0,
         }
       : null,
     header: body.header,
@@ -425,16 +433,10 @@ function placeWords(
   bendFor: (role: Role) => number,
 ): PlacedWord[] {
   const filled = design.textFill !== null && parseLinearGradient(design.textFill) !== null;
-  // Where each line's middle is, for the arch (the words on a line share its top).
-  const middles = new Map<number, number>();
-  if (design.arch > 0) {
-    const ends = new Map<number, [number, number]>();
-    for (const w of flow.words) {
-      const [left, right] = ends.get(w.y) ?? [Infinity, -Infinity];
-      ends.set(w.y, [Math.min(left, w.x), Math.max(right, w.x + w.width)]);
-    }
-    for (const [y, [left, right]] of ends) middles.set(y, (left + right) / 2);
-  }
+  // Every line arches around the middle of the text block, so the arcs stay parallel whatever the alignment.
+  const middle = flow.boxes[0] ? flow.boxes[0].x + flow.boxes[0].width / 2 : 0;
+  // Letters repeat: each distinct letter, in each style, is shaped once per layout.
+  const letters = new Map<string, SkParagraph>();
   return flow.words.map((w) => {
     const small = w.role === 'kicker' || w.role === 'tail';
     const color =
@@ -451,13 +453,15 @@ function placeWords(
       ...(w.rtl ? { rtl: true } : {}),
       ...(w.lang ? { lang: w.lang } : {}),
     };
-    const p = paragraph(w.text, style, fonts, UNLIMITED);
+    // The arch bends the word itself: each letter sits on the curve, upright to it, where the word's shaping put it.
+    // Shaped without ligatures, so every letter has a place of its own.
+    const bendable = bend > 0 && !w.rtl && !joined && LETTERWISE.test(w.text);
+    const shape: TextOptions = bendable ? { ...style, ligatures: false } : style;
+    const p = paragraph(w.text, shape, fonts, UNLIMITED);
     const x = origin.x + w.x;
     const y = origin.y + w.y;
-    const middle = middles.get(w.y) ?? 0;
     const { rotate, dy } = wave(w.index, design.curve);
-    // The arch bends the word itself: each letter sits on the curve, upright to it, where the word's shaping put it.
-    const boxes = bend > 0 && !w.rtl && !joined && LETTERWISE.test(w.text) ? [...w.text].map((_, i) => p.getRectsForRange(i, i + 1)[0]) : [];
+    const boxes = bendable ? [...w.text].map((_, i) => p.getRectsForRange(i, i + 1)[0]) : [];
     const letterwise = boxes.length > 0 && boxes.every(Boolean);
     const bent = bend > 0 && !letterwise ? arch(w.x + w.width / 2 - middle, bend) : { rotate: 0, dy: 0 };
     const baseline = letterwise ? (p.getLineMetrics()[0]?.baseline ?? w.lineHeight) : 0;
@@ -485,8 +489,11 @@ function placeWords(
               const box = boxes[i];
               const center = w.x + box.x + box.width / 2;
               const on = arch(center - middle, bend);
+              const key = `${shape.face}|${shape.size}|${shape.color}|${shape.letterSpacing}|${shape.lineHeight}|${char}`;
+              let glyph = letters.get(key);
+              if (!glyph) letters.set(key, (glyph = paragraph(char, shape, fonts, UNLIMITED)));
               return {
-                paragraph: paragraph(char, style, fonts, UNLIMITED),
+                paragraph: glyph,
                 x: x + box.x,
                 y,
                 width: box.width + w.size,

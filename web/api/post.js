@@ -37,7 +37,7 @@ export async function GET(request) {
   const name = post.author.display_name || post.author.username;
   const canonical = `${url.origin}/post/${id}`;
   // Verse's accent asterisks are for the card, not for titles and descriptions.
-  const text = plainText(post.text);
+  const text = plainText(post.text, parseQuoteDesign(post.design));
   const title = `“${excerpt(text, 70)}” — ${name} on Dicta`;
   const alt = `Quote by ${name}: ${text.trim()}`;
   const preview = `${url.origin}/card/${id}/og.jpg?v=${version}`;

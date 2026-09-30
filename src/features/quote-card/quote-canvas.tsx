@@ -114,7 +114,7 @@ function Word({ word }: { word: PlacedWord }) {
 /** Gradient-filled text: words drawn as a mask in a layer, then the gradient composited in. */
 function FilledWords({ layout }: { layout: CardLayout }) {
   const fill = layout.fill!;
-  const bleed = layout.width * 0.02;
+  const bleed = layout.width * 0.02 + fill.reach;
   return (
     <Group layer>
       {layout.words.map((word, i) => (word.fill ? <Word key={i} word={word} /> : null))}

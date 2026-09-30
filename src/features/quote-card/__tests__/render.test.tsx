@@ -237,6 +237,17 @@ test('the arch bends each line, and each word on it, down toward its ends; off, 
   expect(straight(card(0.7, 'book'))).toBe(true);
 });
 
+test('arched lines stay parallel, whatever the alignment', () => {
+  // Left-aligned lines of different lengths used to arch around their own middles, so a long line's end fell onto the next.
+  const { words } = layoutCard({ text: TEXTS.long, design: { ...createDesign('minimal'), curve: 0, arch: 1 }, author, width: 1080, format: 'original', fonts });
+  const tops = [...new Set(words.map((w) => w.y))];
+  const pitch = tops[1] - tops[0];
+  const points = words.flatMap((w) => (w.letters ?? []).map((l) => ({ line: tops.indexOf(w.y), x: l.pivot.x, y: l.pivot.y + w.dy + l.dy })));
+  const stacked = points.flatMap((a) => points.filter((b) => b.line === a.line + 1 && Math.abs(a.x - b.x) < 15).map((b) => b.y - a.y));
+  expect(stacked.length).toBeGreaterThan(20);
+  expect(Math.min(...stacked)).toBeGreaterThan(pitch * 0.9);
+});
+
 test('a Verse accent sits on its small line’s baseline', () => {
   const { words } = layoutCard({ text: 'and after\n\nthe light\n\nof his *Glory* here', design: createDesign('verse'), author, width: 1080, format: 'original', fonts });
   // AND AFTER / the light / OF HIS Glory HERE

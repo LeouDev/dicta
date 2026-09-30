@@ -46,7 +46,7 @@ export const LikeableCard = memo(function LikeableCard({ post, width, onLike }: 
       <View
         accessible
         accessibilityRole="image"
-        accessibilityLabel={`${plainText(post.text).trim()} — quote card by ${post.author.displayName}`}
+        accessibilityLabel={`${plainText(post.text, post.design).trim()} — quote card by ${post.author.displayName}`}
         accessibilityActions={[
           { name: 'like', label: post.likedByMe ? 'Liked' : 'Like' },
           ...(sound ? [{ name: 'sound', label: playing ? 'Stop sound' : 'Play sound' }] : []),

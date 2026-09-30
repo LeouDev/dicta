@@ -2,6 +2,7 @@ import { Canvas } from '@shopify/react-native-skia';
 import { memo, useMemo } from 'react';
 import { View, type StyleProp, type ViewStyle } from 'react-native';
 
+import { plainText } from './flow';
 import { useCardFonts } from './fonts';
 import { cardSize, showsAvatar, unitScale } from './geometry';
 import { useSkImage } from './images';
@@ -45,7 +46,7 @@ export const QuoteCard = memo(function QuoteCard({ text, design, author, width, 
     <View
       accessible
       accessibilityRole="image"
-      accessibilityLabel={`Quote by ${displayName}: ${text.trim()}`}
+      accessibilityLabel={`Quote by ${displayName}: ${plainText(text, design).trim()}`}
       style={[
         {
           width: size.width,

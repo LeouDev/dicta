@@ -109,7 +109,7 @@ function DiscoverHome() {
               <PressableScale
                 onPress={() => router.push(`/post/${item.id}`)}
                 accessibilityRole="button"
-                accessibilityLabel={`${plainText(item.text).trim()} — by ${item.author.displayName}. Opens the post.`}
+                accessibilityLabel={`${plainText(item.text, item.design).trim()} — by ${item.author.displayName}. Opens the post.`}
                 scaleTo={0.98}>
                 <QuoteCard text={item.text} design={item.design} author={item.author} width={cardWidth} radius={radius.md} />
               </PressableScale>

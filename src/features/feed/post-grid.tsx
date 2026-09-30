@@ -84,7 +84,7 @@ export const GridTile = memo(function GridTile({ post, width }: { post: FeedPost
       <PressableScale
         onPress={() => router.push(`/post/${post.id}`)}
         accessibilityRole="button"
-        accessibilityLabel={`${plainText(post.text).trim()} — by ${post.author.displayName}. Opens the post.`}
+        accessibilityLabel={`${plainText(post.text, post.design).trim()} — by ${post.author.displayName}. Opens the post.`}
         scaleTo={0.98}>
         <QuoteCard text={post.text} design={post.design} author={post.author} width={width} radius={radius.md} />
       </PressableScale>

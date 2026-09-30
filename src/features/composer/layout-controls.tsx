@@ -20,8 +20,9 @@ export function LayoutControls() {
   const update = useComposer((s) => s.update);
   const text = useComposer((s) => s.text);
   const [advanced, setAdvanced] = useState(false);
-  // Paragraph spacing only does something when the card has more than one paragraph in a column.
-  const paragraphs = compose(design, splitParagraphs(text)).some((column) => column.length > 1);
+  // Paragraph spacing applies to a single column with more than one paragraph (two columns keep their own gap).
+  const columns = compose(design, splitParagraphs(text)).filter((column) => column.length > 0);
+  const paragraphs = columns.length === 1 && columns[0].length > 1;
   const moved = design.textOffset.x !== 0 || design.textOffset.y !== 0 || design.headerOffset.x !== 0 || design.headerOffset.y !== 0;
 
   return (

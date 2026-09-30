@@ -113,8 +113,9 @@ const accented = (p: SourceParagraph): SourceParagraph => ({
   ),
 });
 
-/** The text without Verse's accent asterisks, for places that show it as plain text. */
-export const plainText = (text: string) => text.replace(/\*([^*\s]+)\*/g, '$1');
+/** The text as a Verse card shows it (without its accents' asterisks), for places that show it as plain text. */
+export const plainText = (text: string, design: Pick<QuoteDesign, 'composition'>) =>
+  design.composition === 'verse' ? text.split(/(\s+)/).map((part) => part.replace(ACCENT, '$1$2')).join('') : text;
 
 const endsWithColon = (t: Token) => t.text.endsWith(':') || t.text.endsWith('：');
 
@@ -158,10 +159,12 @@ export function compose(
     // Small capitals open it and, from three paragraphs on, close it; the words between are large.
     const { kicker, rest } = splitKicker(paragraphs.map(accented));
     const tail = kicker && rest.length > 1 ? rest[rest.length - 1] : null;
+    // Accents only stand out in the small lines; in the big words they're plain words.
+    const plain = (p: SourceParagraph): SourceParagraph => ({ ...p, lines: p.lines.map((line) => line.map(({ text, glued }) => ({ text, glued }))) });
     return [
       [
         ...(kicker ? [as('kicker', kicker, 'uppercase')] : []),
-        ...(tail ? rest.slice(0, -1) : rest).map((p) => as('body', p)),
+        ...(tail ? rest.slice(0, -1) : rest).map((p) => as('body', plain(p))),
         ...(tail ? [as('tail', tail, 'uppercase')] : []),
       ],
     ];

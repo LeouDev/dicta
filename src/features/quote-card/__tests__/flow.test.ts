@@ -120,7 +120,11 @@ describe('compose', () => {
     // In the big words an accent just loses its asterisks; outside Verse they're plain text, left as written.
     expect(roles(compose(design('verse'), splitParagraphs('a\n\n*big* words'))[0])[1].lines).toEqual([['big', 'words']]);
     expect(roles(compose(design('flow'), splitParagraphs('*sigh* ok'))[0])[0].lines).toEqual([['*sigh*', 'ok']]);
-    expect(plainText('of his *Glory*, in *Christ* 5 * 3')).toBe('of his Glory, in Christ 5 * 3');
+    // Plain text drops exactly the card's accents, and only in Verse.
+    expect(plainText('of his *Glory*, in *Christ* 5 * 3 2*3*4', { composition: 'verse' })).toBe('of his Glory, in Christ 5 * 3 2*3*4');
+    expect(plainText('*sigh* ok', { composition: 'flow' })).toBe('*sigh* ok');
+    // With All Caps, the big words' starred words are capitals like the rest.
+    expect(roles(compose(design('verse', { textTransform: 'uppercase' }), splitParagraphs('a\n\n*big* words'))[0])[1].lines).toEqual([['BIG', 'WORDS']]);
   });
 
   it('highlights the first paragraph; the case applies to all text', () => {
