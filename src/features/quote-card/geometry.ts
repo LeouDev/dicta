@@ -131,6 +131,15 @@ export function wave(i: number, curve: number) {
   return { rotate: curve * 5 * Math.sin(i * 2.3 + 1.1), dy: curve * 0.08 * Math.cos(i * 1.7) };
 }
 
+/**
+ * The arch for a word `offset` px from the middle of its line: the line follows a
+ * circle of radius 1 / curvature, so it drops toward its ends and each word tilts
+ * along it. Returns the drop (px) and the rotation (radians, clockwise).
+ */
+export function arch(offset: number, curvature: number) {
+  return { dy: (curvature * offset * offset) / 2, rotate: Math.atan(curvature * offset) };
+}
+
 /** Stable 32-bit hash, for deterministic decoration (texture seeds, pager date). */
 export function hashString(text: string): number {
   let h = 2166136261;

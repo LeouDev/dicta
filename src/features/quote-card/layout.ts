@@ -6,6 +6,7 @@ import { compose, flowColumns, splitParagraphs, type FlowResult } from './flow';
 import {
   EDGE,
   alignBlock,
+  arch,
   cardSize,
   contentInsets,
   fitSize,
@@ -212,7 +213,9 @@ export function layoutCard({ text, design, author, width, format = 'original', f
       ? layoutNotification({ design, author, fonts, size, s, content, flowAt, hiScale })
       : layoutPlain({ design, author, fonts, s, content, dark, flowAt, hiScale });
 
-  const words = placeWords(body.flow, body.origin, design, face, fonts);
+  // The arch bends running text (not highlight bars or columns); at full strength its circle is as wide as the card.
+  const bend = design.composition === 'flow' || design.composition === 'kicker' ? design.arch / size.width : 0;
+  const words = placeWords(body.flow, body.origin, design, face, fonts, bend);
   const fillGradient = design.textFill ? parseLinearGradient(design.textFill) : null;
   const firstBody = words.find((_, i) => body.flow.words[i].role === 'body');
   const marks = body.flow.marks.map((m) => ({ ...m, x: m.x + body.origin.x, y: m.y + body.origin.y, color: design.highlight }));
@@ -391,8 +394,25 @@ function layoutNotification({ design, author, fonts, size, s, content, flowAt, h
   };
 }
 
-function placeWords(flow: FlowResult, origin: { x: number; y: number }, design: QuoteDesign, face: string, fonts: SkTypefaceFontProvider): PlacedWord[] {
+function placeWords(
+  flow: FlowResult,
+  origin: { x: number; y: number },
+  design: QuoteDesign,
+  face: string,
+  fonts: SkTypefaceFontProvider,
+  bend: number,
+): PlacedWord[] {
   const filled = design.textFill !== null && parseLinearGradient(design.textFill) !== null;
+  // Where each line's middle is, for the arch (the words on a line share its top).
+  const middles = new Map<number, number>();
+  if (bend > 0) {
+    const ends = new Map<number, [number, number]>();
+    for (const w of flow.words) {
+      const [left, right] = ends.get(w.y) ?? [Infinity, -Infinity];
+      ends.set(w.y, [Math.min(left, w.x), Math.max(right, w.x + w.width)]);
+    }
+    for (const [y, [left, right]] of ends) middles.set(y, (left + right) / 2);
+  }
   return flow.words.map((w) => {
     const color = w.role === 'kicker' ? (design.kickerColor ?? design.textColor) : w.role === 'highlight' ? (design.highlightText ?? design.textColor) : design.textColor;
     const fill = filled && w.role !== 'kicker';
@@ -414,14 +434,15 @@ function placeWords(flow: FlowResult, origin: { x: number; y: number }, design: 
     const x = origin.x + w.x;
     const y = origin.y + w.y;
     const { rotate, dy } = wave(w.index, design.curve);
+    const bent = bend > 0 ? arch(w.x + w.width / 2 - (middles.get(w.y) ?? 0), bend) : { rotate: 0, dy: 0 };
     return {
       paragraph: p,
       x,
       y,
       // Slack for glyph overhang; the paragraph is left-aligned and never wraps.
       width: w.width + w.size,
-      rotate: (rotate * Math.PI) / 180,
-      dy: dy * w.size,
+      rotate: (rotate * Math.PI) / 180 + bent.rotate,
+      dy: dy * w.size + bent.dy,
       // Skia rotates around the pivot first, then applies the bob.
       pivot: { x: x + w.width / 2, y: y + w.lineHeight / 2 },
       fill,

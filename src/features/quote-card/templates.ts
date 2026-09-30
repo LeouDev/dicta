@@ -12,6 +12,7 @@ export const BASE: QuoteDesign = {
   letterSpacing: -0.02,
   textTransform: 'none',
   curve: 0.6,
+  arch: 0,
   textColor: '#9B1B1E',
   textFill: null,
   glow: null,

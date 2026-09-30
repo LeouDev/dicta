@@ -203,3 +203,25 @@ test('moved text and header shift as one piece and stay on the card; a device fr
 
   expect(at({ x: 100, y: 100 }, { x: 0, y: 0 }, 'pager').shift.text).toEqual({ x: 0, y: 0 });
 });
+
+test('the arch bends each line down toward its ends, and off it changes nothing', () => {
+  const card = (arch: number, template: TemplateId = 'minimal') =>
+    layoutCard({ text: TEXTS.long, design: { ...createDesign(template), curve: 0, arch }, author, width: 1080, format: 'original', fonts });
+  const flat = card(0);
+  expect(flat.words.every((w) => w.dy === 0 && w.rotate === 0)).toBe(true);
+
+  const arched = card(0.7);
+  const line = arched.words.filter((w) => w.y === arched.words[0].y);
+  expect(line.length).toBeGreaterThan(2);
+  const [first, last] = [line[0], line[line.length - 1]];
+  const middle = Math.min(...line.map((w) => w.dy));
+  expect(first.dy).toBeGreaterThan(middle);
+  expect(last.dy).toBeGreaterThan(middle);
+  expect(first.rotate).toBeLessThan(0);
+  expect(last.rotate).toBeGreaterThan(0);
+  // The words keep their places on the line; only the drawing bends.
+  expect(arched.words.map((w) => [w.x, w.y])).toEqual(flat.words.map((w) => [w.x, w.y]));
+
+  // Highlight bars and columns keep their lines straight.
+  expect(card(0.7, 'book').words.every((w) => w.dy === 0 && w.rotate === 0)).toBe(true);
+});

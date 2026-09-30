@@ -106,6 +106,8 @@ export interface QuoteDesign {
   textTransform: TextTransform;
   /** 0–1 "editorial wave": each word tilts and bobs a little. */
   curve: number;
+  /** 0–1: each line of text bends into an arch, its words tilted along it. */
+  arch: number;
   textColor: string;
   /** CSS linear-gradient() for gradient-filled text, e.g. Headline. */
   textFill: string | null;
@@ -166,6 +168,7 @@ export const DESIGN_LIMITS = {
   lineHeight: { min: 0.8, max: 1.9 },
   letterSpacing: { min: -0.08, max: 0.3 },
   curve: { min: 0, max: 1 },
+  arch: { min: 0, max: 1 },
   strength: { min: 0, max: 1 },
   padding: { min: 0, max: 220 },
   topOffset: { min: 0, max: 0.4 },

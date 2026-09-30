@@ -75,6 +75,17 @@ export function LayoutControls() {
         display={(v) => (v < 0.02 ? 'Off' : `${Math.round(v * 100)}%`)}
         onChange={(curve) => update({ curve })}
       />
+      {(design.composition === 'flow' || design.composition === 'kicker') && (
+        <SliderRow
+          label="Arch"
+          value={design.arch}
+          min={DESIGN_LIMITS.arch.min}
+          max={DESIGN_LIMITS.arch.max}
+          step={0.01}
+          display={(v) => (v < 0.02 ? 'Off' : `${Math.round(v * 100)}%`)}
+          onChange={(arch) => update({ arch })}
+        />
+      )}
       <SliderRow
         label="Padding"
         value={design.padding}

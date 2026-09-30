@@ -1,21 +1,4 @@
-import {
-  alignBlock,
-  cardSize,
-  contentInsets,
-  fitSize,
-  formatRatio,
-  gradientPoints,
-  initials,
-  keepOnCard,
-  overlayStops,
-  parseLinearGradient,
-  photoRect,
-  tornStrip,
-  unionBox,
-  unitScale,
-  wave,
-  withAlpha,
-} from '../geometry';
+import { alignBlock, arch, cardSize, contentInsets, fitSize, formatRatio, gradientPoints, initials, keepOnCard, overlayStops, parseLinearGradient, photoRect, tornStrip, unionBox, unitScale, wave, withAlpha } from '../geometry';
 
 describe('moving and framing', () => {
   const card = { width: 1080, height: 1350 };
@@ -171,5 +154,17 @@ describe('helpers', () => {
     expect(withAlpha('#abc', 1)).toBe('#AABBCCff');
     expect(initials('Mara Vell')).toBe('MV');
     expect(initials('  ')).toBe('·');
+  });
+});
+
+describe('arch', () => {
+  it('drops a line toward both ends alike and tilts each end outward', () => {
+    const k = 1 / 1080;
+    expect(arch(0, k)).toEqual({ dy: 0, rotate: 0 });
+    expect(arch(-300, k).dy).toBeCloseTo(arch(300, k).dy);
+    expect(arch(300, k).dy).toBeCloseTo(300 ** 2 / 2160);
+    expect(arch(300, k).rotate).toBeGreaterThan(0);
+    expect(arch(-300, k).rotate).toBeCloseTo(-arch(300, k).rotate);
+    expect(arch(300, 0)).toEqual({ dy: 0, rotate: 0 });
   });
 });
