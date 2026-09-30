@@ -88,8 +88,8 @@ export const TEMPLATES: Record<TemplateId, TemplateInfo> = {
   },
   verse: {
     label: 'Verse',
-    description: 'Large formal script between small spaced capitals, the first line arched, on a sky photo with grain.',
-    sample: 'And after the storm\n\nthe light\n\nfinds its way back to you',
+    description: 'Large formal script between small spaced capitals, the first line arched, on a sky photo with grain. A word written *like this* is set in script.',
+    sample: 'And after the storm\n\nthe light\n\nfinds its *way* back to you',
     overrides: {
       font: 'script',
       weight: 400,

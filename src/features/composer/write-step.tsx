@@ -18,6 +18,7 @@ export function WriteStep({ onNext, onClose }: { onNext: () => void; onClose: ()
   const insets = useSafeAreaInsets();
   const text = useComposer((s) => s.text);
   const setText = useComposer((s) => s.setText);
+  const verse = useComposer((s) => s.design.composition === 'verse');
   const canContinue = text.trim().length > 0;
   const remaining = TEXT_MAX_LENGTH - text.length;
 
@@ -54,6 +55,11 @@ export function WriteStep({ onNext, onClose }: { onNext: () => void; onClose: ()
           accessibilityLabel="Your thought"
           style={[styles.input, { color: theme.text }]}
         />
+        {verse && (
+          <Text variant="caption" color="textTertiary" style={styles.tip}>
+            Verse: put a word between asterisks, like *Glory*, to set it in script among the small capitals.
+          </Text>
+        )}
         <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, spacing.sm) }]}>
           <TopicPill />
           <Text variant="caption" color={remaining < 40 ? 'accent' : 'textTertiary'} style={styles.count}>
@@ -122,4 +128,5 @@ const styles = StyleSheet.create({
   footer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.lg, paddingTop: spacing.sm },
   topic: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, height: 32, paddingHorizontal: spacing.sm + 4, borderRadius: 16 },
   count: { fontVariant: ['tabular-nums'] },
+  tip: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm },
 });

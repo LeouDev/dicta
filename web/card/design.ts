@@ -5,6 +5,7 @@
  */
 export { cardImagePath, cardKey, previewImagePath } from '@/features/quote-card/card-key';
 export { cardSize } from '@/features/quote-card/geometry';
+export { plainText } from '@/features/quote-card/flow';
 export { parseQuoteDesign } from '@/features/quote-card/serialize';
 export { SOUNDS } from '@/features/quote-card/types';
 export { toAuthor } from '@/services/author';

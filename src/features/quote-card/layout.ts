@@ -111,7 +111,7 @@ const SK_ALIGN: Record<TextAlign, SkTextAlign> = { left: SkTextAlign.Left, cente
 const UNLIMITED = 100_000;
 
 /** Verse's opening and closing lines: small capitals, spaced out. */
-const VERSE_CAPS = { face: 'InstrumentSans_500Medium', letterSpacing: 0.14 } as const;
+const VERSE_CAPS = { face: 'InstrumentSans_500Medium', letterSpacing: 0.14, joined: false } as const;
 
 // Words the arch can bend letter by letter: Latin, Greek and Cyrillic, with their punctuation. Joined or
 // composed scripts (Arabic, Devanagari) and emoji only look right shaped whole, so those words tilt as one.
@@ -205,7 +205,10 @@ export function layoutCard({ text, design, author, width, format = 'original', f
   const hiScale = format === 'story' && !isDeviceFrame(frame) ? 1.15 : 1;
   // Verse sets its opening and closing lines in small spaced capitals, whatever the design's font.
   const typeFor = (role: Role) =>
-    design.composition === 'verse' && (role === 'kicker' || role === 'tail') ? VERSE_CAPS : { face, letterSpacing: design.letterSpacing };
+    design.composition === 'verse' && (role === 'kicker' || role === 'tail')
+      ? VERSE_CAPS
+      : // Joined-up scripts only look right shaped whole, so an arch tilts their words as one.
+        { face, letterSpacing: design.letterSpacing, joined: FONT_LIBRARY[design.font].category === 'script' };
   // The arch bends running text (not highlight bars or columns), and in Verse only the opening line.
   // At full strength its circle is as wide as the card.
   const arched = (role: Role) => (design.composition === 'verse' ? role === 'kicker' : design.composition === 'flow' || design.composition === 'kicker');
@@ -416,7 +419,7 @@ function placeWords(
   flow: FlowResult,
   origin: { x: number; y: number },
   design: QuoteDesign,
-  typeFor: (role: Role) => { face: string; letterSpacing: number },
+  typeFor: (role: Role) => { face: string; letterSpacing: number; joined: boolean },
   fonts: SkTypefaceFontProvider,
   bendFor: (role: Role) => number,
 ): PlacedWord[] {
@@ -433,11 +436,13 @@ function placeWords(
   }
   return flow.words.map((w) => {
     const small = w.role === 'kicker' || w.role === 'tail';
-    const color = small ? (design.kickerColor ?? design.textColor) : w.role === 'highlight' ? (design.highlightText ?? design.textColor) : design.textColor;
+    const color =
+      small && !w.accent ? (design.kickerColor ?? design.textColor) : w.role === 'highlight' ? (design.highlightText ?? design.textColor) : design.textColor;
     const fill = filled && !small;
     const bend = bendFor(w.role);
+    const { joined, ...type } = typeFor(w.accent ? 'body' : w.role);
     const style: TextOptions = {
-      ...typeFor(w.role),
+      ...type,
       size: w.size,
       color: fill ? '#FFFFFF' : color,
       lineHeight: w.lineHeight / w.size,
@@ -451,10 +456,17 @@ function placeWords(
     const middle = middles.get(w.y) ?? 0;
     const { rotate, dy } = wave(w.index, design.curve);
     // The arch bends the word itself: each letter sits on the curve, upright to it, where the word's shaping put it.
-    const boxes = bend > 0 && !w.rtl && LETTERWISE.test(w.text) ? [...w.text].map((_, i) => p.getRectsForRange(i, i + 1)[0]) : [];
+    const boxes = bend > 0 && !w.rtl && !joined && LETTERWISE.test(w.text) ? [...w.text].map((_, i) => p.getRectsForRange(i, i + 1)[0]) : [];
     const letterwise = boxes.length > 0 && boxes.every(Boolean);
     const bent = bend > 0 && !letterwise ? arch(w.x + w.width / 2 - middle, bend) : { rotate: 0, dy: 0 };
     const baseline = letterwise ? (p.getLineMetrics()[0]?.baseline ?? w.lineHeight) : 0;
+    // An accent sits on its small line's baseline.
+    let lift = 0;
+    if (w.accent) {
+      const line = paragraph('H', { ...typeFor(w.role), size: w.accent, color, lineHeight: w.lineHeight / w.accent }, fonts, UNLIMITED);
+      lift = (line.getLineMetrics()[0]?.baseline ?? 0) - (p.getLineMetrics()[0]?.baseline ?? 0);
+      line.dispose();
+    }
     return {
       paragraph: p,
       x,
@@ -462,7 +474,7 @@ function placeWords(
       // Slack for glyph overhang; the paragraph is left-aligned and never wraps.
       width: w.width + w.size,
       rotate: (rotate * Math.PI) / 180 + bent.rotate,
-      dy: dy * w.size + bent.dy,
+      dy: dy * w.size + bent.dy + lift,
       // Skia rotates around the pivot first, then applies the bob.
       pivot: { x: x + w.width / 2, y: y + w.lineHeight / 2 },
       fill,

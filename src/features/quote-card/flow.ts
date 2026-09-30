@@ -13,6 +13,8 @@ export interface Token {
   text: string;
   /** Written straight after the previous token, with no space between (Chinese, Japanese). */
   glued: boolean;
+  /** Verse: a word written *like this*, set like the big words. */
+  accent?: boolean;
 }
 
 /** A paragraph of source text: forced lines (single newlines) of tokens. */
@@ -97,7 +99,22 @@ export function splitParagraphs(text: string): SourceParagraph[] {
 }
 
 const cased = (lines: Token[][], transform: TextTransform) =>
-  transform === 'uppercase' ? lines.map((line) => line.map((t) => ({ ...t, text: t.text.toUpperCase() }))) : lines;
+  transform === 'uppercase' ? lines.map((line) => line.map((t) => (t.accent ? t : { ...t, text: t.text.toUpperCase() }))) : lines;
+
+// Verse's accent: one word between asterisks, *like this*, maybe followed by punctuation.
+const ACCENT = /^\*([^*]+)\*(\p{P}*)$/u;
+const accented = (p: SourceParagraph): SourceParagraph => ({
+  ...p,
+  lines: p.lines.map((line) =>
+    line.map((t) => {
+      const m = ACCENT.exec(t.text);
+      return m ? { ...t, text: m[1] + m[2], accent: true } : t;
+    }),
+  ),
+});
+
+/** The text without Verse's accent asterisks, for places that show it as plain text. */
+export const plainText = (text: string) => text.replace(/\*([^*\s]+)\*/g, '$1');
 
 const endsWithColon = (t: Token) => t.text.endsWith(':') || t.text.endsWith('：');
 
@@ -139,7 +156,7 @@ export function compose(
   }
   if (design.composition === 'verse') {
     // Small capitals open it and, from three paragraphs on, close it; the words between are large.
-    const { kicker, rest } = splitKicker(paragraphs);
+    const { kicker, rest } = splitKicker(paragraphs.map(accented));
     const tail = kicker && rest.length > 1 ? rest[rest.length - 1] : null;
     return [
       [
@@ -165,6 +182,8 @@ export interface FlowWord {
   /** Line box height in px. */
   lineHeight: number;
   role: Role;
+  /** An accent in a small line, set larger in the big words' face: the size of the line's own text. */
+  accent?: number;
   /** Reading-order index, for the editorial wave. */
   index: number;
   /** The paragraph runs right to left. */
@@ -206,6 +225,10 @@ export interface FlowOptions {
 }
 
 const HIGHLIGHT_PAD = 0.14;
+/** An accent is this many times the size of the small line it sits in… */
+const ACCENT_SCALE = 2.5;
+/** …and its line opens up above and below (in its own em), so the big letters clear the lines around it. */
+const ACCENT_ROOM = { above: 1.25, below: 0.45 };
 
 /**
  * Left-to-right order of a line's words (indices into it). Words keep their own
@@ -286,7 +309,10 @@ export function flowColumns(columns: Column[], o: FlowOptions): FlowResult {
       const top = y;
 
       for (const forced of paragraph.lines) {
-        const widths = forced.map((token) => (o.measure(token.text, paragraph.lang, paragraph.role) * size) / 100 + pad * 2);
+        // An accent in a small line is measured and set like the big words, at ACCENT_SCALE times the line's size.
+        const accent = forced.map((token) => small && token.accent === true);
+        const sizes = accent.map((a) => (a ? size * ACCENT_SCALE : size));
+        const widths = forced.map((token, i) => (o.measure(token.text, paragraph.lang, accent[i] ? 'body' : paragraph.role) * sizes[i]) / 100 + pad * 2);
         // The space before each word (none before the first of a line, nor inside Chinese or Japanese).
         const gaps = forced.map((token) => (token.glued ? 0 : gap));
         if (widths.some((w) => w > colWidth + 0.5)) result.fits = false;
@@ -295,6 +321,8 @@ export function flowColumns(columns: Column[], o: FlowOptions): FlowResult {
         if (o.balance && rows.length > 1) rows = balanced(widths, gaps, colWidth, rows.length);
 
         for (const r of rows) {
+          const room = r.some((i) => accent[i]) ? ACCENT_ROOM : null;
+          if (room) y += size * room.above;
           const used = r.reduce((sum, i, n) => sum + widths[i] + (n > 0 ? gaps[i] : 0), 0);
           // Alignment is by reading direction: "left" means the start of the line, so it's the right in Arabic.
           const align = paragraph.rtl && o.align !== 'center' ? (o.align === 'left' ? 'right' : 'left') : o.align;
@@ -311,9 +339,10 @@ export function flowColumns(columns: Column[], o: FlowOptions): FlowResult {
               x: cursor + pad,
               y,
               width: widths[i] - pad * 2,
-              size,
+              size: sizes[i],
               lineHeight,
               role: paragraph.role,
+              ...(accent[i] ? { accent: size } : {}),
               index: index + r.indexOf(i),
               rtl: paragraph.rtl,
               ...(paragraph.lang ? { lang: paragraph.lang } : {}),
@@ -323,7 +352,7 @@ export function flowColumns(columns: Column[], o: FlowOptions): FlowResult {
           });
           index += r.length;
           if (paragraph.role === 'body') result.lines.push({ y, height: lineHeight });
-          y += lineHeight;
+          y += lineHeight + (room ? size * room.below : 0);
         }
       }
       result.boxes.push({ x: x0, y: top, width: colWidth, height: y - top, role: paragraph.role });

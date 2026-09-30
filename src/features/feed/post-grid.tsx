@@ -8,6 +8,7 @@ import { useTabBarSpace } from '@/components/bottom-tab-bar';
 import { EmptyState } from '@/components/ui/empty-state';
 import { PressableScale } from '@/components/ui/pressable-scale';
 import { radius, spacing } from '@/constants/tokens';
+import { plainText } from '@/features/quote-card/flow';
 import { QuoteCard } from '@/features/quote-card/quote-card';
 import { useTabScrollToTop } from '@/hooks/use-tab-scroll-top';
 import { useTheme } from '@/hooks/use-theme';
@@ -83,7 +84,7 @@ export const GridTile = memo(function GridTile({ post, width }: { post: FeedPost
       <PressableScale
         onPress={() => router.push(`/post/${post.id}`)}
         accessibilityRole="button"
-        accessibilityLabel={`${post.text.trim()} — by ${post.author.displayName}. Opens the post.`}
+        accessibilityLabel={`${plainText(post.text).trim()} — by ${post.author.displayName}. Opens the post.`}
         scaleTo={0.98}>
         <QuoteCard text={post.text} design={post.design} author={post.author} width={width} radius={radius.md} />
       </PressableScale>

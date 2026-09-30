@@ -1,4 +1,4 @@
-import { compose, flowColumns, splitParagraphs, visualOrder, type FlowOptions, type Token } from '../flow';
+import { compose, flowColumns, plainText, splitParagraphs, visualOrder, type FlowOptions, type Token } from '../flow';
 
 // Every character is 50 units wide at 100px, so a word of n letters is n × size / 2 px.
 const options = (o: Partial<FlowOptions> = {}): FlowOptions => ({
@@ -103,6 +103,23 @@ describe('compose', () => {
     expect(two.map((p) => p.role)).toEqual(['kicker', 'body']);
     const [one] = compose(design('verse'), splitParagraphs('just the light'));
     expect(one.map((p) => p.role)).toEqual(['body']);
+  });
+
+  it('sets a Verse accent, written *like this*, like the big words: larger, in their face, on the small line', () => {
+    const [col] = compose(design('verse'), splitParagraphs('and after\n\nthe light\n\nof his *Glory*, here'));
+    expect(roles(col)[2]).toEqual({ role: 'tail', lines: [['OF', 'HIS', 'Glory,', 'HERE']] });
+    const roleOf = new Map<string, string>();
+    const r = flowColumns([col], options({ measure: (word, _lang, role) => (roleOf.set(word, role), word.length * 50) }));
+    const glory = r.words.find((w) => w.text === 'Glory,')!;
+    const his = r.words.find((w) => w.text === 'HIS')!;
+    expect(glory.size).toBeCloseTo(his.size * 2.5);
+    expect(glory.accent).toBe(his.size);
+    expect([glory.y, glory.lineHeight]).toEqual([his.y, his.lineHeight]);
+    expect([roleOf.get('Glory,'), roleOf.get('HIS')]).toEqual(['body', 'tail']);
+    // In the big words an accent just loses its asterisks; outside Verse they're plain text, left as written.
+    expect(roles(compose(design('verse'), splitParagraphs('a\n\n*big* words'))[0])[1].lines).toEqual([['big', 'words']]);
+    expect(roles(compose(design('flow'), splitParagraphs('*sigh* ok'))[0])[0].lines).toEqual([['*sigh*', 'ok']]);
+    expect(plainText('of his *Glory*, in *Christ* 5 * 3')).toBe('of his Glory, in Christ 5 * 3');
   });
 
   it('highlights the first paragraph; the case applies to all text', () => {

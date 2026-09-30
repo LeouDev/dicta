@@ -13,6 +13,7 @@ import { Text } from '@/components/ui/text';
 import { UserAvatar } from '@/components/user-avatar';
 import { radius, spacing, typography } from '@/constants/tokens';
 import { GRID_GAP, GRID_GUTTER, PostGrid } from '@/features/feed/post-grid';
+import { plainText } from '@/features/quote-card/flow';
 import { QuoteCard } from '@/features/quote-card/quote-card';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import { useSearchTags, useSearchUsers, useSuggestedCreators, useTopics, useTrendingTags } from '@/hooks/use-discover';
@@ -108,7 +109,7 @@ function DiscoverHome() {
               <PressableScale
                 onPress={() => router.push(`/post/${item.id}`)}
                 accessibilityRole="button"
-                accessibilityLabel={`${item.text.trim()} — by ${item.author.displayName}. Opens the post.`}
+                accessibilityLabel={`${plainText(item.text).trim()} — by ${item.author.displayName}. Opens the post.`}
                 scaleTo={0.98}>
                 <QuoteCard text={item.text} design={item.design} author={item.author} width={cardWidth} radius={radius.md} />
               </PressableScale>

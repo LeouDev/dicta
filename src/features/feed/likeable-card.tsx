@@ -12,6 +12,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { Icon } from '@/components/ui/icon';
+import { plainText } from '@/features/quote-card/flow';
 import { QuoteCard } from '@/features/quote-card/quote-card';
 import { toggleSound, useSoundOwner } from '@/features/sound/player';
 import { SoundButton } from '@/features/sound/sound-button';
@@ -45,7 +46,7 @@ export const LikeableCard = memo(function LikeableCard({ post, width, onLike }: 
       <View
         accessible
         accessibilityRole="image"
-        accessibilityLabel={`${post.text.trim()} — quote card by ${post.author.displayName}`}
+        accessibilityLabel={`${plainText(post.text).trim()} — quote card by ${post.author.displayName}`}
         accessibilityActions={[
           { name: 'like', label: post.likedByMe ? 'Liked' : 'Like' },
           ...(sound ? [{ name: 'sound', label: playing ? 'Stop sound' : 'Play sound' }] : []),

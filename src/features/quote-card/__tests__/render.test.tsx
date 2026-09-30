@@ -236,6 +236,16 @@ test('the arch bends each line, and each word on it, down toward its ends; off, 
   expect(straight(card(0.7, 'book'))).toBe(true);
 });
 
+test('a Verse accent sits on its small line’s baseline', () => {
+  const { words } = layoutCard({ text: 'and after\n\nthe light\n\nof his *Glory* here', design: createDesign('verse'), author, width: 1080, format: 'original', fonts });
+  // AND AFTER / the light / OF HIS Glory HERE
+  const baseline = (w: Layout.PlacedWord) => w.y + w.dy + (w.paragraph.getLineMetrics()[0]?.baseline ?? 0);
+  const [his, glory, here] = words.slice(5);
+  expect(glory.paragraph.getLongestLine()).toBeGreaterThan(his.paragraph.getLongestLine() * 1.5);
+  expect(baseline(glory)).toBeCloseTo(baseline(his), 0);
+  expect(baseline(here)).toBeCloseTo(baseline(his), 0);
+});
+
 test('balanced lines break the same way in the feed as in an export', () => {
   // Whether each word starts a new line.
   const breaks = (width: number) => {

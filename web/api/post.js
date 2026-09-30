@@ -2,7 +2,7 @@
 // /card, see card.js), <meta> tags so link previews show that artwork too, and a way into
 // the app. Posts are read with the public anon key, so database rules apply. The page is
 // cached with the post's tags, so deleting the post purges it at once (purge.js).
-import { SOUNDS, cardKey, cardSize, parseQuoteDesign, toAuthor } from '../card/dist/design.mjs';
+import { SOUNDS, cardKey, cardSize, parseQuoteDesign, plainText, toAuthor } from '../card/dist/design.mjs';
 import { APP_ID, APP_STORE_URL, isOnAppStore } from '../lib/app-store.js';
 import { postTag } from '../lib/cache.js';
 import { fetchPost, isConfigured } from '../lib/supabase.js';
@@ -36,8 +36,10 @@ export async function GET(request) {
   const version = cardKey({ text: post.text, design: post.design, author: toAuthor(post.author) });
   const name = post.author.display_name || post.author.username;
   const canonical = `${url.origin}/post/${id}`;
-  const title = `“${excerpt(post.text, 70)}” — ${name} on Dicta`;
-  const alt = `Quote by ${name}: ${post.text.trim()}`;
+  // Verse's accent asterisks are for the card, not for titles and descriptions.
+  const text = plainText(post.text);
+  const title = `“${excerpt(text, 70)}” — ${name} on Dicta`;
+  const alt = `Quote by ${name}: ${text.trim()}`;
   const preview = `${url.origin}/card/${id}/og.jpg?v=${version}`;
 
   return page(
@@ -47,11 +49,11 @@ export async function GET(request) {
       head: `
     <link rel="canonical" href="${canonical}">
     <meta name="apple-itunes-app" content="app-id=${APP_ID}, app-argument=${canonical}">
-    <meta name="description" content="${esc(excerpt(post.text, 200))}">
+    <meta name="description" content="${esc(excerpt(text, 200))}">
     <meta property="og:type" content="article">
     <meta property="og:site_name" content="Dicta">
     <meta property="og:title" content="${esc(title)}">
-    <meta property="og:description" content="${esc(excerpt(post.text, 200))}">
+    <meta property="og:description" content="${esc(excerpt(text, 200))}">
     <meta property="og:url" content="${canonical}">
     <meta property="og:image" content="${preview}">
     <meta property="og:image:width" content="1200">
