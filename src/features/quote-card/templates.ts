@@ -71,7 +71,7 @@ export const TEMPLATES: Record<TemplateId, TemplateInfo> = {
     description: 'Oversized bold serif in deep red on white paper, every line bent into an arch.',
     sample: 'Softness is its own kind of strength.',
     overrides: {
-      size: 140,
+      size: 180,
       lineHeight: 1,
       letterSpacing: -0.03,
       curve: 0,
