@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { spacing } from '@/constants/tokens';
+import { compose, splitParagraphs } from '@/features/quote-card/flow';
 import { CANVASES, DESIGN_LIMITS, type Canvas, type TextAlign, type VerticalAlign } from '@/features/quote-card/types';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -17,7 +18,10 @@ export function LayoutControls() {
   const theme = useTheme();
   const design = useComposer((s) => s.design);
   const update = useComposer((s) => s.update);
+  const text = useComposer((s) => s.text);
   const [advanced, setAdvanced] = useState(false);
+  // Paragraph spacing only does something when the card has more than one paragraph in a column.
+  const paragraphs = compose(design, splitParagraphs(text)).some((column) => column.length > 1);
   const moved = design.textOffset.x !== 0 || design.textOffset.y !== 0 || design.headerOffset.x !== 0 || design.headerOffset.y !== 0;
 
   return (
@@ -87,6 +91,17 @@ export function LayoutControls() {
         />
       )}
       <ToggleRow label="Balanced lines" value={design.balance} onChange={(balance) => update({ balance })} />
+      {paragraphs && (
+        <SliderRow
+          label="Paragraph spacing"
+          value={design.paragraphGap}
+          min={DESIGN_LIMITS.paragraphGap.min}
+          max={DESIGN_LIMITS.paragraphGap.max}
+          step={0.01}
+          display={(v) => `${Math.round(v * 100)}%`}
+          onChange={(paragraphGap) => update({ paragraphGap })}
+        />
+      )}
       <SliderRow
         label="Padding"
         value={design.padding}

@@ -14,7 +14,7 @@ import { contentInsets } from '../geometry';
 import type * as Layout from '../layout';
 import type * as Canvas from '../quote-canvas';
 import type * as Story from '../story';
-import { createDesign } from '../templates';
+import { BASE, createDesign } from '../templates';
 import { FORMATS, TEMPLATE_IDS, type CardAuthor, type TemplateId } from '../types';
 
 // Skia's web build, backed by the CanvasKit instance this file loads below.
@@ -155,7 +155,8 @@ const REFERENCES: [TemplateId, string][] = [
 test('the drawing is frozen at ENGINE_VERSION', async () => {
   const hash = createHash('sha256');
   for (const [template, text] of REFERENCES) {
-    const layout = layoutCard({ text, design: createDesign(template), author, width: 216, format: 'original', fonts });
+    // Headline now starts with tighter paragraphs; these keep the spacing the drawings were frozen with (and posts made before it still have).
+    const layout = layoutCard({ text, design: { ...createDesign(template), paragraphGap: BASE.paragraphGap }, author, width: 216, format: 'original', fonts });
     const image = await draw(layout.width, layout.height, <QuoteCanvas layout={layout} avatar={null} backgroundImage={null} />);
     hash.update(template).update(image.readPixels() as Uint8Array);
   }

@@ -1,6 +1,6 @@
 import { FONT_LIBRARY, availableWeights, hasItalic, isFontKey, type FontKey, type FontWeight } from '@/constants/fonts';
 
-import { createDesign } from './templates';
+import { BASE, createDesign } from './templates';
 import {
   CANVASES,
   COMPOSITIONS,
@@ -153,6 +153,8 @@ export function parseQuoteDesign(input: unknown): QuoteDesign {
     curve: num(raw.curve, DESIGN_LIMITS.curve, base.curve),
     arch: num(raw.arch, DESIGN_LIMITS.arch, base.arch),
     balance: bool(raw.balance, base.balance),
+    // Designs from before this setting were all drawn with BASE's spacing, whatever their template.
+    paragraphGap: num(raw.paragraphGap, DESIGN_LIMITS.paragraphGap, BASE.paragraphGap),
     textColor: color(raw.textColor, base.textColor),
     textFill: raw.textFill === null ? null : typeof raw.textFill === 'string' && GRADIENT.test(raw.textFill) ? raw.textFill : base.textFill,
     glow: raw.glow === null ? null : typeof raw.glow === 'string' && (RGBA.test(raw.glow) || HEX.test(raw.glow)) ? raw.glow : base.glow,

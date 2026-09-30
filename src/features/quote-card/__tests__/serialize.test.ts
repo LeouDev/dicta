@@ -134,6 +134,12 @@ describe('templates', () => {
     }
   });
 
+  it('keeps the old paragraph spacing for designs saved before the setting, whatever their template', () => {
+    const { paragraphGap: _, ...saved } = createDesign('headline');
+    expect(createDesign('headline').paragraphGap).toBe(0.3);
+    expect(parseQuoteDesign(saved).paragraphGap).toBe(0.55);
+  });
+
   it('matches the spec values for a few templates', () => {
     expect(createDesign('editorial')).toMatchObject({ font: 'editorial', weight: 700, size: 92, curve: 0.6, textColor: '#9B1B1E', canvas: '4:5' });
     expect(createDesign('diptych').background).toMatchObject({ type: 'split', color: '#0D0D0D', color2: '#23439B' });

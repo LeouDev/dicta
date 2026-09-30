@@ -112,6 +112,8 @@ export interface QuoteDesign {
   arch: number;
   /** Lines of a paragraph come out about the same length, instead of each filling up in turn. */
   balance: boolean;
+  /** Space between paragraphs, in lines of the big text. */
+  paragraphGap: number;
   textColor: string;
   /** CSS linear-gradient() for gradient-filled text, e.g. Headline. */
   textFill: string | null;
@@ -173,6 +175,7 @@ export const DESIGN_LIMITS = {
   letterSpacing: { min: -0.08, max: 0.3 },
   curve: { min: 0, max: 1 },
   arch: { min: 0, max: 1 },
+  paragraphGap: { min: 0, max: 1.5 },
   strength: { min: 0, max: 1 },
   padding: { min: 0, max: 220 },
   topOffset: { min: 0, max: 0.4 },

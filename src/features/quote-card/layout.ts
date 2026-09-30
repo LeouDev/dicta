@@ -225,6 +225,7 @@ export function layoutCard({ text, design, author, width, format = 'original', f
       align: design.align,
       wordGap: FONT_LIBRARY[design.font].wordGap,
       balance: design.balance,
+      paragraphGap: design.paragraphGap,
       measure: (w, lang, role) => measureWord(fonts, typeFor(role).face, typeFor(role).letterSpacing, w, lang),
     });
     // An arched line's ends dip below it: leave room under the text for the deepest a full-width line goes.

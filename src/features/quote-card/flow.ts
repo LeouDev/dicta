@@ -220,6 +220,8 @@ export interface FlowOptions {
   wordGap: number;
   /** Lines of a paragraph come out about the same length. */
   balance?: boolean;
+  /** Space between paragraphs in a column, in lines of the big text. */
+  paragraphGap: number;
   /** Advance width of a word at a 100px font size, in a paragraph of this language and role. */
   measure: (word: string, lang: string | undefined, role: Role) => number;
 }
@@ -299,7 +301,7 @@ export function flowColumns(columns: Column[], o: FlowOptions): FlowResult {
     const x0 = c * (colWidth + gutter);
     let y = 0;
     column.forEach((paragraph, k) => {
-      if (k > 0) y += count === 2 ? o.colGap : o.size * o.lineHeight * 0.55;
+      if (k > 0) y += count === 2 ? o.colGap : o.size * o.lineHeight * o.paragraphGap;
       const small = paragraph.role === 'kicker' || paragraph.role === 'tail';
       const highlight = paragraph.role === 'highlight';
       const size = small ? o.size * o.kickerScale : o.size;

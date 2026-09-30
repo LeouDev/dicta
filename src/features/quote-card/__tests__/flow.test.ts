@@ -9,6 +9,7 @@ const options = (o: Partial<FlowOptions> = {}): FlowOptions => ({
   kickerScale: 0.36,
   align: 'left',
   wordGap: 0.25,
+  paragraphGap: 0.55,
   measure: (word) => word.length * 50,
   ...o,
 });
