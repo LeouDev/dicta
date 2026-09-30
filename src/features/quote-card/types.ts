@@ -35,7 +35,7 @@ export const TEXTURES = [
 ] as const;
 export type TextureKey = (typeof TEXTURES)[number];
 
-export const COMPOSITIONS = ['flow', 'kicker', 'columns', 'highlight'] as const;
+export const COMPOSITIONS = ['flow', 'kicker', 'columns', 'highlight', 'verse'] as const;
 export type Composition = (typeof COMPOSITIONS)[number];
 
 export const FRAMES = ['none', 'pager', 'lcd', 'notification'] as const;
@@ -44,6 +44,7 @@ export type Frame = (typeof FRAMES)[number];
 export const TEMPLATE_IDS = [
   'editorial',
   'magazine',
+  'verse',
   'minimal',
   'midnight',
   'typewriter',
@@ -177,7 +178,7 @@ export const DESIGN_LIMITS = {
   topOffset: { min: 0, max: 0.4 },
   textWidth: { min: 0.5, max: 1 },
   radius: { min: 0, max: 80 },
-  kickerScale: { min: 0.2, max: 1 },
+  kickerScale: { min: 0.12, max: 1 },
   colGap: { min: 0, max: 200 },
   angle: { min: 0, max: 360 },
   headerScale: { min: 0.5, max: 1.5 },

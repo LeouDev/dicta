@@ -29,6 +29,7 @@ import { Nunito_400Regular } from '@expo-google-fonts/nunito/400Regular';
 import { Nunito_700Bold } from '@expo-google-fonts/nunito/700Bold';
 import { Nunito_800ExtraBold } from '@expo-google-fonts/nunito/800ExtraBold';
 import { PatrickHand_400Regular } from '@expo-google-fonts/patrick-hand/400Regular';
+import { PinyonScript_400Regular } from '@expo-google-fonts/pinyon-script/400Regular';
 import { PlayfairDisplay_400Regular } from '@expo-google-fonts/playfair-display/400Regular';
 import { PlayfairDisplay_400Regular_Italic } from '@expo-google-fonts/playfair-display/400Regular_Italic';
 import { PlayfairDisplay_700Bold } from '@expo-google-fonts/playfair-display/700Bold';
@@ -39,6 +40,10 @@ import { SourceSerif4_400Regular_Italic } from '@expo-google-fonts/source-serif-
 import { SourceSerif4_500Medium } from '@expo-google-fonts/source-serif-4/500Medium';
 import { SourceSerif4_700Bold } from '@expo-google-fonts/source-serif-4/700Bold';
 import { VT323_400Regular } from '@expo-google-fonts/vt323/400Regular';
+
+// Not packaged for Expo: static instances of Google Fonts' variable font, with its license beside them.
+import LibreCaslonCondensed_400Regular from '../../assets/fonts/LibreCaslonCondensed_400Regular.ttf';
+import LibreCaslonCondensed_700Bold from '../../assets/fonts/LibreCaslonCondensed_700Bold.ttf';
 
 /** Passed to `useFonts` and to Skia; keys become the registered family names. */
 export const fontAssets = {
@@ -62,10 +67,13 @@ export const fontAssets = {
   InstrumentSans_500Medium,
   InstrumentSans_600SemiBold,
   InstrumentSans_700Bold,
+  LibreCaslonCondensed_400Regular,
+  LibreCaslonCondensed_700Bold,
   Nunito_400Regular,
   Nunito_700Bold,
   Nunito_800ExtraBold,
   PatrickHand_400Regular,
+  PinyonScript_400Regular,
   PlayfairDisplay_400Regular,
   PlayfairDisplay_400Regular_Italic,
   PlayfairDisplay_700Bold,
@@ -128,6 +136,13 @@ export const FONT_LIBRARY = {
     defaultWeight: 500,
     wordGap: 0.25,
   },
+  condensed: {
+    label: 'Condensed',
+    category: 'serif',
+    faces: { 400: 'LibreCaslonCondensed_400Regular', 700: 'LibreCaslonCondensed_700Bold' },
+    defaultWeight: 700,
+    wordGap: 0.25,
+  },
   modern: {
     label: 'Modern',
     category: 'sans',
@@ -177,6 +192,13 @@ export const FONT_LIBRARY = {
     faces: { 400: 'VT323_400Regular' },
     defaultWeight: 400,
     wordGap: 0.5,
+  },
+  script: {
+    label: 'Script',
+    category: 'script',
+    faces: { 400: 'PinyonScript_400Regular' },
+    defaultWeight: 400,
+    wordGap: 0.3,
   },
   hand: {
     label: 'Handwritten',

@@ -5,7 +5,8 @@
 import type { Box } from './geometry';
 import type { QuoteDesign, TextAlign, TextTransform } from './types';
 
-export type Role = 'body' | 'kicker' | 'highlight';
+/** Kicker: the small opening line. Tail: Verse's small closing lines. */
+export type Role = 'body' | 'kicker' | 'tail' | 'highlight';
 
 /** What the flow places as one unit: a word, or a single Chinese or Japanese character. */
 export interface Token {
@@ -136,6 +137,18 @@ export function compose(
     }
     return [paragraphs[0] ? [as('body', paragraphs[0])] : [], paragraphs.slice(1).map((p) => as('body', p, second))];
   }
+  if (design.composition === 'verse') {
+    // Small capitals open it and, from three paragraphs on, close it; the words between are large.
+    const { kicker, rest } = splitKicker(paragraphs);
+    const tail = kicker && rest.length > 1 ? rest[rest.length - 1] : null;
+    return [
+      [
+        ...(kicker ? [as('kicker', kicker, 'uppercase')] : []),
+        ...(tail ? rest.slice(0, -1) : rest).map((p) => as('body', p)),
+        ...(tail ? [as('tail', tail, 'uppercase')] : []),
+      ],
+    ];
+  }
   if (design.composition === 'highlight') {
     return [paragraphs.map((p, i) => as(i === 0 ? 'highlight' : 'body', p))];
   }
@@ -188,8 +201,8 @@ export interface FlowOptions {
   wordGap: number;
   /** Lines of a paragraph come out about the same length. */
   balance?: boolean;
-  /** Advance width of a word at a 100px font size, in a paragraph of this language. */
-  measure: (word: string, lang?: string) => number;
+  /** Advance width of a word at a 100px font size, in a paragraph of this language and role. */
+  measure: (word: string, lang: string | undefined, role: Role) => number;
 }
 
 const HIGHLIGHT_PAD = 0.14;
@@ -264,16 +277,16 @@ export function flowColumns(columns: Column[], o: FlowOptions): FlowResult {
     let y = 0;
     column.forEach((paragraph, k) => {
       if (k > 0) y += count === 2 ? o.colGap : o.size * o.lineHeight * 0.55;
-      const kicker = paragraph.role === 'kicker';
+      const small = paragraph.role === 'kicker' || paragraph.role === 'tail';
       const highlight = paragraph.role === 'highlight';
-      const size = kicker ? o.size * o.kickerScale : o.size;
-      const lineHeight = size * (kicker ? 1.1 : o.lineHeight);
+      const size = small ? o.size * o.kickerScale : o.size;
+      const lineHeight = size * (small ? 1.1 : o.lineHeight);
       const gap = highlight ? 0 : o.wordGap * size;
       const pad = highlight ? HIGHLIGHT_PAD * size : 0;
       const top = y;
 
       for (const forced of paragraph.lines) {
-        const widths = forced.map((token) => (o.measure(token.text, paragraph.lang) * size) / 100 + pad * 2);
+        const widths = forced.map((token) => (o.measure(token.text, paragraph.lang, paragraph.role) * size) / 100 + pad * 2);
         // The space before each word (none before the first of a line, nor inside Chinese or Japanese).
         const gaps = forced.map((token) => (token.glued ? 0 : gap));
         if (widths.some((w) => w > colWidth + 0.5)) result.fits = false;

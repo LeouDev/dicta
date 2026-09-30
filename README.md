@@ -9,7 +9,7 @@ Built with Expo SDK 57 (React Native 0.86, New Architecture, React Compiler), Ex
 | Phase | Scope | State |
 | --- | --- | --- |
 | 1 | Expo + TypeScript + Router, Supabase, design tokens, navigation, auth, onboarding, profile setup, full DB schema + RLS | ✅ Done |
-| 2–3 | Quote card engine (Skia), 19 templates, visual editor with live preview, drafts, publish, image export (9:16, 4:5, 1:1, original), feed + profile gallery | ✅ Done |
+| 2–3 | Quote card engine (Skia), 20 templates, visual editor with live preview, drafts, publish, image export (9:16, 4:5, 1:1, original), feed + profile gallery | ✅ Done |
 | 4 | Social: likes (double-tap), threaded comments, follows, saves, Activity with realtime badge, Discover (trending, creators, topics, hashtags), debounced search, post view, other profiles, share sheet (save image, copy link, share counts), settings (edit profile, log out, delete account), report + block | ✅ Done |
 | 5 | Website with shared quote pages and universal links, App Store pages | ✅ Done |
 | 6 | Production and private beta: phone-drawn card images, any-script text, instant deletion from the web, push notifications, live timestamps, dev seed, security audit, App Store prep | ✅ Done, see [docs/production.md](docs/production.md) and [docs/app-store-checklist.md](docs/app-store-checklist.md) |
@@ -169,7 +169,7 @@ Tables: `profiles`, `posts`, `post_designs` (the structured card design as JSONB
 - **Deletion:** every page and image is tagged with its post, and a database trigger purges them from Vercel's cache the moment a post is deleted, hidden or removed (`/api/purge`).
 - **Push:** `/api/push` sends one queued notification through Expo (see docs/production.md).
 - **App Store Connect:** use `/privacy` for the privacy policy URL and `/support` for the support URL.
-- **Tests:** `cd web && npm test` builds the renderer, draws all 19 templates in all 4 formats and six scripts, and checks the card, post, purge and push endpoints against an in-memory Supabase.
+- **Tests:** `cd web && npm test` builds the renderer, draws all 20 templates in all 4 formats and six scripts, and checks the card, post, purge and push endpoints against an in-memory Supabase.
 
 ## Building for iOS
 

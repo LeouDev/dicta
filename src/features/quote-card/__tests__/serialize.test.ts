@@ -126,8 +126,8 @@ describe('parseQuoteDesign', () => {
 });
 
 describe('templates', () => {
-  it('has all 19 templates, each with a sample and a valid design', () => {
-    expect(TEMPLATE_IDS).toHaveLength(19);
+  it('has all 20 templates, each with a sample and a valid design', () => {
+    expect(TEMPLATE_IDS).toHaveLength(20);
     for (const id of TEMPLATE_IDS) {
       expect(TEMPLATES[id].sample.length).toBeGreaterThan(0);
       expect(parseQuoteDesign(createDesign(id))).toEqual(createDesign(id));

@@ -10,8 +10,8 @@ describe('font library', () => {
     for (const face of Object.values(UI_FACES)) expect(fontAssets).toHaveProperty(face);
   });
 
-  it('has the 13 spec fonts, each with a face for its default weight', () => {
-    expect(FONT_KEYS).toHaveLength(13);
+  it('has all 15 fonts, each with a face for its default weight', () => {
+    expect(FONT_KEYS).toHaveLength(15);
     for (const key of FONT_KEYS) expect(availableWeights(key)).toContain(FONT_LIBRARY[key].defaultWeight);
   });
 

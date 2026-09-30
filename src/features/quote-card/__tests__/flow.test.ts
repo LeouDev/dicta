@@ -16,7 +16,7 @@ const options = (o: Partial<FlowOptions> = {}): FlowOptions => ({
 const texts = (lines: Token[][]) => lines.map((line) => line.map((t) => t.text));
 const roles = (column: { role: string; lines: Token[][] }[]) => column.map((p) => ({ role: p.role, lines: texts(p.lines) }));
 
-const design = (composition: 'flow' | 'kicker' | 'columns' | 'highlight', extra = {}) => ({
+const design = (composition: 'flow' | 'kicker' | 'columns' | 'highlight' | 'verse', extra = {}) => ({
   composition,
   textTransform: 'none' as const,
   secondTransform: null,
@@ -90,6 +90,19 @@ describe('compose', () => {
     expect(texts(cols[1][0].lines)).toEqual([['D', 'E']]);
     const two = compose(design('columns'), splitParagraphs('still\n\nhere'));
     expect(two.map((c) => texts(c[0].lines))).toEqual([[['still']], [['here']]]);
+  });
+
+  it('opens Verse with small capitals and, from three paragraphs on, closes it with them', () => {
+    const [three] = compose(design('verse'), splitParagraphs('and after\n\nthe light\n\nfinds you'));
+    expect(roles(three)).toEqual([
+      { role: 'kicker', lines: [['AND', 'AFTER']] },
+      { role: 'body', lines: [['the', 'light']] },
+      { role: 'tail', lines: [['FINDS', 'YOU']] },
+    ]);
+    const [two] = compose(design('verse'), splitParagraphs('and after\n\nthe light'));
+    expect(two.map((p) => p.role)).toEqual(['kicker', 'body']);
+    const [one] = compose(design('verse'), splitParagraphs('just the light'));
+    expect(one.map((p) => p.role)).toEqual(['body']);
   });
 
   it('highlights the first paragraph; the case applies to all text', () => {

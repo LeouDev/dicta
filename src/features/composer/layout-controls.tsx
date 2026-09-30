@@ -75,7 +75,7 @@ export function LayoutControls() {
         display={(v) => (v < 0.02 ? 'Off' : `${Math.round(v * 100)}%`)}
         onChange={(curve) => update({ curve })}
       />
-      {(design.composition === 'flow' || design.composition === 'kicker') && (
+      {(design.composition === 'flow' || design.composition === 'kicker' || design.composition === 'verse') && (
         <SliderRow
           label="Arch"
           value={design.arch}

@@ -2,7 +2,7 @@ import { Skia, TextAlign as SkTextAlign, TextDirection, type SkParagraph, type S
 
 import { FONT_LIBRARY, UI_FACES, resolveFace } from '@/constants/fonts';
 
-import { compose, flowColumns, splitParagraphs, type FlowResult } from './flow';
+import { compose, flowColumns, splitParagraphs, type FlowResult, type Role } from './flow';
 import {
   EDGE,
   alignBlock,
@@ -110,6 +110,9 @@ export interface LayoutInput {
 const SK_ALIGN: Record<TextAlign, SkTextAlign> = { left: SkTextAlign.Left, center: SkTextAlign.Center, right: SkTextAlign.Right };
 const UNLIMITED = 100_000;
 
+/** Verse's opening and closing lines: small capitals, spaced out. */
+const VERSE_CAPS = { face: 'InstrumentSans_500Medium', letterSpacing: 0.14 } as const;
+
 // Words the arch can bend letter by letter: Latin, Greek and Cyrillic, with their punctuation. Joined or
 // composed scripts (Arabic, Devanagari) and emoji only look right shaped whole, so those words tilt as one.
 const LETTERWISE = /^[\u0021-\u024F\u0370-\u03FF\u0400-\u04FF\u2010-\u205E]{2,}$/;
@@ -200,8 +203,13 @@ export function layoutCard({ text, design, author, width, format = 'original', f
   const face = resolveFace(design.font, design.weight, design.italic);
   const columns = compose(design, splitParagraphs(text));
   const hiScale = format === 'story' && !isDeviceFrame(frame) ? 1.15 : 1;
-  // The arch bends running text (not highlight bars or columns); at full strength its circle is as wide as the card.
-  const bend = design.composition === 'flow' || design.composition === 'kicker' ? design.arch / size.width : 0;
+  // Verse sets its opening and closing lines in small spaced capitals, whatever the design's font.
+  const typeFor = (role: Role) =>
+    design.composition === 'verse' && (role === 'kicker' || role === 'tail') ? VERSE_CAPS : { face, letterSpacing: design.letterSpacing };
+  // The arch bends running text (not highlight bars or columns), and in Verse only the opening line.
+  // At full strength its circle is as wide as the card.
+  const arched = (role: Role) => (design.composition === 'verse' ? role === 'kicker' : design.composition === 'flow' || design.composition === 'kicker');
+  const bend = design.arch / size.width;
   const flowAt = (fontSize: number, blockWidth: number) => {
     const flow = flowColumns(columns, {
       size: fontSize,
@@ -214,10 +222,10 @@ export function layoutCard({ text, design, author, width, format = 'original', f
       align: design.align,
       wordGap: FONT_LIBRARY[design.font].wordGap,
       balance: design.balance,
-      measure: (w, lang) => measureWord(fonts, face, design.letterSpacing, w, lang),
+      measure: (w, lang, role) => measureWord(fonts, typeFor(role).face, typeFor(role).letterSpacing, w, lang),
     });
     // An arched line's ends dip below it: leave room under the text for the deepest a full-width line goes.
-    return bend > 0 ? { ...flow, height: flow.height + (bend * (blockWidth / 2) ** 2) / 2 } : flow;
+    return bend > 0 && arched('body') ? { ...flow, height: flow.height + (bend * (blockWidth / 2) ** 2) / 2 } : flow;
   };
 
   const body =
@@ -225,7 +233,7 @@ export function layoutCard({ text, design, author, width, format = 'original', f
       ? layoutNotification({ design, author, fonts, size, s, content, flowAt, hiScale })
       : layoutPlain({ design, author, fonts, s, content, dark, flowAt, hiScale });
 
-  const words = placeWords(body.flow, body.origin, design, face, fonts, bend);
+  const words = placeWords(body.flow, body.origin, design, typeFor, fonts, (role) => (arched(role) ? bend : 0));
   const fillGradient = design.textFill ? parseLinearGradient(design.textFill) : null;
   const firstBody = words.find((_, i) => body.flow.words[i].role === 'body');
   const marks = body.flow.marks.map((m) => ({ ...m, x: m.x + body.origin.x, y: m.y + body.origin.y, color: design.highlight }));
@@ -262,7 +270,7 @@ export function layoutCard({ text, design, author, width, format = 'original', f
     fill: fillGradient
       ? {
           ...fillGradient,
-          boxes: body.flow.boxes.filter((b) => b.role !== 'kicker').map((b) => ({ x: b.x + body.origin.x, y: b.y + body.origin.y, width: b.width, height: b.height })),
+          boxes: body.flow.boxes.filter((b) => b.role !== 'kicker' && b.role !== 'tail').map((b) => ({ x: b.x + body.origin.x, y: b.y + body.origin.y, width: b.width, height: b.height })),
         }
       : null,
     header: body.header,
@@ -408,14 +416,14 @@ function placeWords(
   flow: FlowResult,
   origin: { x: number; y: number },
   design: QuoteDesign,
-  face: string,
+  typeFor: (role: Role) => { face: string; letterSpacing: number },
   fonts: SkTypefaceFontProvider,
-  bend: number,
+  bendFor: (role: Role) => number,
 ): PlacedWord[] {
   const filled = design.textFill !== null && parseLinearGradient(design.textFill) !== null;
   // Where each line's middle is, for the arch (the words on a line share its top).
   const middles = new Map<number, number>();
-  if (bend > 0) {
+  if (design.arch > 0) {
     const ends = new Map<number, [number, number]>();
     for (const w of flow.words) {
       const [left, right] = ends.get(w.y) ?? [Infinity, -Infinity];
@@ -424,13 +432,14 @@ function placeWords(
     for (const [y, [left, right]] of ends) middles.set(y, (left + right) / 2);
   }
   return flow.words.map((w) => {
-    const color = w.role === 'kicker' ? (design.kickerColor ?? design.textColor) : w.role === 'highlight' ? (design.highlightText ?? design.textColor) : design.textColor;
-    const fill = filled && w.role !== 'kicker';
+    const small = w.role === 'kicker' || w.role === 'tail';
+    const color = small ? (design.kickerColor ?? design.textColor) : w.role === 'highlight' ? (design.highlightText ?? design.textColor) : design.textColor;
+    const fill = filled && !small;
+    const bend = bendFor(w.role);
     const style: TextOptions = {
-      face,
+      ...typeFor(w.role),
       size: w.size,
       color: fill ? '#FFFFFF' : color,
-      letterSpacing: design.letterSpacing,
       lineHeight: w.lineHeight / w.size,
       ...(design.glow ? { shadows: [{ color: design.glow, blur: w.size * 0.14 }, { color: design.glow, blur: w.size * 0.4 }] } : {}),
       ...(w.rtl ? { rtl: true } : {}),

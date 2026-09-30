@@ -33,6 +33,7 @@ const PACKAGES: Record<string, string> = {
   InstrumentSans: 'instrument-sans',
   Nunito: 'nunito',
   PatrickHand: 'patrick-hand',
+  PinyonScript: 'pinyon-script',
   PlayfairDisplay: 'playfair-display',
   ShareTechMono: 'share-tech-mono',
   SourceSerif4: 'source-serif-4',
@@ -80,7 +81,10 @@ beforeAll(async () => {
   fonts = Skia.TypefaceFontProvider.Make();
   for (const face of Object.keys(fontAssets)) {
     const [family, ...style] = face.split('_');
-    const file = path.join(process.cwd(), 'node_modules/@expo-google-fonts', PACKAGES[family], style.join('_'), `${face}.ttf`);
+    // Faces without an Expo package live in assets/fonts.
+    const file = PACKAGES[family]
+      ? path.join(process.cwd(), 'node_modules/@expo-google-fonts', PACKAGES[family], style.join('_'), `${face}.ttf`)
+      : path.join(process.cwd(), 'assets/fonts', `${face}.ttf`);
     fonts.registerFont(Skia.Typeface.MakeFreeTypeFaceFromData(Skia.Data.fromBytes(new Uint8Array(fs.readFileSync(file)))), face);
   }
 

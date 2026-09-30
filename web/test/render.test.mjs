@@ -6,7 +6,7 @@ import { test } from 'node:test';
 const { CARD_WIDTH, PREVIEW_SIZE, cardImageUrls, missingGlyphs, previewFromCard, renderCard, renderCardAndPreview, renderLinkPreview } = await import('../card/dist/render.mjs');
 const { cardSize, parseQuoteDesign } = await import('../card/dist/design.mjs');
 
-const TEMPLATES = ['editorial', 'magazine', 'minimal', 'midnight', 'typewriter', 'journal', 'modern', 'gradient', 'photograph', 'diptych', 'headline', 'grain', 'pager', 'lcd', 'ink', 'wall', 'notification', 'book', 'dialogue'];
+const TEMPLATES = ['editorial', 'magazine', 'verse', 'minimal', 'midnight', 'typewriter', 'journal', 'modern', 'gradient', 'photograph', 'diptych', 'headline', 'grain', 'pager', 'lcd', 'ink', 'wall', 'notification', 'book', 'dialogue'];
 const FORMATS = ['original', 'story', 'post', 'square'];
 const author = { username: 'mara', display_name: 'Mara', avatar_url: null, is_verified: true };
 const none = { avatar: null, photo: null };
