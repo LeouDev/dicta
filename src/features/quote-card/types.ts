@@ -43,6 +43,7 @@ export type Frame = (typeof FRAMES)[number];
 
 export const TEMPLATE_IDS = [
   'editorial',
+  'magazine',
   'minimal',
   'midnight',
   'typewriter',
@@ -108,6 +109,8 @@ export interface QuoteDesign {
   curve: number;
   /** 0–1: each line of text bends into an arch, its words tilted along it. */
   arch: number;
+  /** Lines of a paragraph come out about the same length, instead of each filling up in turn. */
+  balance: boolean;
   textColor: string;
   /** CSS linear-gradient() for gradient-filled text, e.g. Headline. */
   textFill: string | null;

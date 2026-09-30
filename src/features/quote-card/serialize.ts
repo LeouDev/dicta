@@ -152,6 +152,7 @@ export function parseQuoteDesign(input: unknown): QuoteDesign {
     textTransform: oneOf(raw.textTransform, CASES, base.textTransform),
     curve: num(raw.curve, DESIGN_LIMITS.curve, base.curve),
     arch: num(raw.arch, DESIGN_LIMITS.arch, base.arch),
+    balance: bool(raw.balance, base.balance),
     textColor: color(raw.textColor, base.textColor),
     textFill: raw.textFill === null ? null : typeof raw.textFill === 'string' && GRADIENT.test(raw.textFill) ? raw.textFill : base.textFill,
     glow: raw.glow === null ? null : typeof raw.glow === 'string' && (RGBA.test(raw.glow) || HEX.test(raw.glow)) ? raw.glow : base.glow,

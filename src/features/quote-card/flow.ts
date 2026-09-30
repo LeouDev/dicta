@@ -186,6 +186,8 @@ export interface FlowOptions {
   align: TextAlign;
   /** Space between words, in em. */
   wordGap: number;
+  /** Lines of a paragraph come out about the same length. */
+  balance?: boolean;
   /** Advance width of a word at a 100px font size, in a paragraph of this language. */
   measure: (word: string, lang?: string) => number;
 }
@@ -218,6 +220,37 @@ export function visualOrder(dirs: (boolean | null)[], rtl: boolean): number[] {
   return (rtl ? runs.reverse() : runs).flatMap((run) => (run.rtl ? run.items.reverse() : run.items));
 }
 
+/** Greedy wrap: the word indices of each row, every row filled in turn up to `width`. */
+function wrap(widths: number[], gaps: number[], width: number): number[][] {
+  const rows: number[][] = [];
+  let row: number[] = [];
+  let rowWidth = 0;
+  widths.forEach((w, i) => {
+    if (row.length > 0 && rowWidth + gaps[i] + w > width) {
+      rows.push(row);
+      row = [];
+      rowWidth = 0;
+    }
+    rowWidth += (row.length > 0 ? gaps[i] : 0) + w;
+    row.push(i);
+  });
+  if (row.length > 0) rows.push(row);
+  return rows;
+}
+
+/** The same number of rows, wrapped at the narrowest width that still holds them, so they come out even (like CSS text-wrap: balance). */
+function balanced(widths: number[], gaps: number[], width: number, count: number): number[][] {
+  let lo = Math.max(...widths);
+  let hi = width;
+  // A fixed number of halvings rather than a pixel tolerance, so the feed and a 1080px export break the same way.
+  for (let n = 0; n < 24 && lo < hi; n++) {
+    const mid = (lo + hi) / 2;
+    if (wrap(widths, gaps, mid).length > count) lo = mid;
+    else hi = mid;
+  }
+  return wrap(widths, gaps, hi);
+}
+
 /** Lays out columns of paragraphs at one font size. */
 export function flowColumns(columns: Column[], o: FlowOptions): FlowResult {
   const count = columns.filter((c) => c.length > 0).length > 1 ? 2 : 1;
@@ -245,20 +278,8 @@ export function flowColumns(columns: Column[], o: FlowOptions): FlowResult {
         const gaps = forced.map((token) => (token.glued ? 0 : gap));
         if (widths.some((w) => w > colWidth + 0.5)) result.fits = false;
 
-        // Greedy wrap.
-        const rows: number[][] = [];
-        let row: number[] = [];
-        let rowWidth = 0;
-        widths.forEach((w, i) => {
-          if (row.length > 0 && rowWidth + gaps[i] + w > colWidth) {
-            rows.push(row);
-            row = [];
-            rowWidth = 0;
-          }
-          rowWidth += (row.length > 0 ? gaps[i] : 0) + w;
-          row.push(i);
-        });
-        if (row.length > 0) rows.push(row);
+        let rows = wrap(widths, gaps, colWidth);
+        if (o.balance && rows.length > 1) rows = balanced(widths, gaps, colWidth, rows.length);
 
         for (const r of rows) {
           const used = r.reduce((sum, i, n) => sum + widths[i] + (n > 0 ? gaps[i] : 0), 0);

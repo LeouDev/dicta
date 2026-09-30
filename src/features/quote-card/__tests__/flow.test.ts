@@ -114,6 +114,19 @@ describe('flowColumns', () => {
     expect(right.words[0].x).toBe(800);
   });
 
+  it('balances rows to about the same length without adding one', () => {
+    const five = compose(design('flow'), splitParagraphs('aaaa aaaa aaaa aaaa aaaa'));
+    const balanced = flowColumns(five, options({ width: 900, balance: true, align: 'center' }));
+    expect(balanced.words.map((w) => w.y)).toEqual([0, 0, 0, 100, 100]);
+    expect(balanced.height).toBe(200);
+    // Still centered in the full column: three words (650px) and two (425px).
+    expect(balanced.words[0].x).toBe(125);
+    expect(balanced.words[3].x).toBe(237.5);
+    // One row, or a word too wide to wrap, stays as it is.
+    expect(flowColumns(compose(design('flow'), splitParagraphs('aaaa aaaa')), options({ balance: true })).words.map((w) => w.y)).toEqual([0, 0]);
+    expect(flowColumns(compose(design('flow'), splitParagraphs('extraordinarily a')), options({ width: 300, balance: true })).words.map((w) => w.y)).toEqual([0, 100]);
+  });
+
   it('numbers words in reading order and gaps paragraphs by 0.55 lines', () => {
     const r = flowColumns(compose(design('flow'), splitParagraphs('a b\n\nc')), options({ lineHeight: 1.2 }));
     expect(r.words.map((w) => w.index)).toEqual([0, 1, 2]);

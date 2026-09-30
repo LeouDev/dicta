@@ -8,7 +8,7 @@ import { spacing } from '@/constants/tokens';
 import { CANVASES, DESIGN_LIMITS, type Canvas, type TextAlign, type VerticalAlign } from '@/features/quote-card/types';
 import { useTheme } from '@/hooks/use-theme';
 
-import { SectionLabel, Segmented, SliderRow } from './controls';
+import { SectionLabel, Segmented, SliderRow, ToggleRow } from './controls';
 import { useComposer } from './store';
 
 const CANVAS_OPTIONS = (Object.keys(CANVASES) as Canvas[]).map((value) => ({ value, label: value }));
@@ -86,6 +86,7 @@ export function LayoutControls() {
           onChange={(arch) => update({ arch })}
         />
       )}
+      <ToggleRow label="Balanced lines" value={design.balance} onChange={(balance) => update({ balance })} />
       <SliderRow
         label="Padding"
         value={design.padding}

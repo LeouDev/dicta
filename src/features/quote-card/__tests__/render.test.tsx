@@ -225,3 +225,12 @@ test('the arch bends each line down toward its ends, and off it changes nothing'
   // Highlight bars and columns keep their lines straight.
   expect(card(0.7, 'book').words.every((w) => w.dy === 0 && w.rotate === 0)).toBe(true);
 });
+
+test('balanced lines break the same way in the feed as in an export', () => {
+  // Whether each word starts a new line.
+  const breaks = (width: number) => {
+    const { words } = layoutCard({ text: TEXTS.long, design: createDesign('magazine'), author, width, format: 'original', fonts });
+    return words.map((w, i) => i > 0 && w.y !== words[i - 1].y);
+  };
+  expect(breaks(358)).toEqual(breaks(1080));
+});

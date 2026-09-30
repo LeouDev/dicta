@@ -205,6 +205,7 @@ export function layoutCard({ text, design, author, width, format = 'original', f
       kickerScale: design.kickerScale,
       align: design.align,
       wordGap: FONT_LIBRARY[design.font].wordGap,
+      balance: design.balance,
       measure: (w, lang) => measureWord(fonts, face, design.letterSpacing, w, lang),
     });
 
