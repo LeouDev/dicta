@@ -22,6 +22,36 @@
         <p class="note">Free, for iPhone.</p>
       </div>
     </main>
+    <section class="showcase" aria-label="Cards made with Dicta">
+      <div class="track">
+        <div class="set">
+          <img src="/samples/post-grass.webp" width="500" height="889" alt="“The grass isn’t greener on the other side, it’s greener where you water it.” in script over a lavender field">
+          <img src="/samples/magazine.webp" width="640" height="800" alt="“Softness is its own kind of strength.” in a big red serif, gently arched">
+          <img src="/samples/post-time.webp" width="500" height="889" alt="“Where’d all the time go?” over a plane window at night">
+          <img src="/samples/gradient.webp" width="640" height="800" alt="“Your pace is not a verdict.” on a peach-to-lavender gradient">
+          <img src="/samples/post-self-respect.webp" width="500" height="889" alt="“Self respect is more important than feelings.” over a photo in a corner shop">
+          <img src="/samples/lcd.webp" width="640" height="800" alt="“Protect your peace like it pays rent.” in red pixels on a camera screen">
+          <img src="/samples/post-hunger.webp" width="500" height="889" alt="“Let them walk away. Let the hunger fuel you. Then win.” over a figure in a spotlight">
+          <img src="/samples/journal.webp" width="640" height="800" alt="“Keep a little light in your pocket for the long days.” handwritten on a ruled page">
+          <img src="/samples/post-bro.webp" width="500" height="889" alt="“Bro to bro. We still have 3 months left before we wrap up the year. Make it happen. We believe in you.” over a gym photo">
+          <img src="/samples/verse.webp" width="640" height="800" alt="“And after the storm the light finds its way back to you” in script and small capitals on sky blue">
+          <img src="/samples/post-0-100.webp" width="500" height="889" alt="“Life can go from 0 to 100 in just eight-tenths of a second.” over a race car at night">
+          <img src="/samples/book.webp" width="640" height="800" alt="“Read this slowly. Then tell someone you are glad they exist.” on a book page, the first line highlighted">
+        </div>
+      </div>
+    </section>
+    <script>
+      // The cards drift past in a loop, a hidden copy following the first set. Without motion
+      // (or without this script) they're a row you can scroll.
+      if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        const set = document.querySelector('.showcase .set');
+        const copy = set.cloneNode(true);
+        copy.setAttribute('aria-hidden', 'true');
+        for (const img of copy.querySelectorAll('img')) img.alt = '';
+        set.after(copy);
+        set.closest('.showcase').classList.add('moving');
+      }
+    </script>
     <footer class="site"><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/support">Support</a></footer>
   </body>
 </html>
