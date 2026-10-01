@@ -1,4 +1,4 @@
-# App Store listing: Dicta 1.0.1
+# App Store listing: Dicta 1.0.2
 
 Ready to paste into App Store Connect → **Dicta: Thoughts as Art**. Lengths are within Apple's limits. Screenshots: 5, in `~/Downloads/Dicta App Store screenshots/`, to upload in order: `6.5-inch (use this)` at 1284 × 2778 for the slot App Store Connect shows, and the same five at 1320 × 2868 in `6.9-inch (optional)` for Media Manager's 6.9-inch slot.
 
@@ -14,7 +14,19 @@ Ready to paste into App Store Connect → **Dicta: Thoughts as Art**. Lengths ar
 | Content rights | Yes, it shows third-party content (people's posts); the Terms give Dicta the rights it needs |
 | Age rating | 13+ (answers below) |
 
-## Version 1.0.1
+## Version 1.0.2
+
+1.0.1 was released on 1 October 2026. 1.0.2 (9) is the first update; App Store Connect copies everything below from 1.0.1, so only What's New is new, plus the template and font counts in the Description and the review Notes.
+
+**What's New in This Version**
+
+> New ways to make your words look like art:
+> • Magazine: a bold condensed serif in deep red, every word bent along a gentle arch
+> • Verse: a big flowing script between small capitals. Put a word between asterisks, like *Glory*, to set it in script
+> • Arch: bend a card's lines, and the words on them, into a smooth curve
+> • Balanced lines: lines of about the same length, with no lonely last word
+> • Paragraph spacing: bring a small first line closer to the big words, or give paragraphs more room
+> • Two new fonts: Condensed and Script
 
 **Promotional text** (170)
 
@@ -29,8 +41,9 @@ Ready to paste into App Store Connect → **Dicta: Thoughts as Art**. Lengths ar
 > Dicta turns what you think into something worth sharing. Write a thought, pick a design, and it becomes a quote card, a beautiful one.
 >
 > DESIGNED, NOT JUST TYPED
-> • 18 templates, from paper-and-ink Editorial to Midnight, Typewriter, Pager and Photograph
-> • 13 hand-picked fonts, your own colors, gradients and photos
+> • 20 templates, from paper-and-ink Editorial and the arched Magazine to Verse, Midnight, Typewriter and Photograph
+> • 15 hand-picked fonts, your own colors, gradients and photos
+> • Bend your words into an arch, balance your lines, set a word in script
 > • Add a sound to your card: rain, ocean, birds, café, piano and more
 > • Cards lay themselves out: the text sizes itself to fit, in any language, from English to Chinese and Arabic
 >
@@ -64,7 +77,7 @@ Ready to paste into App Store Connect → **Dicta: Thoughts as Art**. Lengths ar
 | Marketing URL | https://dicta.world |
 | Copyright | 2026 Leou Alven Comendador |
 | Price | Free |
-| Build | 1.0.1 (8): everything in build 5 plus moving, resizing and zooming on the card, sound, Edit post, @mentions and dicta.world links (see the checklist) |
+| Build | 1.0.2 (9): the Magazine and Verse templates, Arch, Balanced lines and Paragraph spacing, the Condensed and Script fonts, and Verse accents (1.0.1 (8) had moving, resizing and zooming on the card, sound, Edit post, @mentions and dicta.world links) |
 
 ## App Privacy
 
@@ -100,7 +113,7 @@ The feed makes the minimum **13+**, which matches the Terms ("at least 13").
 
 - **Sign-in required:** yes. Use the demo account (see the checklist): email and password in the sign-in fields.
 - **Contact:** your name, phone and email.
-- **Notes** (3,587 of 4,000 characters; the answers Apple asked for on 26 September 2026 under Guideline 2.1 (reply sent at 13:58, with an unlisted YouTube screen recording), plus "New in this build" for 1.0.1 (8), submitted on 30 September 2026):
+- **Notes** (3,547 of 4,000 characters; the answers Apple asked for on 26 September 2026 under Guideline 2.1 (reply sent at 13:58, with an unlisted YouTube screen recording), plus "New in this build", now for 1.0.2 (9)):
 
 ```text
 1. Screen recording
@@ -108,7 +121,7 @@ Unlisted video, recorded on an iPhone running the latest iOS: https://youtu.be/Z
 It starts at launch and shows signing up (with the confirmation email), creating and sharing a post, liking and reporting a post, blocking a person, signing out and back in, and deleting the account.
 
 2. Purpose and audience
-Dicta is a social app where every post is a designed quote card. People write a short thought, quote or poem, choose a design (18 templates, 13 fonts, their own colors and photos) and publish it to a feed where others can like, comment, save, follow and share it. It's for people 13 and older who write or collect words: poetry, affirmations, favorite lines. Today they type in one app, design the image in another and post it somewhere else; Dicta does all three in seconds and gives the words a home of their own. It's free, with no ads and no tracking.
+Dicta is a social app where every post is a designed quote card. People write a short thought, quote or poem, choose a design (20 templates, 15 fonts, their own colors and photos) and publish it to a feed where others can like, comment, save, follow and share it. It's for people 13 and older who write or collect words: poetry, affirmations, favorite lines. Today they type in one app, design the image in another and post it somewhere else; Dicta does all three in seconds and gives the words a home of their own. It's free, with no ads and no tracking.
 
 3. How to use it
 - Sign in with the demo account in the Sign-In Information fields. It follows a few people, so the feed has posts. You can also create an account with email (a confirmation email is sent) or Sign in with Apple.
@@ -140,7 +153,8 @@ User-generated content (Guideline 1.2)
 - Contact: support@air-rally.com, also on https://dicta.world/support
 
 New in this build
-- Sound: in the editor's Sound tab you can add a sound to a card; people tap the speaker on the card to hear it. The sounds are public-domain (CC0) recordings from Wikimedia Commons, with sources at https://dicta.world/sounds/CREDITS.txt. Nothing plays on its own, and the app doesn't use the microphone.
-- Edit post: the ... menu on your own post.
-- Mentions: type @ in a comment to mention someone, who gets a notification.
+- Two templates, Magazine and Verse, and two fonts, Condensed and Script (both under the SIL Open Font License).
+- Layout: Arch bends a card's lines and words into a curve; Balanced lines evens out line lengths; Paragraph spacing sets the gap between paragraphs.
+- Verse: a word typed between asterisks, like *Glory*, is set in script.
+No new permissions, services or data collection.
 ```
