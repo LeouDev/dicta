@@ -350,7 +350,7 @@ const fallbackAuthor: PostAuthor = { id: '', displayName: '', username: '', avat
 const styles = StyleSheet.create({
   root: { flex: 1 },
   flex: { flex: 1 },
-  headerButton: { width: hitTarget, height: hitTarget, alignItems: 'flex-end', justifyContent: 'center' },
+  headerButton: { width: hitTarget, height: hitTarget, alignItems: 'center', justifyContent: 'center' },
   title: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, maxWidth: 240 },
   titleText: { flexShrink: 1 },
   list: { paddingHorizontal: spacing.md, paddingVertical: spacing.md },

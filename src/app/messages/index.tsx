@@ -139,7 +139,7 @@ const ConversationRow = memo(function ConversationRow({ conversation: c }: { con
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  headerButton: { width: hitTarget, height: hitTarget, alignItems: 'flex-end', justifyContent: 'center' },
+  headerButton: { width: hitTarget, height: hitTarget, alignItems: 'center', justifyContent: 'center' },
   tabs: { flexDirection: 'row', borderBottomWidth: StyleSheet.hairlineWidth, paddingHorizontal: spacing.md },
   tab: { flex: 1, alignItems: 'center', justifyContent: 'center', minHeight: hitTarget, borderBottomWidth: 1.5, marginBottom: -StyleSheet.hairlineWidth },
   list: { flexGrow: 1, paddingVertical: spacing.sm },
