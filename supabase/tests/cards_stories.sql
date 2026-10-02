@@ -59,6 +59,26 @@ do $$ begin
     'the stack is replaced';
 end $$;
 
+-- An edit is saved whole (update_post): the words, the design and the other cards.
+do $$ declare word text := (select w.word from w); begin
+  begin
+    perform public.update_post((select id from public.posts where text = 'Card one' and author_id = '00000000-0000-4000-a000-0000000000a3'),
+      'Card one, edited', null, 'editorial', '{"template":"editorial"}'::jsonb, null,
+      jsonb_build_array(jsonb_build_object('text', 'a ' || word, 'template', 'editorial', 'design', '{"template":"editorial"}'::jsonb)));
+    raise exception 'a blocked word in an edited card was saved';
+  exception when check_violation then null;
+  end;
+end $$;
+select public.update_post(id, 'Card one', 'love', 'minimal', '{"template":"minimal"}'::jsonb, null,
+  '[{"text": "New two", "template": "editorial", "design": {"template": "editorial"}}]'::jsonb)
+from public.posts where text = 'Card one' and author_id = '00000000-0000-4000-a000-0000000000a3';
+do $$ begin
+  assert (select p.topic = 'love' and d.template = 'minimal' from public.posts p join public.post_designs d on d.post_id = p.id
+          where p.text = 'Card one' and p.author_id = '00000000-0000-4000-a000-0000000000a3'), 'the words and design are saved';
+  assert (select array_agg(c.text) from public.post_cards c join public.posts p on p.id = c.post_id
+          where p.text = 'Card one' and p.author_id = '00000000-0000-4000-a000-0000000000a3') = array['New two'], 'with the cards';
+end $$;
+
 -- Ben sees the cards of a public post, and can't edit them.
 set local request.jwt.claims = '{"sub":"00000000-0000-4000-a000-0000000000b3","role":"authenticated"}';
 do $$ begin

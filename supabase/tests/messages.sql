@@ -91,6 +91,13 @@ select id, '00000000-0000-4000-a000-0000000000b4', 'Hi   Ana,
 good to hear from you' from chat;
 update public.conversation_members set last_read_at = now()
 where conversation_id = (select id from chat) and user_id = '00000000-0000-4000-a000-0000000000b4';
+-- Read times come from the server's clock, not the phone's.
+update public.conversation_members set last_read_at = now() + interval '1 hour'
+where conversation_id = (select id from chat) and user_id = '00000000-0000-4000-a000-0000000000b4';
+do $$ begin
+  assert (select last_read_at from public.conversation_members
+          where conversation_id = (select id from chat) and user_id = '00000000-0000-4000-a000-0000000000b4') = now(), 'the server''s time, not the phone''s';
+end $$;
 
 reset role;
 do $$ declare v_push jsonb; begin

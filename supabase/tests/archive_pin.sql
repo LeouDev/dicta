@@ -102,6 +102,23 @@ do $$ begin
     'unpinning frees a place';
 end $$;
 
+-- A pinned post that moderation removes stops holding one of the three.
+reset role;
+update public.posts set status = 'removed' where author_id = '00000000-0000-4000-a000-0000000000a1' and text = 'Four';
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"00000000-0000-4000-a000-0000000000a1","role":"authenticated"}';
+select public.set_post_pinned(id, true) from public.posts
+where author_id = '00000000-0000-4000-a000-0000000000a1' and text in ('Three', 'Five');
+do $$ begin
+  assert (select count(*) from public.posts
+          where author_id = '00000000-0000-4000-a000-0000000000a1' and pinned_at is not null and status = 'published') = 3,
+    'a removed post doesn''t hold a pin';
+end $$;
+reset role;
+update public.posts set status = 'published' where author_id = '00000000-0000-4000-a000-0000000000a1' and text = 'Four';
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"00000000-0000-4000-a000-0000000000a1","role":"authenticated"}';
+
 -- ── Unarchive, then delete an archived post ────────────────────────────
 select public.set_post_archived(id, false) from public.posts
 where author_id = '00000000-0000-4000-a000-0000000000a1' and text = 'One';

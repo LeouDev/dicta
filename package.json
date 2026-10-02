@@ -58,6 +58,7 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
     "@expo-google-fonts/noto-color-emoji": "^0.4.6",
     "@expo-google-fonts/noto-sans": "^0.4.2",
     "@expo-google-fonts/noto-sans-arabic": "^0.4.3",
@@ -89,7 +90,8 @@
     "render:cards": "RENDER_OUT=.renders jest src/features/quote-card/__tests__/render.test.tsx",
     "seed": "node scripts/seed/index.mjs",
     "test:seed": "node --test scripts/seed/generate.test.mjs",
-    "test:db": "supabase db query --linked -f supabase/tests/social.sql && supabase db query --linked -f supabase/tests/push.sql && supabase db query --linked -f supabase/tests/welcome.sql && supabase db query --linked -f supabase/tests/moderation.sql && supabase db query --linked -f supabase/tests/archive_pin.sql && supabase db query --linked -f supabase/tests/privacy.sql && supabase db query --linked -f supabase/tests/cards_stories.sql && supabase db query --linked -f supabase/tests/messages.sql"
+    "test:db": "supabase db query --linked -f supabase/tests/social.sql && supabase db query --linked -f supabase/tests/push.sql && supabase db query --linked -f supabase/tests/welcome.sql && supabase db query --linked -f supabase/tests/moderation.sql && supabase db query --linked -f supabase/tests/archive_pin.sql && supabase db query --linked -f supabase/tests/privacy.sql && supabase db query --linked -f supabase/tests/cards_stories.sql && supabase db query --linked -f supabase/tests/messages.sql",
+    "test:db:local": "node supabase/tests/local.mjs"
   },
   "private": true,
   "jest": {
