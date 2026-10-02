@@ -29,13 +29,14 @@ export const storageUrl = (bucketPath) => `${SUPABASE_URL}/storage/v1/object/pub
  * with a ticket. `calls` records "METHOD path?query" for every request,
  * including ones to ORIGIN; `sent` collects the messages Expo received.
  */
-export function fakeSupabase({ posts = [post()], files = {}, pushes = {}, expo = () => ({ status: 'ok', id: 'ticket' }), welcome = {}, reports = {}, resend = () => ({ status: 200, body: { id: 'email' } }), onAppStore = false } = {}) {
+export function fakeSupabase({ posts = [post()], files = {}, pushes = {}, messagePushes = {}, expo = () => ({ status: 'ok', id: 'ticket' }), welcome = {}, reports = {}, resend = () => ({ status: 200, body: { id: 'email' } }), onAppStore = false } = {}) {
   process.env.SUPABASE_URL = SUPABASE_URL;
   process.env.SUPABASE_ANON_KEY = 'anon';
   process.env.SUPABASE_SERVICE_ROLE_KEY = 'service';
   const db = {
     posts: new Map(posts.map((p) => [p.id, structuredClone(p)])),
     pushes: new Map(Object.entries(pushes)),
+    messagePushes: new Map(Object.entries(messagePushes)),
     welcome: new Map(Object.entries(welcome)),
     welcomed: new Set(),
     reports: new Map(Object.entries(reports)),
@@ -88,6 +89,13 @@ export function fakeSupabase({ posts = [post()], files = {}, pushes = {}, expo =
       const { p_id } = JSON.parse(init.body);
       const push = db.pushes.get(p_id) ?? null;
       db.pushes.delete(p_id);
+      return json(push);
+    }
+    if (url.pathname === '/rest/v1/rpc/claim_message_push') {
+      if (!service) return json({ message: 'permission denied' }, 401);
+      const { p_id } = JSON.parse(init.body);
+      const push = db.messagePushes.get(p_id) ?? null;
+      db.messagePushes.delete(p_id);
       return json(push);
     }
     if (url.pathname === '/rest/v1/rpc/claim_welcome') {

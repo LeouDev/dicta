@@ -68,6 +68,21 @@ export function alert(report) {
     body = report.post
       ? `“${report.post.text}”\n\nTo take it down everywhere, the website included:\nupdate posts set status = 'removed' where id = '${report.post_id}';`
       : 'The quote has already been deleted.';
+  } else if (report.story_id) {
+    const by = report.story?.author?.username ?? report.person?.username;
+    what = by ? `a story by @${by}` : 'a story';
+    const words = report.story?.text ?? report.snapshot;
+    body = report.story
+      ? `“${words}”\n\nTo take it down:\nupdate stories set status = 'removed' where id = '${report.story_id}';`
+      : `The story has expired or been deleted.${words ? ` It said: “${words}”` : ''}`;
+  } else if (report.message_id) {
+    const from = report.message?.sender?.username ?? report.person?.username;
+    what = from ? `a message from @${from}` : 'a message';
+    const words = report.message?.body ?? report.snapshot;
+    body = report.message
+      ? `“${words ?? '(a shared quote or story)'}”\n\nTo remove it:\ndelete from messages where id = '${report.message_id}';`
+      : `The message was unsent.${words ? ` It said: “${words}”` : ''}`;
+    if (report.reported_user_id) body += `\n\nTo remove the sender and everything they posted: Authentication → Users → the user with ID ${report.reported_user_id} → Delete user.`;
   } else if (report.comment_id) {
     what = report.comment ? `a comment by @${report.comment.author?.username}` : 'a comment';
     body = report.comment

@@ -107,3 +107,22 @@ test('reports a refused email, and needs Resend configured', async () => {
   delete process.env.RESEND_API_KEY;
   assert.equal((await alert({ id: ID })).status, 503);
 });
+
+test('a reported story or message comes with its words, even once it’s gone', async () => {
+  const STORY_ID = '88888888-8888-8888-8888-888888888888';
+  const MESSAGE_ID = '99999999-9999-9999-9999-999999999999';
+  const story = report({ post_id: null, post: null, story_id: STORY_ID, snapshot: 'Mean story', story: { text: 'Mean story', author: { username: 'mara' } } });
+  const gone = report({ post_id: null, post: null, message_id: MESSAGE_ID, reported_user_id: USER_ID, snapshot: 'Mean message', message: null, person: { username: 'mara' } });
+
+  let db = fakeSupabase({ reports: { [ID]: story } });
+  await alert({ id: ID });
+  assert.match(db.emails[0].subject, /a story by @mara/);
+  assert.match(db.emails[0].text, /“Mean story”/);
+  assert.match(db.emails[0].text, new RegExp(`update stories set status = 'removed' where id = '${STORY_ID}';`));
+
+  db = fakeSupabase({ reports: { [ID]: gone } });
+  await alert({ id: ID });
+  assert.match(db.emails[0].subject, /a message from @mara/);
+  assert.match(db.emails[0].text, /The message was unsent\. It said: “Mean message”/);
+  assert.match(db.emails[0].text, new RegExp(USER_ID));
+});

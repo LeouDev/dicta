@@ -104,6 +104,18 @@ export async function claimPush(id) {
   return res.json();
 }
 
+/** The push for one new message, marked sent as it's read (claim_message_push), or null. */
+export async function claimMessagePush(id) {
+  const { url, service } = env();
+  const res = await fetch(`${url}/rest/v1/rpc/claim_message_push`, {
+    method: 'POST',
+    headers: { ...keyHeaders(service), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ p_id: id }),
+  });
+  if (!res.ok) throw new Error(`Couldn't claim the push for message ${id} (${res.status}).`);
+  return res.json();
+}
+
 /** Forgets devices that can't receive pushes anymore. */
 export async function removePushTokens(tokens) {
   const { url, service } = env();
@@ -131,11 +143,13 @@ export async function releaseWelcome(id) {
 }
 
 const REPORT_SELECT =
-  'id,reason,details,status,created_at,post_id,comment_id,reported_user_id,' +
+  'id,reason,details,status,created_at,post_id,comment_id,reported_user_id,story_id,message_id,snapshot,' +
   'reporter:profiles!reports_reporter_id_fkey(username),' +
   'person:profiles!reports_reported_user_id_fkey(username),' +
   'post:posts(text,author:profiles!posts_author_id_fkey(username)),' +
-  'comment:comments(body,author:profiles!comments_author_id_fkey(username))';
+  'comment:comments(body,author:profiles!comments_author_id_fkey(username)),' +
+  'story:stories(text,author:profiles!stories_author_id_fkey(username)),' +
+  'message:messages(body,sender:profiles!messages_sender_id_fkey(username))';
 
 /** A report with what it points at, read with the service role (reports are private), or null. */
 export async function fetchReport(id) {

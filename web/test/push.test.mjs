@@ -78,3 +78,17 @@ test('rejects anything else', async () => {
   assert.equal((await push({ id: 'nope' })).status, 400);
   assert.equal((await POST(new Request(`${ORIGIN}/api/push`, { method: 'POST', body: 'not json' }))).status, 400);
 });
+
+test('a direct message is claimed and sent once, opening the chat', async () => {
+  const MESSAGE = '44444444-4444-4444-4444-444444444444';
+  const db = fakeSupabase({
+    messagePushes: { [MESSAGE]: { tokens: ['ExponentPushToken[phone]'], body: 'Mara: are you around?', url: '/messages/c1', then: null } },
+  });
+  assert.equal((await push({ message: MESSAGE })).status, 204);
+  assert.deepEqual(db.sent, [{ to: 'ExponentPushToken[phone]', body: 'Mara: are you around?', sound: 'default', data: { url: '/messages/c1' } }]);
+  assert.ok(db.calls.includes('POST /rest/v1/rpc/claim_message_push'));
+
+  assert.equal((await push({ message: MESSAGE })).status, 204);
+  assert.equal(db.sent.length, 1);
+  assert.equal((await push({ message: 'not-a-uuid' })).status, 400);
+});
