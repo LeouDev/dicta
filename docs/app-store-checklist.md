@@ -11,8 +11,8 @@
 Stories, Messages, stacked posts, private accounts with follow requests, pinned and archived posts, and the sliding tab bar.
 
 - ✅ Six migrations (`supabase/migrations/20261002*`), written so 1.0.1 and 1.0.2 keep working on the new database, and four new test files in `npm run test:db`.
-- ⬜ Apply them: `env -u SUPABASE_ACCESS_TOKEN npx supabase db push --linked`, then `env -u SUPABASE_ACCESS_TOKEN npm run test:db`.
-- ✅ Website: message pushes, story and message reports in the moderator email, and the Privacy Policy and Terms cover stories, messages and private accounts (updated 2 October 2026). Deploys with the app push, after the migrations, since the report email reads their new columns.
+- ✅ Applied to production on 2 October 2026 with `db push` (seven migrations, including the review fixes), and `npm run test:db` passes on the live database. `npm run test:db:local` runs the same tests on PGlite before a push. The CLI login had expired: `~/.zshrc` exports an old `SUPABASE_ACCESS_TOKEN`, so log in with `env -u SUPABASE_ACCESS_TOKEN npx supabase login`.
+- ✅ Website: message pushes, story and message reports in the moderator email, and the Privacy Policy and Terms cover stories, messages and private accounts (updated 2 October 2026). Live on dicta.world since 2 October.
 - ⬜ App Store Connect, before submitting: App Privacy gains **User Content → Emails or Text Messages** (linked, App Functionality, no tracking); Age Rating → Messaging and chat: **Yes** (stays 13+); What's New, Description and Notes from docs/app-store-listing.md.
 - ⬜ Build with `npx eas-cli@latest build -p ios --profile production`, then submit; release stays manual.
 
