@@ -34,7 +34,8 @@ export function StoryTray() {
 
   const mine = tray.data?.find((ring) => ring.author.id === me.id);
   const others = (tray.data ?? []).filter((ring) => ring.author.id !== me.id);
-  const own: StoryRing = mine ?? { author: profileToAuthor(me), latestAt: '', unseen: false };
+  // Your own views aren't recorded (you'd count as a viewer), so your ring never reads as new.
+  const own: StoryRing = mine ? { ...mine, unseen: false } : { author: profileToAuthor(me), latestAt: '', unseen: false };
 
   return (
     <FlatList

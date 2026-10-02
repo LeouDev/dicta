@@ -40,7 +40,7 @@ export default function ActivityScreen() {
   const items = notifications.data?.pages.flat() ?? [];
   const { data: me } = useMyProfile();
   const requests = useFollowRequests(Boolean(me?.is_private));
-  const waiting = requests.data?.length ?? 0;
+  const waiting = me?.is_private ? (requests.data?.length ?? 0) : 0;
 
   // Leaving Activity means you've seen it: clear the badge (rows stay tinted while you're here).
   useFocusEffect(
@@ -143,26 +143,28 @@ const NotificationRow = memo(function NotificationRow({ item, onPress }: { item:
   const now = useNow();
   const when = timeAgo(item.createdAt, now);
 
+  // A request's buttons sit beside the row's button, not in it, so VoiceOver reaches them.
   return (
-    <Pressable
-      onPress={() => onPress(item)}
-      accessibilityRole="button"
-      accessibilityLabel={`${unread ? 'New. ' : ''}${item.actor.displayName} ${message} ${when}`}
-      style={({ pressed }) => [styles.row, unread && { backgroundColor: theme.accentSoft }, pressed && { opacity: 0.7 }]}>
-      <View>
-        <UserAvatar uri={item.actor.avatarUrl} name={item.actor.displayName} size={44} />
-        {unread && <View style={[styles.dot, { backgroundColor: theme.accent, borderColor: theme.background }]} />}
-      </View>
-      <Text variant="callout" style={styles.text} numberOfLines={3}>
-        <RNText style={styles.name}>{item.actor.displayName}</RNText> {message}
-        <RNText style={{ color: theme.textTertiary }}>{`  ${when}`}</RNText>
-      </Text>
-      {item.type === 'follow_request' ? (
-        <RequestButtons requesterId={item.actor.id} />
-      ) : (
-        item.post && <QuoteCard text={item.post.text} design={item.post.design} author={item.post.author} width={42} radius={radius.xs} />
-      )}
-    </Pressable>
+    <View style={[styles.row, unread && { backgroundColor: theme.accentSoft }]}>
+      <Pressable
+        onPress={() => onPress(item)}
+        accessibilityRole="button"
+        accessibilityLabel={`${unread ? 'New. ' : ''}${item.actor.displayName} ${message} ${when}`}
+        style={({ pressed }) => [styles.rowMain, pressed && { opacity: 0.7 }]}>
+        <View>
+          <UserAvatar uri={item.actor.avatarUrl} name={item.actor.displayName} size={44} />
+          {unread && <View style={[styles.dot, { backgroundColor: theme.accent, borderColor: theme.background }]} />}
+        </View>
+        <Text variant="callout" style={styles.text} numberOfLines={3}>
+          <RNText style={styles.name}>{item.actor.displayName}</RNText> {message}
+          <RNText style={{ color: theme.textTertiary }}>{`  ${when}`}</RNText>
+        </Text>
+        {item.type !== 'follow_request' && item.post && (
+          <QuoteCard text={item.post.text} design={item.post.design} author={item.post.author} width={42} radius={radius.xs} />
+        )}
+      </Pressable>
+      {item.type === 'follow_request' && <RequestButtons requesterId={item.actor.id} />}
+    </View>
   );
 });
 
@@ -187,6 +189,7 @@ const styles = StyleSheet.create({
   list: { flexGrow: 1, paddingBottom: spacing.xxl },
   loading: { paddingVertical: spacing.xl },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm + 4, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm + 4 },
+  rowMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.sm + 4 },
   dot: { position: 'absolute', top: -1, right: -1, width: 12, height: 12, borderRadius: 6, borderWidth: 2 },
   text: { flex: 1 },
   name: { fontWeight: '600' },

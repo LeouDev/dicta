@@ -112,6 +112,8 @@ export default function CreateScreen() {
 
   // The draft is saved continuously, so closing never loses work unless asked.
   const close = () => {
+    // Uploading can't be called back: it finishes, then closes the composer itself.
+    if (publish.isPending || save.isPending || share.isPending) return toast('Still uploading…');
     if (editing) return confirm('Discard your changes?', 'The post stays as it was.', 'Discard', () => router.back());
     if (story) return text.trim() ? confirm('Discard this story?', 'Your draft post stays as it was.', 'Discard', () => router.back()) : router.back();
     if (!stackOf(useComposer.getState()).some((card) => card.text.trim())) return router.back();

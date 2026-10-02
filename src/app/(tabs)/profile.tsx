@@ -79,7 +79,7 @@ export default function ProfileScreen() {
       <PostGrid
         key={tab}
         query={tab === 'posts' ? posts : saved}
-        pinned={tab === 'posts' ? pinned.data : undefined}
+        pinned={tab === 'posts' ? pinned : undefined}
         header={header}
         empty={
           tab === 'posts' ? (

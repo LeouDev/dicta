@@ -107,27 +107,33 @@ function StoryPlayer({ authorId, list }: { authorId: string; list: Story[] }) {
     if (index !== null && index > 0) return setIndex(index - 1);
     const before = neighbor(-1);
     if (before && !mine) router.replace(`/story/${before}`);
-    else progress.set(0);
+    else setReplays((n) => n + 1);
   };
 
   // Each story fills its bar, then moves on; pausing holds the bar where it is.
   const progress = useSharedValue(0);
+  // Back on the first story replays it.
+  const [replays, setReplays] = useState(0);
+  const playing = useRef('');
   useEffect(() => {
-    progress.set(0);
-  }, [story?.id, progress]);
-  useEffect(() => {
-    if (!story || paused) {
-      cancelAnimation(progress);
-      return;
-    }
+    if (!story) return;
+    // A new story (or a replay) starts from 0 with the whole duration. Its bar can't be read for that:
+    // setting it reaches the UI thread later, and reading it now would still see the last story's 1.
+    const take = `${story.id}:${replays}`;
+    const fresh = playing.current !== take;
+    playing.current = take;
+    cancelAnimation(progress);
+    if (fresh) progress.set(0);
+    if (paused) return;
+    const from = fresh ? 0 : progress.get();
     progress.set(
-      withTiming(1, { duration: (1 - progress.get()) * DURATION, easing: Easing.linear }, (finished) => {
+      withTiming(1, { duration: (1 - from) * DURATION, easing: Easing.linear }, (finished) => {
         if (finished) runOnJS(next)();
       }),
     );
-    // `next` reads this story's index; re-run when the story or pause changes.
+    // `next` reads this story's index; re-run when the story, a replay or pause changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [story?.id, paused]);
+  }, [story?.id, replays, paused]);
 
   // Seen once shown.
   useEffect(() => {
@@ -142,39 +148,60 @@ function StoryPlayer({ authorId, list }: { authorId: string; list: Story[] }) {
       if (e.translationY > 90) runOnJS(close)();
     });
 
+  // Paused from the menu opening until it's cancelled or what it opened is done.
   const openMenu = () => {
     if (!story) return;
     setMenuOpen(true);
     const done = () => setMenuOpen(false);
     const author = list[0];
     if (mine) {
-      showActions([
-        { label: 'Add another story', onPress: () => (close(), openStoryComposer()) },
-        {
-          label: 'Delete this story',
-          destructive: true,
-          onPress: () =>
-            confirm('Delete this story?', 'It disappears for everyone now, before its 24 hours are up.', 'Delete', () =>
-              remove.mutate(story, { onSuccess: () => (list.length <= 1 ? close() : setIndex(Math.min(index ?? 0, list.length - 2))) }),
-            ),
-        },
-      ]);
+      showActions(
+        [
+          { label: 'Add another story', onPress: () => (close(), openStoryComposer()) },
+          {
+            label: 'Delete this story',
+            destructive: true,
+            onPress: () =>
+              confirm(
+                'Delete this story?',
+                'It disappears for everyone now, before its 24 hours are up.',
+                'Delete',
+                () =>
+                  remove.mutate(story, {
+                    onSuccess: () => (list.length <= 1 ? close() : setIndex(Math.min(index ?? 0, list.length - 2))),
+                    onSettled: done,
+                  }),
+                done,
+              ),
+          },
+        ],
+        undefined,
+        done,
+      );
     } else if (author) {
-      showActions([
-        { label: 'Report story', onPress: () => (close(), openReport({ kind: 'story', id: story.id, userId: author.authorId, label: 'this story' })) },
-        {
-          label: `Block @${author.author.username}`,
-          destructive: true,
-          onPress: () =>
-            confirm(`Block @${author.author.username}?`, 'You won’t see each other’s posts or stories, and they can’t message you.', 'Block', () => {
-              block.mutate({ targetId: author.authorId, username: author.author.username, blocked: true });
-              close();
-            }),
-        },
-      ]);
-    }
-    // The sheet has no close callback; resume shortly after it's dismissed.
-    setTimeout(done, 400);
+      showActions(
+        [
+          { label: 'Report story', onPress: () => (close(), openReport({ kind: 'story', id: story.id, userId: author.authorId, label: 'this story' })) },
+          {
+            label: `Block @${author.author.username}`,
+            destructive: true,
+            onPress: () =>
+              confirm(
+                `Block @${author.author.username}?`,
+                'You won’t see each other’s posts or stories, and they can’t message you.',
+                'Block',
+                () => {
+                  block.mutate({ targetId: author.authorId, username: author.author.username, blocked: true });
+                  close();
+                },
+                done,
+              ),
+          },
+        ],
+        undefined,
+        done,
+      );
+    } else done();
   };
 
   const ratio = CANVASES[story.design.canvas];

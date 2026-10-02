@@ -99,6 +99,8 @@ export function useFollow(targetId: string) {
     onError: (error, action) => {
       apply(UNDO[action]);
       toast(friendlyError(error, 'Couldn’t update follow.'));
+      // They may have gone private or public since their profile loaded; the next tap then picks the right action.
+      client.invalidateQueries({ queryKey: ['profile'] });
     },
   });
 }

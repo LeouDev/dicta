@@ -1,5 +1,5 @@
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
-import type { InfiniteData, UseInfiniteQueryResult } from '@tanstack/react-query';
+import type { InfiniteData, UseInfiniteQueryResult, UseQueryResult } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { memo, useRef, useState, type ReactElement } from 'react';
 import { ActivityIndicator, StyleSheet, View, useWindowDimensions } from 'react-native';
@@ -23,8 +23,8 @@ export const GRID_GAP = spacing.sm + 4;
 
 interface PostGridProps {
   query: UseInfiniteQueryResult<InfiniteData<FeedPost[], unknown>>;
-  /** Shown first, badged with a pin (a profile's pinned posts). */
-  pinned?: FeedPost[];
+  /** Shown first, badged with a pin (a profile's pinned posts); refreshed with the grid. */
+  pinned?: UseQueryResult<FeedPost[]>;
   header?: ReactElement | null;
   empty: ReactElement;
 }
@@ -33,16 +33,17 @@ interface PostGridProps {
  * The gallery view of posts: two-column masonry where every card keeps its own
  * format, with infinite scroll and pull to refresh. Tapping opens the post.
  */
-export function PostGrid({ query, pinned = [], header, empty }: PostGridProps) {
+export function PostGrid({ query, pinned, header, empty }: PostGridProps) {
   const theme = useTheme();
   const { width } = useWindowDimensions();
   const [pulling, setPulling] = useState(false);
   const tabBarSpace = useTabBarSpace();
   const listRef = useRef<FlashListRef<FeedPost>>(null);
   useTabScrollToTop(listRef);
-  const items = dedupe([...pinned, ...(query.data?.pages.flat() ?? [])]);
+  const pinnedPosts = pinned?.data ?? [];
+  const items = dedupe([...pinnedPosts, ...(query.data?.pages.flat() ?? [])]);
   // Only a profile's pinned row is badged: every post carries pinned_at, also in Discover and search.
-  const pinnedIds = new Set(pinned.map((post) => post.id));
+  const pinnedIds = new Set(pinnedPosts.map((post) => post.id));
   const tileWidth = (width - GRID_GUTTER * 2 - GRID_GAP) / 2;
 
   return (
@@ -64,11 +65,11 @@ export function PostGrid({ query, pinned = [], header, empty }: PostGridProps) {
       refreshing={pulling}
       onRefresh={async () => {
         setPulling(true);
-        await query.refetch();
+        await Promise.all([query.refetch(), pinned?.refetch()]);
         setPulling(false);
       }}
       ListEmptyComponent={
-        query.isPending && pinned.length === 0 ? (
+        query.isPending && pinnedPosts.length === 0 ? (
           <View style={styles.skeleton}>
             <CardSkeleton width={tileWidth * 2 + GRID_GAP} count={1} ratio={1.6} />
           </View>

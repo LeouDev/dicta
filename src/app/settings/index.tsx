@@ -40,7 +40,14 @@ export default function SettingsScreen() {
       Haptics.selectionAsync();
       client.setQueryData<Profile | null>(queryKeys.profile(userId), (p) => (p ? { ...p, is_private: isPrivate } : p));
     },
-    onSuccess: (profile) => client.setQueryData(queryKeys.profile(userId), profile),
+    onSuccess: (profile, isPrivate) => {
+      client.setQueryData(queryKeys.profile(userId), profile);
+      if (isPrivate) return;
+      // Going public accepts everyone waiting, after the row above was read: new followers, no requests.
+      client.invalidateQueries({ queryKey: queryKeys.profile(userId) });
+      client.invalidateQueries({ queryKey: queryKeys.notifications(userId) });
+      client.removeQueries({ queryKey: queryKeys.followRequests(userId) });
+    },
     onError: (e, isPrivate) => {
       client.setQueryData<Profile | null>(queryKeys.profile(userId), (p) => (p ? { ...p, is_private: !isPrivate } : p));
       Alert.alert('Couldn’t change your privacy', friendlyError(e));

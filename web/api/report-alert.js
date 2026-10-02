@@ -71,23 +71,23 @@ export function alert(report) {
   } else if (report.story_id) {
     const by = report.story?.author?.username ?? report.person?.username;
     what = by ? `a story by @${by}` : 'a story';
-    const words = report.story?.text ?? report.snapshot;
-    body = report.story
-      ? `“${words}”\n\nTo take it down:\nupdate stories set status = 'removed' where id = '${report.story_id}';`
-      : `The story has expired or been deleted.${words ? ` It said: “${words}”` : ''}`;
+    body = `“${report.story?.text ?? report.snapshot}”\n\nTo take it down:\nupdate stories set status = 'removed' where id = '${report.story_id}';`;
   } else if (report.message_id) {
     const from = report.message?.sender?.username ?? report.person?.username;
     what = from ? `a message from @${from}` : 'a message';
-    const words = report.message?.body ?? report.snapshot;
-    body = report.message
-      ? `“${words ?? '(a shared quote or story)'}”\n\nTo remove it:\ndelete from messages where id = '${report.message_id}';`
-      : `The message was unsent.${words ? ` It said: “${words}”` : ''}`;
+    body = `“${report.message?.body ?? report.snapshot ?? '(a shared quote or story)'}”\n\nTo remove it:\ndelete from messages where id = '${report.message_id}';`;
     if (report.reported_user_id) body += `\n\nTo remove the sender and everything they posted: Authentication → Users → the user with ID ${report.reported_user_id} → Delete user.`;
   } else if (report.comment_id) {
     what = report.comment ? `a comment by @${report.comment.author?.username}` : 'a comment';
     body = report.comment
       ? `“${report.comment.body}”\n\nTo remove it:\ndelete from comments where id = '${report.comment_id}';`
       : 'The comment has already been deleted.';
+  } else if (report.snapshot) {
+    // Only message and story reports keep their words; the message was unsent or the story deleted
+    // before this ran, which cleared its link.
+    what = report.person ? `a message or story from @${report.person.username}` : 'a message or story';
+    body = `It has since been deleted. It said: “${report.snapshot}”`;
+    if (report.reported_user_id) body += `\n\nTo remove the sender and everything they posted: Authentication → Users → the user with ID ${report.reported_user_id} → Delete user.`;
   } else {
     what = report.person ? `@${report.person.username}` : 'a person';
     body = report.person

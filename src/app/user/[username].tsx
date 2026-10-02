@@ -143,7 +143,7 @@ export default function UserScreen() {
       {options}
       <PostGrid
         query={posts}
-        pinned={pinned.data}
+        pinned={pinned}
         header={header}
         empty={<EmptyState title="No quotes yet" message={`When @${p.username} posts, their cards will gather here.`} />}
       />

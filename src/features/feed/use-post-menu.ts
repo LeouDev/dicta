@@ -74,14 +74,18 @@ export function usePostMenu() {
     };
     if (post.author.id === userId) {
       const archived = post.status === 'archived';
+      // A post moderation hid or removed can only be unpinned, edited or deleted (the server refuses the rest).
+      const published = post.status === 'published';
       showActions([
         ...(archived ? [] : [share]),
+        ...(published || post.pinnedAt
+          ? [{ label: post.pinnedAt ? 'Unpin from profile' : 'Pin to profile', onPress: () => pin.mutate({ post, pinned: !post.pinnedAt }) }]
+          : []),
         ...(archived
-          ? []
-          : [{ label: post.pinnedAt ? 'Unpin from profile' : 'Pin to profile', onPress: () => pin.mutate({ post, pinned: !post.pinnedAt }) }]),
-        archived
-          ? { label: 'Show on profile', onPress: () => archive.mutate({ post, archived: false }) }
-          : { label: 'Archive', onPress: () => archive.mutate({ post, archived: true }) },
+          ? [{ label: 'Show on profile', onPress: () => archive.mutate({ post, archived: false }) }]
+          : published
+            ? [{ label: 'Archive', onPress: () => archive.mutate({ post, archived: true }) }]
+            : []),
         {
           label: 'Edit post',
           onPress: () => {

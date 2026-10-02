@@ -7,7 +7,6 @@ import { queryKeys } from '@/lib/query-keys';
 import { supabase } from '@/lib/supabase';
 import { friendlyError } from '@/services/errors';
 import {
-  MESSAGE_PAGE,
   acceptConversation,
   clearConversation,
   fetchChat,
@@ -46,7 +45,8 @@ export function useMessages(conversationId: string) {
     queryKey: queryKeys.messages(conversationId),
     queryFn: ({ pageParam }) => fetchMessages(conversationId, pageParam),
     initialPageParam: null as string | null,
-    getNextPageParam: (page) => (page.length === MESSAGE_PAGE ? page.at(-1)!.createdAt : undefined),
+    // Asks for more until a page comes back empty: sending, receiving and unsending change a page's length.
+    getNextPageParam: (page) => page.at(-1)?.createdAt,
   });
 }
 
@@ -66,12 +66,18 @@ export function useOtherLastRead(conversationId: string) {
   });
 }
 
-/** Adds a message to the newest page unless it's there already (a live event and our own insert can race). */
-function addMessage(client: QueryClient, message: Message, replacing?: string) {
+/**
+ * Puts a message in the newest page, in time order, once: a live event and our own insert can race, and
+ * live messages arrive after a fetch that can finish out of order.
+ */
+export function addMessage(client: QueryClient, message: Message, replacing?: string) {
   client.setQueryData<Pages>(queryKeys.messages(message.conversationId), (data) => {
     if (!data) return data;
     const pages = data.pages.map((page) => page.filter((m) => m.id !== replacing && m.id !== message.id));
-    return { ...data, pages: [[message, ...(pages[0] ?? [])], ...pages.slice(1)] };
+    const newest = pages[0] ?? [];
+    const at = newest.findIndex((m) => Date.parse(m.createdAt) < Date.parse(message.createdAt));
+    const placed = at < 0 ? [...newest, message] : [...newest.slice(0, at), message, ...newest.slice(at)];
+    return { ...data, pages: [placed, ...pages.slice(1)] };
   });
 }
 

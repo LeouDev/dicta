@@ -1,7 +1,7 @@
 import * as Clipboard from 'expo-clipboard';
 import { Stack, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { memo, useCallback, useState } from 'react';
-import { ActivityIndicator, FlatList, KeyboardAvoidingView, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { memo, useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, FlatList, Keyboard, KeyboardAvoidingView, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { toast } from '@/components/toast';
@@ -40,6 +40,7 @@ export default function ChatScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const keyboardUp = useKeyboardUp();
   const userId = useAuth(selectUserId);
   const chat = useChat(id);
   const messages = useMessages(id);
@@ -202,7 +203,7 @@ export default function ChatScreen() {
           </View>
         </View>
       ) : (
-        <View style={[styles.composer, { borderTopColor: theme.hairline, paddingBottom: Math.max(insets.bottom, spacing.sm) }]}>
+        <View style={[styles.composer, { borderTopColor: theme.hairline, paddingBottom: keyboardUp ? spacing.sm : Math.max(insets.bottom, spacing.sm) }]}>
           <TextInput
             value={draft}
             onChangeText={setDraft}
@@ -379,3 +380,13 @@ const styles = StyleSheet.create({
   input: { flex: 1, minHeight: 40, maxHeight: 120, borderRadius: 20, paddingHorizontal: spacing.md, paddingTop: 10, paddingBottom: 10, fontSize: 16 },
   send: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
 });
+
+/** Whether the keyboard is up: its height already covers the home indicator, so the composer drops that padding. */
+function useKeyboardUp() {
+  const [up, setUp] = useState(false);
+  useEffect(() => {
+    const subscriptions = [Keyboard.addListener('keyboardWillShow', () => setUp(true)), Keyboard.addListener('keyboardWillHide', () => setUp(false))];
+    return () => subscriptions.forEach((s) => s.remove());
+  }, []);
+  return up;
+}
