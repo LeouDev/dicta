@@ -6,6 +6,16 @@
 
 **Resubmitted as 1.0.1 (30 September 2026):** after four days Waiting for Review, version 1.0 was taken out of review, renamed 1.0.1 (allowed, since it was never released), given build 1.0.1 (8) and submitted again, so Dicta launches with everything since build 5 (moving, resizing and zooming on the card, sound, Edit post, @mentions, dicta.world links). The Notes gained a "New in this build" section (docs/app-store-listing.md), and the Support, Marketing and Privacy Policy URLs moved to dicta.world. The first public version is therefore 1.0.1, and no App Store user ever gets 1.0. **Approved by 1 October 2026, and released on 1 October 2026:** Dicta 1.0.1 (8) is the first public version, at https://apps.apple.com/app/id6816172939 once Apple's store has it (a few hours after release). The website's App Store button and Safari's banner switch on by themselves when Apple's lookup lists it. **1.0.2 (9) was submitted for review on 1 October 2026** (manual release), with the What's New, counts and Notes in docs/app-store-listing.md, **and was approved and released by 2 October 2026** (Ready for Distribution). Apple's lookup listed Dicta (1.0.1) by then, so the website's App Store button is on.
 
+## 1.0.3 (build 10)
+
+Stories, Messages, stacked posts, private accounts with follow requests, pinned and archived posts, and the sliding tab bar.
+
+- ✅ Six migrations (`supabase/migrations/20261002*`), written so 1.0.1 and 1.0.2 keep working on the new database, and four new test files in `npm run test:db`.
+- ⬜ Apply them: `env -u SUPABASE_ACCESS_TOKEN npx supabase db push --linked`, then `env -u SUPABASE_ACCESS_TOKEN npm run test:db`.
+- ✅ Website: message pushes, story and message reports in the moderator email, and the Privacy Policy and Terms cover stories, messages and private accounts (updated 2 October 2026). Deploys with the app push, after the migrations, since the report email reads their new columns.
+- ⬜ App Store Connect, before submitting: App Privacy gains **User Content → Emails or Text Messages** (linked, App Functionality, no tracking); Age Rating → Messaging and chat: **Yes** (stays 13+); What's New, Description and Notes from docs/app-store-listing.md.
+- ⬜ Build with `npx eas-cli@latest build -p ios --profile production`, then submit; release stays manual.
+
 ## Build
 
 - ✅ Bundle ID `com.leoudev.dicta`, Apple team `Z5643XKUTZ`, version `1.0.0`, iPhone only.
