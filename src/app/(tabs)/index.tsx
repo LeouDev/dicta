@@ -1,20 +1,27 @@
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
+import { useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useRef, useState } from 'react';
-import { ActivityIndicator, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 
 import { useTabBarSpace } from '@/components/bottom-tab-bar';
 import { EmptyState } from '@/components/ui/empty-state';
+import { Icon } from '@/components/ui/icon';
+import { Text } from '@/components/ui/text';
 import { Screen } from '@/components/ui/screen';
 import { ScreenHeader } from '@/components/ui/screen-header';
 import { Wordmark } from '@/components/wordmark';
-import { spacing } from '@/constants/tokens';
+import { hitTarget, spacing } from '@/constants/tokens';
 import { CardSkeleton } from '@/features/feed/card-skeleton';
 import { PostCard } from '@/features/feed/post-card';
+import { StoryTray } from '@/features/stories/story-tray';
+import { useUnreadMessages } from '@/hooks/use-messages';
 import { useHomeFeed } from '@/hooks/use-posts';
 import { useTabScrollToTop } from '@/hooks/use-tab-scroll-top';
 import { useTheme } from '@/hooks/use-theme';
+import { queryKeys } from '@/lib/query-keys';
 import { friendlyError } from '@/services/errors';
+import { selectUserId, useAuth } from '@/store/auth';
 import type { FeedPost } from '@/types/models';
 
 export default function HomeScreen() {
@@ -27,17 +34,42 @@ export default function HomeScreen() {
   const listRef = useRef<FlashListRef<FeedPost>>(null);
   useTabScrollToTop(listRef);
   const posts = feed.data?.pages.flat() ?? [];
+  const client = useQueryClient();
+  const userId = useAuth(selectUserId);
+  const { unread, requests } = useUnreadMessages();
 
   const refresh = async () => {
     setPulling(true);
-    await feed.refetch();
+    await Promise.all([
+      feed.refetch(),
+      client.invalidateQueries({ queryKey: queryKeys.storyTray(userId) }),
+      client.invalidateQueries({ queryKey: queryKeys.conversations(userId) }),
+    ]);
     setPulling(false);
   };
 
   return (
     <Screen edges={['top']} contentStyle={styles.screen}>
       <View style={styles.header}>
-        <ScreenHeader left={<Wordmark size={20} />} />
+        <ScreenHeader
+          left={<Wordmark size={20} />}
+          right={
+            <Pressable
+              onPress={() => router.push('/messages')}
+              accessibilityRole="button"
+              accessibilityLabel={`Messages${unread ? `, ${unread} unread` : ''}${requests ? `, ${requests} requests` : ''}`}
+              style={styles.messages}>
+              <Icon name="messages" size={22} color={theme.text} />
+              {(unread > 0 || requests > 0) && (
+                <View style={[styles.badge, { backgroundColor: theme.accent }]}>
+                  <Text variant="caption" style={[styles.badgeText, { color: theme.onAccent }]} allowFontScaling={false}>
+                    {unread > 0 ? (unread > 9 ? '9+' : String(unread)) : '•'}
+                  </Text>
+                </View>
+              )}
+            </Pressable>
+          }
+        />
       </View>
 
       {feed.isPending ? (
@@ -52,6 +84,7 @@ export default function HomeScreen() {
           // New posts arrive at the top: show them rather than hold the old first post in place.
           maintainVisibleContentPosition={{ disabled: true }}
           renderItem={({ item }) => <PostCard post={item} width={cardWidth} />}
+          ListHeaderComponent={<StoryTray />}
           contentContainerStyle={{ ...styles.list, paddingBottom: tabBarSpace + spacing.lg }}
           onEndReached={() => {
             if (feed.hasNextPage && !feed.isFetchingNextPage) feed.fetchNextPage();
@@ -82,4 +115,17 @@ const styles = StyleSheet.create({
   list: { paddingHorizontal: spacing.md, paddingTop: spacing.sm },
   empty: { paddingTop: spacing.xxxl * 2 },
   more: { paddingVertical: spacing.lg },
+  messages: { width: hitTarget, height: hitTarget, alignItems: 'flex-end', justifyContent: 'center' },
+  badge: {
+    position: 'absolute',
+    top: 4,
+    right: -6,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    paddingHorizontal: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeText: { fontSize: 10, lineHeight: 12, fontWeight: '700', letterSpacing: 0 },
 });

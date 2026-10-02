@@ -22,7 +22,7 @@ export async function searchTags(query: string): Promise<HashtagCount[]> {
   return toCounts(data);
 }
 
-const PROFILE_SELECT = '*, followed_by_me';
+const PROFILE_SELECT = '*, followed_by_me, requested_by_me';
 
 /** Popular creators the viewer doesn't follow yet (server excludes self + blocked). */
 export async function fetchSuggestedCreators(): Promise<ProfileView[]> {

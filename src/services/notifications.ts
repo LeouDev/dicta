@@ -11,7 +11,7 @@ const NOTIFICATION_SELECT =
   `post:posts(id, text, author:profiles!posts_author_id_fkey(${AUTHOR_SELECT}), design:post_designs(design)), ` +
   'comment:comments(id, body)';
 
-const TYPES: NotificationType[] = ['follow', 'like', 'comment', 'reply', 'mention', 'comment_like'];
+const TYPES: NotificationType[] = ['follow', 'like', 'comment', 'reply', 'mention', 'comment_like', 'follow_request', 'follow_accept'];
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
 
 export function toNotification(row: unknown): NotificationItem | null {
@@ -93,5 +93,9 @@ export function notificationMessage(n: Pick<NotificationItem, 'type' | 'comment'
       return `mentioned you${said}`;
     case 'comment_like':
       return 'liked your comment.';
+    case 'follow_request':
+      return 'asked to follow you.';
+    case 'follow_accept':
+      return 'accepted your follow request.';
   }
 }

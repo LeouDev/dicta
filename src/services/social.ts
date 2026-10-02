@@ -44,6 +44,25 @@ export function setFollow(userId: string, targetId: string, following: boolean) 
   );
 }
 
+/** Asks to follow a private account, or takes the request back. */
+export function setFollowRequest(userId: string, targetId: string, requested: boolean) {
+  if (userId === targetId) return Promise.reject(new Error('You can’t follow yourself.'));
+  return run(
+    requested
+      ? supabase.from('follow_requests').upsert({ requester_id: userId, target_id: targetId }, { onConflict: 'requester_id,target_id', ignoreDuplicates: true })
+      : supabase.from('follow_requests').delete().eq('requester_id', userId).eq('target_id', targetId),
+  );
+}
+
+/** Accepting makes them a follower (the server does it, since a private account's follows are its to give). */
+export function acceptFollowRequest(requesterId: string) {
+  return run(supabase.rpc('accept_follow_request', { p_requester: requesterId }));
+}
+
+export function declineFollowRequest(userId: string, requesterId: string) {
+  return run(supabase.from('follow_requests').delete().eq('requester_id', requesterId).eq('target_id', userId));
+}
+
 /** Share counts can only be written by the server function. */
 export function recordShare(postId: string) {
   return run(supabase.rpc('record_share', { p_post_id: postId }));

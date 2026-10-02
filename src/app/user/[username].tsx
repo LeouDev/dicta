@@ -1,3 +1,4 @@
+import { useMutation } from '@tanstack/react-query';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
@@ -9,12 +10,14 @@ import { Icon } from '@/components/ui/icon';
 import { hitTarget, spacing } from '@/constants/tokens';
 import { PostGrid } from '@/features/feed/post-grid';
 import { openReport } from '@/features/safety/report-sheet';
-import { useUserPosts } from '@/hooks/use-posts';
+import { toast } from '@/components/toast';
+import { usePinnedPosts, useUserPosts } from '@/hooks/use-posts';
 import { useProfileByUsername } from '@/hooks/use-profile';
 import { useBlock, useIsBlocked } from '@/hooks/use-safety';
 import { useTheme } from '@/hooks/use-theme';
 import { confirm, showActions } from '@/lib/action-sheet';
 import { friendlyError } from '@/services/errors';
+import { startConversation } from '@/services/messages';
 import { selectUserId, useAuth } from '@/store/auth';
 
 export default function UserScreen() {
@@ -25,8 +28,17 @@ export default function UserScreen() {
   const p = profile.data;
   const blocked = useIsBlocked(p?.id);
   const block = useBlock();
-  const posts = useUserPosts(p && !blocked ? p.id : null);
   const isMe = p?.id === userId;
+  // A private account's posts are for its followers (the database enforces it; this just says so).
+  const locked = Boolean(p && !isMe && p.is_private && !p.followed_by_me);
+  const shown = p && !blocked && !locked ? p.id : null;
+  const posts = useUserPosts(shown);
+  const pinned = usePinnedPosts(shown);
+  const message = useMutation({
+    mutationFn: () => startConversation(p!.id),
+    onSuccess: (id) => router.push(`/messages/${id}`),
+    onError: (error) => toast(friendlyError(error, 'Couldn’t open the chat.')),
+  });
 
   const openMenu = () => {
     if (!p) return;
@@ -89,7 +101,10 @@ export default function UserScreen() {
       style={styles.action}
     />
   ) : (
-    <FollowButton profile={p} size="sm" style={styles.action} />
+    <>
+      <FollowButton profile={p} size="sm" style={styles.action} />
+      <Button label="Message" variant="secondary" size="sm" loading={message.isPending} onPress={() => message.mutate()} style={styles.action} />
+    </>
   );
   const header = (
     <View style={styles.header}>
@@ -107,11 +122,28 @@ export default function UserScreen() {
     );
   }
 
+  if (locked) {
+    return (
+      <ScrollView style={{ backgroundColor: theme.background }} contentContainerStyle={styles.blocked}>
+        {options}
+        {header}
+        <View style={styles.lock} accessible accessibilityLabel="This account is private">
+          <Icon name="lock" size={28} color={theme.textSecondary} />
+        </View>
+        <EmptyState
+          title="This account is private"
+          message={p.requested_by_me ? `You asked to follow @${p.username}. You’ll see their quotes once they accept.` : `Follow @${p.username} to see their quotes and stories.`}
+        />
+      </ScrollView>
+    );
+  }
+
   return (
     <View style={[styles.root, { backgroundColor: theme.background }]}>
       {options}
       <PostGrid
         query={posts}
+        pinned={pinned.data}
         header={header}
         empty={<EmptyState title="No quotes yet" message={`When @${p.username} posts, their cards will gather here.`} />}
       />
@@ -126,4 +158,5 @@ const styles = StyleSheet.create({
   header: { paddingBottom: spacing.xl, paddingHorizontal: spacing.sm },
   action: { flex: 1 },
   blocked: { flexGrow: 1, paddingBottom: spacing.xxl },
+  lock: { alignItems: 'center', paddingTop: spacing.xl },
 });

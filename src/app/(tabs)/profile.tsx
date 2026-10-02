@@ -12,7 +12,7 @@ import { Text } from '@/components/ui/text';
 import { hitTarget, spacing } from '@/constants/tokens';
 import { PostGrid } from '@/features/feed/post-grid';
 import { useMyProfile } from '@/hooks/use-my-profile';
-import { useSavedPosts, useUserPosts } from '@/hooks/use-posts';
+import { usePinnedPosts, useSavedPosts, useUserPosts } from '@/hooks/use-posts';
 import { useTheme } from '@/hooks/use-theme';
 
 type Tab = 'posts' | 'saved';
@@ -23,6 +23,7 @@ export default function ProfileScreen() {
   const [tab, setTab] = useState<Tab>('posts');
   const [savedOpened, setSavedOpened] = useState(false);
   const posts = useUserPosts(profile?.id ?? null);
+  const pinned = usePinnedPosts(profile?.id ?? null);
   // Saved loads the first time it's opened, then stays warm.
   const saved = useSavedPosts(savedOpened);
 
@@ -63,9 +64,14 @@ export default function ProfileScreen() {
         <ScreenHeader
           title=""
           right={
-            <Pressable onPress={() => router.push('/settings')} accessibilityRole="button" accessibilityLabel="Settings" style={styles.iconButton}>
-              <Icon name="settings" size={22} color={theme.text} />
-            </Pressable>
+            <View style={styles.topActions}>
+              <Pressable onPress={() => router.push('/archive')} accessibilityRole="button" accessibilityLabel="Archive" style={styles.iconButton}>
+                <Icon name="archive" size={22} color={theme.text} />
+              </Pressable>
+              <Pressable onPress={() => router.push('/settings')} accessibilityRole="button" accessibilityLabel="Settings" style={styles.iconButton}>
+                <Icon name="settings" size={22} color={theme.text} />
+              </Pressable>
+            </View>
           }
         />
       </View>
@@ -73,6 +79,7 @@ export default function ProfileScreen() {
       <PostGrid
         key={tab}
         query={tab === 'posts' ? posts : saved}
+        pinned={tab === 'posts' ? pinned.data : undefined}
         header={header}
         empty={
           tab === 'posts' ? (
@@ -94,6 +101,7 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   screen: { paddingHorizontal: 0 },
   topBar: { paddingHorizontal: spacing.lg },
+  topActions: { flexDirection: 'row', gap: spacing.xs },
   iconButton: { width: hitTarget, height: hitTarget, alignItems: 'flex-end', justifyContent: 'center' },
   profile: { paddingBottom: spacing.md, paddingHorizontal: spacing.sm },
   edit: { flex: 1 },

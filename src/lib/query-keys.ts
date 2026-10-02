@@ -9,6 +9,8 @@ export const queryKeys = {
 
   homeFeed: (userId: string | null) => ['posts', 'home', userId] as const,
   userPosts: (userId: string | null) => ['posts', 'user', userId] as const,
+  pinnedPosts: (userId: string | null) => ['posts', 'pinned', userId] as const,
+  archivedPosts: (userId: string | null) => ['posts', 'archived', userId] as const,
   savedPosts: (userId: string | null) => ['posts', 'saved', userId] as const,
   trendingPosts: () => ['posts', 'trending'] as const,
   recentPosts: () => ['posts', 'recent'] as const,
@@ -29,5 +31,15 @@ export const queryKeys = {
   suggestedCreators: (userId: string | null) => ['creators', userId] as const,
   searchUsers: (query: string) => ['users', 'search', query] as const,
   blocked: (userId: string | null) => ['blocked', userId] as const,
+  followRequests: (userId: string | null) => ['follow-requests', userId] as const,
+
+  storyTray: (userId: string | null) => ['stories', 'tray', userId] as const,
+  stories: (authorId: string) => ['stories', 'author', authorId] as const,
+  storyViewers: (storyId: string) => ['stories', 'viewers', storyId] as const,
+
+  conversations: (userId: string | null) => ['conversations', userId] as const,
+  messages: (conversationId: string) => ['messages', conversationId] as const,
+  otherLastRead: (conversationId: string) => ['messages', 'seen', conversationId] as const,
+  chat: (conversationId: string) => ['chat', conversationId] as const,
   pushSettings: (userId: string | null) => ['push-settings', userId] as const,
 };

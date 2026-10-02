@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 
 import { Text } from '@/components/ui/text';
@@ -15,11 +15,14 @@ import { PostActions } from './post-actions';
 /** A post in the feed: the card is the content, the chrome stays quiet. */
 export const PostCard = memo(function PostCard({ post, width }: { post: FeedPost; width: number }) {
   const like = useLikePost(post.id);
+  // The feed reuses this cell for other posts; a card picked on one doesn't carry over.
+  const [shown, setShown] = useState({ id: post.id, card: 0 });
+  const card = shown.id === post.id ? shown.card : 0;
 
   return (
     <>
-      <LikeableCard post={post} width={width} onLike={() => !post.likedByMe && like.mutate(true)} />
-      <PostActions post={post} />
+      <LikeableCard post={post} width={width} onLike={() => !post.likedByMe && like.mutate(true)} onCardChange={(i) => setShown({ id: post.id, card: i })} />
+      <PostActions post={post} card={card} />
       <PostMeta post={post} />
     </>
   );

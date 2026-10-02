@@ -23,10 +23,12 @@ export interface ReportInput {
   postId?: string;
   userId?: string;
   commentId?: string;
+  storyId?: string;
+  messageId?: string;
 }
 
 /** Files a report into the moderation queue (reports table). */
-export async function submitReport({ reporterId, reason, details, postId, userId, commentId }: ReportInput) {
+export async function submitReport({ reporterId, reason, details, postId, userId, commentId, storyId, messageId }: ReportInput) {
   const { error } = await supabase.from('reports').insert({
     reporter_id: reporterId,
     reason,
@@ -34,6 +36,8 @@ export async function submitReport({ reporterId, reason, details, postId, userId
     post_id: postId ?? null,
     reported_user_id: userId ?? null,
     comment_id: commentId ?? null,
+    story_id: storyId ?? null,
+    message_id: messageId ?? null,
   });
   if (error) throw error;
 }

@@ -208,6 +208,14 @@ function ShareSheet({ target, onClose }: { target: ShareTarget; onClose: () => v
 
       {/* Stories get the card as designed, as a sticker; the format above is for images. */}
       <View style={styles.targets}>
+        {postId && (
+          <Target
+            label="Send"
+            accessibilityLabel="Send in a Dicta message"
+            onPress={() => router.push({ pathname: '/messages/new', params: { post: postId } })}>
+            <Icon name="messages" size={22} color={theme.text} />
+          </Target>
+        )}
         {storiesApps.map((app) => (
           <Target
             key={app}

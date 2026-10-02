@@ -28,7 +28,7 @@ export function useBlock() {
       if (blocked) removePosts(client, (p) => p.author.id === targetId);
       toast(blocked ? `Blocked @${username}` : `Unblocked @${username}`);
       // Feeds, discovery, activity and profiles all depend on who is blocked.
-      for (const key of [['posts'], ['blocked'], ['creators'], ['users'], ['notifications'], ['comments'], ['profile']]) {
+      for (const key of [['posts'], ['blocked'], ['creators'], ['users'], ['notifications'], ['comments'], ['profile'], ['stories'], ['conversations'], ['follow-requests']]) {
         client.invalidateQueries({ queryKey: key });
       }
     },

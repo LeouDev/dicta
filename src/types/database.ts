@@ -160,6 +160,120 @@ export type Database = {
           },
         ]
       }
+      conversation_members: {
+        Row: {
+          accepted: boolean
+          cleared_at: string | null
+          conversation_id: string
+          last_read_at: string | null
+          muted: boolean
+          user_id: string
+        }
+        Insert: {
+          accepted?: boolean
+          cleared_at?: string | null
+          conversation_id: string
+          last_read_at?: string | null
+          muted?: boolean
+          user_id: string
+        }
+        Update: {
+          accepted?: boolean
+          cleared_at?: string | null
+          conversation_id?: string
+          last_read_at?: string | null
+          muted?: boolean
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_members_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversation_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversations: {
+        Row: {
+          created_at: string
+          id: string
+          last_message_at: string | null
+          user_a: string
+          user_b: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_message_at?: string | null
+          user_a: string
+          user_b: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_message_at?: string | null
+          user_a?: string
+          user_b?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_user_a_fkey"
+            columns: ["user_a"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_user_b_fkey"
+            columns: ["user_b"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      follow_requests: {
+        Row: {
+          created_at: string
+          requester_id: string
+          target_id: string
+        }
+        Insert: {
+          created_at?: string
+          requester_id: string
+          target_id: string
+        }
+        Update: {
+          created_at?: string
+          requester_id?: string
+          target_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "follow_requests_requester_id_fkey"
+            columns: ["requester_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "follow_requests_target_id_fkey"
+            columns: ["target_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       follows: {
         Row: {
           created_at: string
@@ -226,6 +340,68 @@ export type Database = {
           },
         ]
       }
+      messages: {
+        Row: {
+          body: string | null
+          conversation_id: string
+          created_at: string
+          id: string
+          post_id: string | null
+          push_sent_at: string | null
+          sender_id: string
+          story_id: string | null
+        }
+        Insert: {
+          body?: string | null
+          conversation_id: string
+          created_at?: string
+          id?: string
+          post_id?: string | null
+          push_sent_at?: string | null
+          sender_id: string
+          story_id?: string | null
+        }
+        Update: {
+          body?: string | null
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          post_id?: string | null
+          push_sent_at?: string | null
+          sender_id?: string
+          story_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "stories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           actor_id: string
@@ -284,6 +460,41 @@ export type Database = {
             columns: ["recipient_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      post_cards: {
+        Row: {
+          background_image_path: string | null
+          design: Json
+          position: number
+          post_id: string
+          template: string
+          text: string
+        }
+        Insert: {
+          background_image_path?: string | null
+          design: Json
+          position: number
+          post_id: string
+          template: string
+          text: string
+        }
+        Update: {
+          background_image_path?: string | null
+          design?: Json
+          position?: number
+          post_id?: string
+          template?: string
+          text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_cards_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
             referencedColumns: ["id"]
           },
         ]
@@ -354,6 +565,7 @@ export type Database = {
           created_at: string
           id: string
           like_count: number
+          pinned_at: string | null
           save_count: number
           share_count: number
           status: string
@@ -368,6 +580,7 @@ export type Database = {
           created_at?: string
           id?: string
           like_count?: number
+          pinned_at?: string | null
           save_count?: number
           share_count?: number
           status?: string
@@ -382,6 +595,7 @@ export type Database = {
           created_at?: string
           id?: string
           like_count?: number
+          pinned_at?: string | null
           save_count?: number
           share_count?: number
           status?: string
@@ -416,6 +630,7 @@ export type Database = {
           followers_count: number
           following_count: number
           id: string
+          is_private: boolean
           is_verified: boolean
           posts_count: number
           updated_at: string
@@ -430,6 +645,7 @@ export type Database = {
           followers_count?: number
           following_count?: number
           id: string
+          is_private?: boolean
           is_verified?: boolean
           posts_count?: number
           updated_at?: string
@@ -444,6 +660,7 @@ export type Database = {
           followers_count?: number
           following_count?: number
           id?: string
+          is_private?: boolean
           is_verified?: boolean
           posts_count?: number
           updated_at?: string
@@ -507,6 +724,7 @@ export type Database = {
           comments: boolean
           follows: boolean
           likes: boolean
+          messages: boolean
           replies: boolean
           user_id: string
         }
@@ -514,6 +732,7 @@ export type Database = {
           comments?: boolean
           follows?: boolean
           likes?: boolean
+          messages?: boolean
           replies?: boolean
           user_id: string
         }
@@ -521,6 +740,7 @@ export type Database = {
           comments?: boolean
           follows?: boolean
           likes?: boolean
+          messages?: boolean
           replies?: boolean
           user_id?: string
         }
@@ -566,33 +786,42 @@ export type Database = {
           created_at: string
           details: string | null
           id: string
+          message_id: string | null
           post_id: string | null
           reason: string
           reported_user_id: string | null
           reporter_id: string
+          snapshot: string | null
           status: string
+          story_id: string | null
         }
         Insert: {
           comment_id?: string | null
           created_at?: string
           details?: string | null
           id?: string
+          message_id?: string | null
           post_id?: string | null
           reason: string
           reported_user_id?: string | null
           reporter_id: string
+          snapshot?: string | null
           status?: string
+          story_id?: string | null
         }
         Update: {
           comment_id?: string | null
           created_at?: string
           details?: string | null
           id?: string
+          message_id?: string | null
           post_id?: string | null
           reason?: string
           reported_user_id?: string | null
           reporter_id?: string
+          snapshot?: string | null
           status?: string
+          story_id?: string | null
         }
         Relationships: [
           {
@@ -600,6 +829,13 @@ export type Database = {
             columns: ["comment_id"]
             isOneToOne: false
             referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
             referencedColumns: ["id"]
           },
           {
@@ -621,6 +857,13 @@ export type Database = {
             columns: ["reporter_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "stories"
             referencedColumns: ["id"]
           },
         ]
@@ -652,6 +895,83 @@ export type Database = {
           {
             foreignKeyName: "saves_user_id_fkey"
             columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stories: {
+        Row: {
+          author_id: string
+          background_image_path: string | null
+          created_at: string
+          design: Json
+          expires_at: string
+          id: string
+          status: string
+          template: string
+          text: string
+        }
+        Insert: {
+          author_id: string
+          background_image_path?: string | null
+          created_at?: string
+          design: Json
+          expires_at?: string
+          id?: string
+          status?: string
+          template: string
+          text: string
+        }
+        Update: {
+          author_id?: string
+          background_image_path?: string | null
+          created_at?: string
+          design?: Json
+          expires_at?: string
+          id?: string
+          status?: string
+          template?: string
+          text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stories_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      story_views: {
+        Row: {
+          story_id: string
+          viewed_at: string
+          viewer_id: string
+        }
+        Insert: {
+          story_id: string
+          viewed_at?: string
+          viewer_id: string
+        }
+        Update: {
+          story_id?: string
+          viewed_at?: string
+          viewer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_views_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "stories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "story_views_viewer_id_fkey"
+            columns: ["viewer_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -704,11 +1024,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_follow_request: {
+        Args: { p_requester: string }
+        Returns: undefined
+      }
+      claim_message_push: { Args: { p_id: string }; Returns: Json }
       claim_push: { Args: { p_id: string }; Returns: Json }
       claim_welcome: { Args: { p_user: string }; Returns: Json }
       create_post: {
         Args: {
           p_background_image_path?: string
+          p_cards?: Json
           p_design: Json
           p_template: string
           p_text: string
@@ -730,6 +1056,7 @@ export type Database = {
           created_at: string
           id: string
           like_count: number
+          pinned_at: string | null
           save_count: number
           share_count: number
           status: string
@@ -753,8 +1080,33 @@ export type Database = {
             Args: { post: Database["public"]["Tables"]["posts"]["Row"] }
             Returns: boolean
           }
+      my_conversations: {
+        Args: never
+        Returns: {
+          accepted: boolean
+          conversation_id: string
+          last_body: string
+          last_message_at: string
+          last_message_id: string
+          last_post_id: string
+          last_read_at: string
+          last_sender_id: string
+          last_story_id: string
+          muted: boolean
+          other_avatar_url: string
+          other_display_name: string
+          other_id: string
+          other_is_verified: boolean
+          other_last_read_at: string
+          other_username: string
+        }[]
+      }
       record_share: { Args: { p_post_id: string }; Returns: undefined }
       register_push_token: { Args: { p_token: string }; Returns: undefined }
+      requested_by_me: {
+        Args: { profile: Database["public"]["Tables"]["profiles"]["Row"] }
+        Returns: boolean
+      }
       saved_by_me: {
         Args: { post: Database["public"]["Tables"]["posts"]["Row"] }
         Returns: boolean
@@ -775,6 +1127,7 @@ export type Database = {
           created_at: string
           id: string
           like_count: number
+          pinned_at: string | null
           save_count: number
           share_count: number
           status: string
@@ -800,6 +1153,7 @@ export type Database = {
           followers_count: number
           following_count: number
           id: string
+          is_private: boolean
           is_verified: boolean
           posts_count: number
           updated_at: string
@@ -812,6 +1166,31 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      set_post_archived: {
+        Args: { p_archived: boolean; p_post_id: string }
+        Returns: undefined
+      }
+      set_post_cards: {
+        Args: { p_cards: Json; p_post_id: string }
+        Returns: undefined
+      }
+      set_post_pinned: {
+        Args: { p_pinned: boolean; p_post_id: string }
+        Returns: undefined
+      }
+      start_conversation: { Args: { p_user: string }; Returns: string }
+      story_tray: {
+        Args: never
+        Returns: {
+          author_id: string
+          avatar_url: string
+          display_name: string
+          is_verified: boolean
+          latest_at: string
+          unseen: boolean
+          username: string
+        }[]
+      }
       suggested_creators: {
         Args: { p_limit?: number }
         Returns: {
@@ -823,6 +1202,7 @@ export type Database = {
           followers_count: number
           following_count: number
           id: string
+          is_private: boolean
           is_verified: boolean
           posts_count: number
           updated_at: string
@@ -851,6 +1231,7 @@ export type Database = {
           created_at: string
           id: string
           like_count: number
+          pinned_at: string | null
           save_count: number
           share_count: number
           status: string
@@ -865,6 +1246,18 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      update_post: {
+        Args: {
+          p_background_image_path?: string
+          p_cards?: Json
+          p_design: Json
+          p_post_id: string
+          p_template: string
+          p_text: string
+          p_topic: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       notification_type:
@@ -874,6 +1267,8 @@ export type Database = {
         | "reply"
         | "mention"
         | "comment_like"
+        | "follow_request"
+        | "follow_accept"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1011,6 +1406,8 @@ export const Constants = {
         "reply",
         "mention",
         "comment_like",
+        "follow_request",
+        "follow_accept",
       ],
     },
   },

@@ -56,6 +56,18 @@ const ICONS = {
   'sound.off': { ios: 'speaker.slash.fill', android: 'volume_off' },
   music: { ios: 'music.note', android: 'music_note' },
   waveform: { ios: 'waveform', android: 'graphic_eq' },
+  pin: { ios: 'pin', android: 'push_pin' },
+  'pin.fill': { ios: 'pin.fill', android: 'push_pin' },
+  archive: { ios: 'archivebox', android: 'archive' },
+  lock: { ios: 'lock.fill', android: 'lock' },
+  messages: { ios: 'paperplane', android: 'send' },
+  'messages.fill': { ios: 'paperplane.fill', android: 'send' },
+  stack: { ios: 'square.stack.fill', android: 'filter_none' },
+  eye: { ios: 'eye', android: 'visibility' },
+  trash: { ios: 'trash', android: 'delete' },
+  mute: { ios: 'bell.slash', android: 'notifications_off' },
+  'plus.circle': { ios: 'plus.circle.fill', android: 'add_circle' },
+  'person.requests': { ios: 'person.2', android: 'group' },
 } as const satisfies Record<string, { ios: string; android: string }>;
 
 export type IconName = keyof typeof ICONS;

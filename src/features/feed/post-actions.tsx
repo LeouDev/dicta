@@ -16,12 +16,14 @@ import { usePostMenu } from './use-post-menu';
 
 interface PostActionsProps {
   post: FeedPost;
+  /** Which card of a stack is showing (Share shares that one). */
+  card?: number;
   /** Called after the post is deleted from its own menu (e.g. to leave the post screen). */
   onDeleted?: () => void;
 }
 
 /** Like · comment · share on the left, save · more on the right. Quiet by design. */
-export const PostActions = memo(function PostActions({ post, onDeleted }: PostActionsProps) {
+export const PostActions = memo(function PostActions({ post, card = 0, onDeleted }: PostActionsProps) {
   const theme = useTheme();
   const like = useLikePost(post.id);
   const save = useSavePost(post.id);
@@ -39,7 +41,10 @@ export const PostActions = memo(function PostActions({ post, onDeleted }: PostAc
       <ActionButton
         icon="share"
         label="Share"
-        onPress={() => openShare({ text: post.text, design: post.design, author: post.author, postId: post.id })}
+        onPress={() => {
+          const shown = post.cards[card - 1] ?? post;
+          openShare({ text: shown.text, design: shown.design, author: post.author, postId: post.id });
+        }}
       />
       <View style={styles.spacer} />
       <ActionButton

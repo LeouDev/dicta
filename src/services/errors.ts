@@ -23,6 +23,8 @@ export function friendlyError(error: unknown, fallback = 'Something went wrong. 
   if (/objectionable_content/.test(message)) {
     return 'That includes a word Dicta doesn’t allow. Please edit it and try again.';
   }
+  if (/pin_limit/.test(message)) return 'You can pin up to 3 posts. Unpin one first.';
+  if (message === 'blocked') return 'You can’t message this account.';
   if (code === 'weak_password') return 'Choose a stronger password.';
   if (code === 'over_email_send_rate_limit' || code === 'over_request_rate_limit' || /rate limit/i.test(message)) {
     return 'Too many attempts. Wait a minute and try again.';

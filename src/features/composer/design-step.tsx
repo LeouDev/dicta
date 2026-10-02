@@ -12,6 +12,7 @@ import { CANVASES, type CardAuthor } from '@/features/quote-card/types';
 import { useTheme } from '@/hooks/use-theme';
 
 import { BackgroundPicker } from './background-picker';
+import { CardStrip } from './card-strip';
 import { ColorControls } from './color-controls';
 import { EditableCard } from './editable-card';
 import { FontPicker } from './font-picker';
@@ -50,6 +51,7 @@ export function DesignStep({ author, onEditText, onShare, onPost, posting, editi
   const insets = useSafeAreaInsets();
   const text = useComposer((s) => s.text);
   const design = useComposer((s) => s.design);
+  const story = useComposer((s) => s.story);
   const [tab, setTab] = useState<TabKey>('templates');
   const [area, setArea] = useState<{ width: number; height: number } | null>(null);
 
@@ -68,11 +70,11 @@ export function DesignStep({ author, onEditText, onShare, onPost, posting, editi
             <Icon name="share" size={20} color={theme.text} />
           </Pressable>
           <Button
-            label={editing ? 'Save' : 'Post'}
+            label={editing ? 'Save' : story ? 'Share' : 'Post'}
             size="sm"
             onPress={onPost}
             loading={posting}
-            accessibilityHint={editing ? 'Saves your changes to the post' : 'Publishes your card'}
+            accessibilityHint={editing ? 'Saves your changes to the post' : story ? 'Shares it to your story for 24 hours' : 'Publishes your card'}
           />
         </View>
       </View>
@@ -84,6 +86,8 @@ export function DesignStep({ author, onEditText, onShare, onPost, posting, editi
           </View>
         )}
       </View>
+
+      {!story && <CardStrip author={author} onAdded={onEditText} />}
 
       <ScrollView
         horizontal

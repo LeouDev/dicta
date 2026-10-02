@@ -6,7 +6,7 @@ import type { ReactNode } from 'react';
 import { toast } from '@/components/toast';
 import { queryKeys } from '@/lib/query-keys';
 import { markRead } from '@/services/notifications';
-import { setFollow, setLike } from '@/services/social';
+import { setFollow, setFollowRequest, setLike } from '@/services/social';
 import { useAuth } from '@/store/auth';
 import { author, pages, post, profile } from '@/test-utils/fixtures';
 import type { FeedPost, NotificationItem, ProfileView } from '@/types/models';
@@ -16,7 +16,15 @@ import { useFollow, useLikePost } from '../use-social';
 
 jest.mock('@/lib/supabase', () => ({ supabase: { auth: { onAuthStateChange: jest.fn() } }, isSupabaseConfigured: true }));
 jest.mock('@/services/profiles', () => ({ fetchProfile: jest.fn() }));
-jest.mock('@/services/social', () => ({ setLike: jest.fn(), setSave: jest.fn(), setFollow: jest.fn(), recordShare: jest.fn() }));
+jest.mock('@/services/social', () => ({
+  setLike: jest.fn(),
+  setSave: jest.fn(),
+  setFollow: jest.fn(),
+  setFollowRequest: jest.fn(),
+  acceptFollowRequest: jest.fn(),
+  declineFollowRequest: jest.fn(),
+  recordShare: jest.fn(),
+}));
 jest.mock('@/services/notifications', () => ({
   markRead: jest.fn(),
   fetchNotifications: jest.fn(),
@@ -32,6 +40,7 @@ jest.mock('expo-haptics', () => ({
 
 const setLikeMock = jest.mocked(setLike);
 const setFollowMock = jest.mocked(setFollow);
+const setFollowRequestMock = jest.mocked(setFollowRequest);
 const markReadMock = jest.mocked(markRead);
 
 function setup() {
@@ -102,7 +111,7 @@ describe('useFollow', () => {
     setFollowMock.mockResolvedValue();
 
     const { result } = await renderHook(() => useFollow('u2'), { wrapper });
-    await act(() => result.current.mutate(true));
+    await act(() => result.current.mutate('follow'));
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(client.getQueryData<ProfileView>(queryKeys.profileByUsername('ben'))).toMatchObject({ followed_by_me: true, followers_count: 1 });
@@ -116,11 +125,38 @@ describe('useFollow', () => {
     setFollowMock.mockRejectedValue(new Error('blocked'));
 
     const { result } = await renderHook(() => useFollow('u2'), { wrapper });
-    await act(() => result.current.mutate(true));
+    await act(() => result.current.mutate('follow'));
 
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(client.getQueryData<ProfileView>(queryKeys.profileByUsername('ben'))).toMatchObject({ followed_by_me: false, followers_count: 5 });
     expect(client.getQueryData<ProfileView>(queryKeys.profile('me'))!.following_count).toBe(2);
+  });
+
+  it('asks to follow a private account without counting a follow', async () => {
+    const { client, wrapper } = setup();
+    client.setQueryData(queryKeys.profileByUsername('ben'), profile({ is_private: true, followers_count: 5 }));
+    client.setQueryData(queryKeys.profile('me'), profile({ id: 'me', username: 'me', following_count: 2 }));
+    setFollowRequestMock.mockResolvedValue();
+
+    const { result } = await renderHook(() => useFollow('u2'), { wrapper });
+    await act(() => result.current.mutate('request'));
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(setFollowRequestMock).toHaveBeenCalledWith('me', 'u2', true);
+    expect(client.getQueryData<ProfileView>(queryKeys.profileByUsername('ben'))).toMatchObject({ requested_by_me: true, followed_by_me: false, followers_count: 5 });
+    expect(client.getQueryData<ProfileView>(queryKeys.profile('me'))!.following_count).toBe(2);
+  });
+
+  it('takes the request back in the cache when it fails', async () => {
+    const { client, wrapper } = setup();
+    client.setQueryData(queryKeys.profileByUsername('ben'), profile({ is_private: true }));
+    setFollowRequestMock.mockRejectedValue(new Error('blocked'));
+
+    const { result } = await renderHook(() => useFollow('u2'), { wrapper });
+    await act(() => result.current.mutate('request'));
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(client.getQueryData<ProfileView>(queryKeys.profileByUsername('ben'))).toMatchObject({ requested_by_me: false });
   });
 });
 

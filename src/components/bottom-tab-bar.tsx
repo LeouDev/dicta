@@ -4,7 +4,8 @@ import { router } from 'expo-router';
 import { BottomTabBarHeightCallbackContext, BottomTabBarHeightContext, type BottomTabBarProps } from 'expo-router/tabs';
 import { useContext, useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { radius, shadows, spacing } from '@/constants/tokens';
@@ -29,6 +30,10 @@ const CREATE_SLOT = 2;
 const BAR_HEIGHT = 60;
 const BAR_PADDING = 6;
 const GLASS = isLiquidGlassAvailable();
+/** Critically damped: quick, and it settles without bouncing past the tab. */
+const SETTLE = { duration: 300, dampingRatio: 1 };
+/** How much the bubble swells while you slide it, like iOS 26's lens. */
+const LENS = 1.12;
 
 /** How far the floating tab bar reaches up a tab screen (0 outside the tabs), so lists can scroll clear of it. */
 export function useTabBarSpace() {
@@ -39,6 +44,8 @@ export function useTabBarSpace() {
  * Icon-only tab bar floating over the content on Liquid Glass (iOS 26; a
  * raised bar before), with a distinct Create button in the middle. Create is a
  * modal route, not a tab, so it always opens on top of whatever you're viewing.
+ * Like iOS 26's, you can slide along it: the bubble follows your finger and
+ * the tab under it opens when you let go.
  */
 export function BottomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const theme = useTheme();
@@ -58,11 +65,48 @@ export function BottomTabBar({ state, descriptors, navigation }: BottomTabBarPro
   const placed = useRef(false);
   useEffect(() => {
     if (!slotWidth) return;
-    // Critically damped: quick, and it settles without bouncing past the tab.
-    bubbleX.set(placed.current ? withSpring(slot * slotWidth, { duration: 300, dampingRatio: 1 }) : slot * slotWidth);
+    bubbleX.set(placed.current ? withSpring(slot * slotWidth, SETTLE) : slot * slotWidth);
     placed.current = true;
   }, [bubbleX, slot, slotWidth]);
-  const bubbleStyle = useAnimatedStyle(() => ({ transform: [{ translateX: bubbleX.get() }] }));
+  const lens = useSharedValue(1);
+  const bubbleStyle = useAnimatedStyle(() => ({ transform: [{ translateX: bubbleX.get() }, { scale: lens.get() }] }));
+
+  // Sliding: starts only after a sideways drag, so taps work as before. Create
+  // isn't a tab, so the bubble passes over it and settles on a neighbor.
+  const hovered = useSharedValue(-1);
+  const tick = () => Haptics.selectionAsync();
+  const openSlot = (target: number) => {
+    const route = state.routes[target < CREATE_SLOT ? target : target - 1];
+    if (!route || route.key === state.routes[state.index].key) return;
+    const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+    if (!event.defaultPrevented) navigation.navigate(route.name, route.params);
+  };
+  const slide = Gesture.Pan()
+    .activeOffsetX([-10, 10])
+    .failOffsetY([-14, 14])
+    .onStart(() => {
+      lens.set(withSpring(LENS, SETTLE));
+    })
+    .onUpdate((e) => {
+      const x = Math.min((SLOTS - 1) * slotWidth, Math.max(0, e.x - BAR_PADDING - slotWidth / 2));
+      bubbleX.set(x);
+      const over = Math.round(x / slotWidth);
+      if (over !== hovered.get() && over !== CREATE_SLOT) {
+        hovered.set(over);
+        runOnJS(tick)();
+      }
+    })
+    .onEnd(() => {
+      const x = bubbleX.get();
+      let target = Math.round(x / slotWidth);
+      if (target === CREATE_SLOT) target = x < CREATE_SLOT * slotWidth ? CREATE_SLOT - 1 : CREATE_SLOT + 1;
+      bubbleX.set(withSpring(target * slotWidth, SETTLE));
+      runOnJS(openSlot)(target);
+    })
+    .onFinalize(() => {
+      lens.set(withSpring(1, SETTLE));
+      hovered.set(-1);
+    });
 
   const tabs = state.routes.map((route, index) => {
     const focused = state.index === index;
@@ -122,27 +166,29 @@ export function BottomTabBar({ state, descriptors, navigation }: BottomTabBarPro
 
   return (
     <View pointerEvents="box-none" style={[styles.wrap, { bottom }]}>
-      <GlassView
-        // Glass darkens over dark content, but these icons don't flip like the
-        // system's do: a tint of the page color keeps them readable on anything.
-        colorScheme={scheme}
-        tintColor={scheme === 'dark' ? 'rgba(18, 17, 16, 0.55)' : 'rgba(247, 243, 236, 0.72)'}
-        onLayout={(e) => setSlotWidth((e.nativeEvent.layout.width - BAR_PADDING * 2) / SLOTS)}
-        style={[styles.bar, !GLASS && [styles.raised, { backgroundColor: theme.surfaceRaised, borderColor: theme.hairline }]]}>
-        {slotWidth > 0 && (
-          <Animated.View
-            pointerEvents="none"
-            style={[
-              styles.bubble,
-              { width: slotWidth, backgroundColor: scheme === 'dark' ? 'rgba(255, 255, 255, 0.12)' : 'rgba(26, 23, 20, 0.07)' },
-              bubbleStyle,
-            ]}
-          />
-        )}
-        {tabs.slice(0, CREATE_SLOT)}
-        {createButton}
-        {tabs.slice(CREATE_SLOT)}
-      </GlassView>
+      <GestureDetector gesture={slide}>
+        <GlassView
+          // Glass darkens over dark content, but these icons don't flip like the
+          // system's do: a tint of the page color keeps them readable on anything.
+          colorScheme={scheme}
+          tintColor={scheme === 'dark' ? 'rgba(18, 17, 16, 0.55)' : 'rgba(247, 243, 236, 0.72)'}
+          onLayout={(e) => setSlotWidth((e.nativeEvent.layout.width - BAR_PADDING * 2) / SLOTS)}
+          style={[styles.bar, !GLASS && [styles.raised, { backgroundColor: theme.surfaceRaised, borderColor: theme.hairline }]]}>
+          {slotWidth > 0 && (
+            <Animated.View
+              pointerEvents="none"
+              style={[
+                styles.bubble,
+                { width: slotWidth, backgroundColor: scheme === 'dark' ? 'rgba(255, 255, 255, 0.12)' : 'rgba(26, 23, 20, 0.07)' },
+                bubbleStyle,
+              ]}
+            />
+          )}
+          {tabs.slice(0, CREATE_SLOT)}
+          {createButton}
+          {tabs.slice(CREATE_SLOT)}
+        </GlassView>
+      </GestureDetector>
     </View>
   );
 }

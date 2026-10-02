@@ -1,4 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
+import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 
 import { FollowButton } from '@/components/follow-button';
@@ -28,6 +29,7 @@ export default function PostScreen() {
   const like = useLikePost(id);
   const author = useProfileByUsername(post.data?.author.username);
   const { data: topics } = useTopics();
+  const [card, setCard] = useState(0);
 
   if (!post.data) {
     return (
@@ -54,8 +56,8 @@ export default function PostScreen() {
         {author.data && <FollowButton profile={author.data} size="sm" />}
       </View>
 
-      <LikeableCard post={p} width={width - spacing.md * 2} onLike={() => !p.likedByMe && like.mutate(true)} />
-      <PostActions post={p} onDeleted={() => router.back()} />
+      <LikeableCard post={p} width={width - spacing.md * 2} onLike={() => !p.likedByMe && like.mutate(true)} onCardChange={setCard} />
+      <PostActions post={p} card={card} onDeleted={() => router.back()} />
 
       <View style={styles.footer}>
         {topic && (

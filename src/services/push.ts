@@ -48,15 +48,15 @@ export async function unregisterDevice(): Promise<void> {
   registered = null;
 }
 
-export const PUSH_KINDS = ['follows', 'likes', 'comments', 'replies'] as const;
+export const PUSH_KINDS = ['follows', 'likes', 'comments', 'replies', 'messages'] as const;
 export type PushKind = (typeof PUSH_KINDS)[number];
 export type PushSettings = Record<PushKind, boolean>;
 
 /** Which pushes the signed-in person wants; everything is on until they change it. */
 export async function fetchPushSettings(): Promise<PushSettings> {
-  const { data, error } = await supabase.from('push_settings').select('follows, likes, comments, replies').maybeSingle();
+  const { data, error } = await supabase.from('push_settings').select('follows, likes, comments, replies, messages').maybeSingle();
   if (error) throw error;
-  return data ?? { follows: true, likes: true, comments: true, replies: true };
+  return data ?? { follows: true, likes: true, comments: true, replies: true, messages: true };
 }
 
 export async function savePushSettings(userId: string, settings: PushSettings): Promise<void> {

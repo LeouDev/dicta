@@ -40,6 +40,12 @@ export function withFollow(profile: ProfileView, following: boolean): ProfileVie
   return { ...profile, followed_by_me: following, followers_count: bump(profile.followers_count, following ? 1 : -1) };
 }
 
+/** Asking to follow a private account (no counts change until they accept). */
+export function withRequest(profile: ProfileView, requested: boolean): ProfileView {
+  if (profile.requested_by_me === requested) return profile;
+  return { ...profile, requested_by_me: requested };
+}
+
 /** The viewer's own side: how many people they follow. */
 export function withFollowingDelta<P extends { following_count: number }>(profile: P, delta: number): P {
   return { ...profile, following_count: bump(profile.following_count, delta) };

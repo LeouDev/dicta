@@ -118,6 +118,12 @@ function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
           <Stack.Screen name="settings/edit-profile" options={{ ...pushed, title: 'Edit profile' }} />
           <Stack.Screen name="settings/notifications" options={{ ...pushed, title: 'Notifications' }} />
           <Stack.Screen name="settings/blocked" options={{ ...pushed, title: 'Blocked accounts' }} />
+          <Stack.Screen name="archive" options={{ ...pushed, title: 'Archive' }} />
+          <Stack.Screen name="requests" options={{ ...pushed, title: 'Follow requests' }} />
+          <Stack.Screen name="messages/index" options={{ ...pushed, title: 'Messages' }} />
+          <Stack.Screen name="messages/[id]" options={pushed} />
+          <Stack.Screen name="messages/new" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="story/[userId]" options={{ presentation: 'fullScreenModal', animation: 'fade', gestureEnabled: false }} />
           <Stack.Screen name="share" options={{ presentation: 'modal' }} />
           <Stack.Screen name="report" options={{ presentation: 'modal' }} />
         </Stack.Protected>

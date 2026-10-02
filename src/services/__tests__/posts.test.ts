@@ -8,26 +8,19 @@ import { deletePost, publishPost, updatePost } from '../posts';
 const mockLog: string[] = [];
 const mockCards = new Set<string>();
 let mockPhotoUsers = 0;
-const mockUpdateErrors: Record<string, { message: string }> = {};
+const mockRpcErrors: Record<string, { message: string }> = {};
+const mockRpcArgs: Record<string, Record<string, unknown>> = {};
 
 jest.mock('../card-images', () => ({ storeCardImages: jest.fn(() => Promise.resolve()) }));
 
 jest.mock('@/lib/supabase', () => ({
   supabase: {
-    rpc: (name: string) => (mockLog.push(`rpc ${name}`), Promise.resolve({ data: 'post-9', error: null })),
+    rpc: (name: string, args: Record<string, unknown>) => (
+      mockLog.push(`rpc ${name}`), (mockRpcArgs[name] = args), Promise.resolve({ data: 'post-9', error: mockRpcErrors[name] ?? null })
+    ),
     from: (table: string) => ({
       delete: () => ({ eq: (_: string, id: string) => (mockLog.push(`delete ${table} ${id}`), Promise.resolve({ error: null })) }),
       select: () => ({ eq: (_: string, path: string) => (mockLog.push(`count ${table} ${path}`), Promise.resolve({ count: mockPhotoUsers, error: null })) }),
-      update: (values: object) => ({
-        eq: (_: string, id: string) => ({
-          select: () => ({
-            single: () => {
-              mockLog.push(`update ${table} ${id} ${Object.keys(values).join(',')}`);
-              return Promise.resolve({ data: {}, error: mockUpdateErrors[table] ?? null });
-            },
-          }),
-        }),
-      }),
     }),
     storage: {
       from: (bucket: string) => ({
@@ -54,7 +47,8 @@ beforeEach(() => {
   mockLog.length = 0;
   mockCards.clear();
   mockPhotoUsers = 0;
-  for (const table in mockUpdateErrors) delete mockUpdateErrors[table];
+  for (const name in mockRpcErrors) delete mockRpcErrors[name];
+  for (const name in mockRpcArgs) delete mockRpcArgs[name];
   fetchMock.mockClear();
   stored.mockReset().mockResolvedValue(undefined);
   global.fetch = fetchMock as unknown as typeof fetch;
@@ -71,6 +65,32 @@ describe('publishPost', () => {
     await flush();
     expect(stored).toHaveBeenCalledWith({ postId: 'post-9', authorId: 'u1', text: 'Stay soft.', design, author });
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('sends a stack’s other cards with the post, trimmed, in order', async () => {
+    const minimal = createDesign('minimal');
+    await publishPost({
+      userId: 'u1',
+      text: 'One',
+      design: createDesign('editorial'),
+      cards: [
+        { text: ' Two ', design: minimal },
+        { text: 'Three', design: createDesign('midnight') },
+      ],
+      author,
+    });
+    const cards = mockRpcArgs.create_post.p_cards as { text: string; template: string; background_image_path: string | null }[];
+    expect(cards.map((c) => [c.text, c.template, c.background_image_path])).toEqual([
+      ['Two', 'minimal', null],
+      ['Three', 'midnight', null],
+    ]);
+  });
+
+  it('says which card isn’t ready', async () => {
+    await expect(
+      publishPost({ userId: 'u1', text: 'One', design: createDesign('editorial'), cards: [{ text: '  ', design: createDesign('editorial') }], author }),
+    ).rejects.toThrow('Card 2: Write something first.');
+    expect(mockLog).toEqual([]);
   });
 
   it('asks the website to draw them if the phone can’t', async () => {
@@ -110,44 +130,65 @@ describe('deletePost', () => {
     await deletePost(withPhoto);
     expect(mockLog).toContain('remove post-images u1/photo.jpg');
   });
+
+  it('removes every card’s photo of a stack', async () => {
+    const photo = (path: string) => ({ ...createDesign('photograph'), background: { ...createDesign('photograph').background, image: `https://x/${path}`, path } });
+    await deletePost(post({ id: 'p1', design: photo('u1/a.jpg'), cards: [{ text: 'Two', design: photo('u1/b.jpg') }, { text: 'Three', design: createDesign('editorial') }] }));
+    expect(mockLog).toContain('remove post-images u1/a.jpg u1/b.jpg');
+  });
 });
 
 describe('updatePost', () => {
   const photo = (path: string) => ({ ...createDesign('photograph').background, image: `https://x/${path}`, path });
 
-  it('saves the words, then the design, and redraws the website’s images', async () => {
+  it('saves the words, the design and the cards in one call, and redraws the website’s images', async () => {
     const design = createDesign('midnight');
-    const saved = await updatePost({ postId: 'p1', previousPhoto: null, userId: 'u1', text: '  New words.  ', design, topic: 'love', author });
-    expect(saved).toEqual({ text: 'New words.', topic: 'love', design });
-    expect(mockLog).toEqual(['update posts p1 text,topic', 'update post_designs p1 template,design,background_image_path']);
+    const saved = await updatePost({ postId: 'p1', previousPhotos: [], userId: 'u1', text: '  New words.  ', design, topic: 'love', author });
+    expect(saved).toEqual({ text: 'New words.', topic: 'love', design, cards: [] });
+    expect(mockLog).toEqual(['rpc update_post']);
+    expect(mockRpcArgs.update_post).toEqual({
+      p_post_id: 'p1',
+      p_text: 'New words.',
+      p_topic: 'love',
+      p_template: 'midnight',
+      p_design: design,
+      p_background_image_path: undefined,
+      p_cards: [],
+    });
     await flush();
     expect(stored).toHaveBeenCalledWith({ postId: 'p1', authorId: 'u1', text: 'New words.', design, author });
   });
 
-  it('changes nothing else when the words are rejected', async () => {
-    mockUpdateErrors.posts = { message: 'objectionable_content' };
-    await expect(updatePost({ postId: 'p1', previousPhoto: null, userId: 'u1', text: 'Words.', design: createDesign('editorial'), author })).rejects.toEqual(
-      mockUpdateErrors.posts,
+  it('changes nothing else when a card’s words are rejected', async () => {
+    mockRpcErrors.update_post = { message: 'objectionable_content' };
+    await expect(updatePost({ postId: 'p1', previousPhotos: ['u1/old.jpg'], userId: 'u1', text: 'Words.', design: createDesign('editorial'), author })).rejects.toEqual(
+      mockRpcErrors.update_post,
     );
-    expect(mockLog).toEqual(['update posts p1 text,topic']);
+    expect(mockLog).toEqual(['rpc update_post']);
     await flush();
     expect(stored).not.toHaveBeenCalled();
   });
 
   it('removes the photo it replaced, unless another post still uses it', async () => {
     const design = { ...createDesign('photograph'), background: photo('u1/new.jpg') };
-    await updatePost({ postId: 'p1', previousPhoto: 'u1/new.jpg', userId: 'u1', text: 'Same photo.', design, author });
+    await updatePost({ postId: 'p1', previousPhotos: ['u1/new.jpg'], userId: 'u1', text: 'Same photo.', design, author });
     expect(mockLog.some((line) => line.startsWith('count') || line.startsWith('remove'))).toBe(false);
 
     mockLog.length = 0;
     mockPhotoUsers = 1;
-    await updatePost({ postId: 'p1', previousPhoto: 'u1/old.jpg', userId: 'u1', text: 'New photo.', design, author });
+    await updatePost({ postId: 'p1', previousPhotos: ['u1/old.jpg'], userId: 'u1', text: 'New photo.', design, author });
     expect(mockLog).toContain('count post_designs u1/old.jpg');
     expect(mockLog.some((line) => line.startsWith('remove'))).toBe(false);
 
     mockLog.length = 0;
     mockPhotoUsers = 0;
-    await updatePost({ postId: 'p1', previousPhoto: 'u1/old.jpg', userId: 'u1', text: 'No photo.', design: createDesign('editorial'), author });
+    await updatePost({ postId: 'p1', previousPhotos: ['u1/old.jpg'], userId: 'u1', text: 'No photo.', design: createDesign('editorial'), author });
     expect(mockLog).toContain('remove post-images u1/old.jpg');
+  });
+
+  it('keeps a photo that moved to another card of the stack', async () => {
+    const card = { ...createDesign('photograph'), background: photo('u1/old.jpg') };
+    await updatePost({ postId: 'p1', previousPhotos: ['u1/old.jpg'], userId: 'u1', text: 'One', design: createDesign('editorial'), cards: [{ text: 'Two', design: card }], author });
+    expect(mockLog.some((line) => line.startsWith('remove'))).toBe(false);
   });
 });

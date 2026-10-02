@@ -15,7 +15,7 @@ jest.mock('expo-sqlite/localStorage/install', () => {
 });
 
 // eslint-disable-next-line import/first
-import { mergeDesign, useComposer } from '../store';
+import { mergeDesign, stackOf, useComposer } from '../store';
 
 describe('validatePost', () => {
   it('requires text within the limit', () => {
@@ -92,7 +92,7 @@ describe('editing a post', () => {
   it('sets the draft aside, keeps it on disk, and brings it back', () => {
     useComposer.getState().setText('My draft');
     useComposer.getState().startEdit(post({ id: 'p7', text: 'As posted.', topic: 'love', design: createDesign('midnight') }));
-    expect(useComposer.getState()).toMatchObject({ text: 'As posted.', topic: 'love', editing: { postId: 'p7', photoPath: null } });
+    expect(useComposer.getState()).toMatchObject({ text: 'As posted.', topic: 'love', editing: { postId: 'p7', photoPaths: [] } });
     expect(useComposer.getState().design.template).toBe('midnight');
     expect(onDisk()).toMatchObject({ text: 'My draft', topic: null });
 
@@ -105,11 +105,65 @@ describe('editing a post', () => {
   it('remembers the uploaded photo, and forgets one the card no longer shows', () => {
     const photo = { ...createDesign('photograph').background, image: 'https://x/a.jpg', path: 'u1/a.jpg' };
     useComposer.getState().startEdit(post({ design: { ...createDesign('photograph'), background: photo } }));
-    expect(useComposer.getState().editing?.photoPath).toBe('u1/a.jpg');
+    expect(useComposer.getState().editing?.photoPaths).toEqual(['u1/a.jpg']);
     useComposer.getState().endEdit();
 
     useComposer.getState().startEdit(post({ design: { ...createDesign('editorial'), background: { ...photo, type: 'solid' } } }));
-    expect(useComposer.getState().editing?.photoPath).toBeNull();
+    expect(useComposer.getState().editing?.photoPaths).toEqual([]);
     expect(useComposer.getState().design.background).toMatchObject({ type: 'solid', image: null });
+  });
+});
+
+describe('stacks', () => {
+  beforeEach(() => useComposer.getState().reset());
+  const texts = () => stackOf(useComposer.getState()).map((card) => card.text);
+
+  it('adds cards after the current one, styled like it, and switches between them', () => {
+    const { setText, addCard, selectCard, update } = useComposer.getState();
+    setText('One');
+    update({ size: 70 });
+    addCard();
+    expect(useComposer.getState()).toMatchObject({ current: 1, text: '' });
+    expect(useComposer.getState().design.size).toBe(70);
+    useComposer.getState().setText('Two');
+    selectCard(0);
+    addCard();
+    useComposer.getState().setText('Between');
+    expect(texts()).toEqual(['One', 'Between', 'Two']);
+    selectCard(2);
+    expect(useComposer.getState().text).toBe('Two');
+  });
+
+  it('removing down to one card leaves a plain draft', () => {
+    const { setText, addCard, removeCard } = useComposer.getState();
+    setText('One');
+    addCard();
+    useComposer.getState().setText('Two');
+    removeCard(0);
+    expect(useComposer.getState()).toMatchObject({ cards: [], current: 0, text: 'Two' });
+  });
+
+  it('opens a stacked post card by card, and keeps the stack on disk', async () => {
+    useComposer.getState().startEdit(post({ text: 'First', cards: [{ text: 'Second', design: createDesign('minimal') }] }));
+    expect(texts()).toEqual(['First', 'Second']);
+    useComposer.getState().endEdit();
+
+    useComposer.getState().setText('Draft one');
+    useComposer.getState().addCard();
+    useComposer.getState().setText('Draft two');
+    const saved = useComposer.persist.getOptions().partialize!(useComposer.getState());
+    localStorage.setItem('dicta.composer.draft', JSON.stringify({ state: saved, version: 1 }));
+    useComposer.getState().reset();
+    await useComposer.persist.rehydrate();
+    expect(texts()).toEqual(['Draft one', 'Draft two']);
+  });
+
+  it('a story sets the draft aside and starts a 9:16 card', () => {
+    useComposer.getState().setText('My draft');
+    useComposer.getState().startStory();
+    expect(useComposer.getState()).toMatchObject({ story: true, text: '' });
+    expect(useComposer.getState().design.canvas).toBe('9:16');
+    useComposer.getState().endStory();
+    expect(useComposer.getState()).toMatchObject({ story: false, text: 'My draft' });
   });
 });

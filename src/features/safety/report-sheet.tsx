@@ -14,8 +14,10 @@ import { useTheme } from '@/hooks/use-theme';
 import { REPORT_REASONS, type ReportReason } from '@/services/safety';
 
 export interface ReportTarget {
-  kind: 'post' | 'user' | 'comment';
+  kind: 'post' | 'user' | 'comment' | 'story' | 'message';
   id: string;
+  /** Who posted the story or sent the message, so the report names them too. */
+  userId?: string;
   /** Shown in the title, e.g. "@maravell" or "this quote". */
   label: string;
 }
@@ -39,8 +41,10 @@ export function ReportScreen() {
         reason,
         details,
         postId: target.kind === 'post' ? target.id : undefined,
-        userId: target.kind === 'user' ? target.id : undefined,
+        userId: target.kind === 'user' ? target.id : target.userId || undefined,
         commentId: target.kind === 'comment' ? target.id : undefined,
+        storyId: target.kind === 'story' ? target.id : undefined,
+        messageId: target.kind === 'message' ? target.id : undefined,
       },
       { onSuccess: closeReport },
     );

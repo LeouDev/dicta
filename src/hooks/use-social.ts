@@ -1,12 +1,13 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 
 import { toast } from '@/components/toast';
-import { withFollow, withFollowingDelta, withLike, withSave, withShare } from '@/features/social/reducers';
+import { withFollow, withFollowingDelta, withLike, withRequest, withSave, withShare } from '@/features/social/reducers';
 import { patchPost, patchProfile } from '@/lib/cache';
 import { queryKeys } from '@/lib/query-keys';
 import { friendlyError } from '@/services/errors';
-import { recordShare, setFollow, setLike, setSave } from '@/services/social';
+import { acceptFollowRequest, declineFollowRequest, recordShare, setFollow, setFollowRequest, setLike, setSave } from '@/services/social';
+import { fetchFollowRequests } from '@/services/profiles';
 import { selectUserId, useAuth } from '@/store/auth';
 import type { Profile } from '@/types/models';
 
@@ -54,30 +55,80 @@ export function useSavePost(postId: string) {
   });
 }
 
+/** Follow or unfollow, or (for a private account) ask to follow or take the request back. */
+export type FollowAction = 'follow' | 'unfollow' | 'request' | 'unrequest';
+
+/** The opposite of each action, for rolling an optimistic change back. */
+const UNDO: Record<FollowAction, FollowAction> = { follow: 'unfollow', unfollow: 'follow', request: 'unrequest', unrequest: 'request' };
+
 export function useFollow(targetId: string) {
   const client = useQueryClient();
   const userId = useAuth(selectUserId);
   const patchMe = (delta: number) =>
     client.setQueryData<Profile | null>(queryKeys.profile(userId), (me) => (me ? withFollowingDelta(me, delta) : me));
+  const apply = (action: FollowAction) => {
+    if (action === 'follow' || action === 'unfollow') {
+      patchProfile(client, targetId, (p) => withFollow(p, action === 'follow'));
+      patchMe(action === 'follow' ? 1 : -1);
+    } else {
+      patchProfile(client, targetId, (p) => withRequest(p, action === 'request'));
+    }
+  };
 
   return useMutation({
     scope: { id: `follow:${targetId}` },
-    mutationFn: (following: boolean) => setFollow(userId!, targetId, following),
-    onMutate: (following) => {
+    mutationFn: (action: FollowAction) =>
+      action === 'follow' || action === 'unfollow'
+        ? setFollow(userId!, targetId, action === 'follow')
+        : setFollowRequest(userId!, targetId, action === 'request'),
+    onMutate: (action) => {
       Haptics.selectionAsync();
-      patchProfile(client, targetId, (p) => withFollow(p, following));
-      patchMe(following ? 1 : -1);
+      apply(action);
     },
-    onSuccess: () => {
-      // The home feed now includes (or drops) their posts.
+    onSuccess: (_data, action) => {
+      // The home feed and the story rings now include (or drop) their posts and stories.
       client.invalidateQueries({ queryKey: queryKeys.homeFeed(userId) });
+      client.invalidateQueries({ queryKey: queryKeys.storyTray(userId) });
       client.invalidateQueries({ queryKey: queryKeys.suggestedCreators(userId) });
+      // Unfollowing a private account hides its posts again.
+      if (action === 'unfollow') {
+        client.invalidateQueries({ queryKey: queryKeys.userPosts(targetId) });
+        client.invalidateQueries({ queryKey: queryKeys.pinnedPosts(targetId) });
+      }
     },
-    onError: (error, following) => {
-      patchProfile(client, targetId, (p) => withFollow(p, !following));
-      patchMe(following ? -1 : 1);
+    onError: (error, action) => {
+      apply(UNDO[action]);
       toast(friendlyError(error, 'Couldn’t update follow.'));
     },
+  });
+}
+
+/** People asking to follow your private account. */
+export function useFollowRequests(enabled = true) {
+  const userId = useAuth(selectUserId);
+  return useQuery({ queryKey: queryKeys.followRequests(userId), queryFn: () => fetchFollowRequests(userId!), enabled: enabled && userId !== null });
+}
+
+/** Accept or decline a follow request; it leaves the list at once. */
+export function useAnswerFollowRequest() {
+  const client = useQueryClient();
+  const userId = useAuth(selectUserId);
+  return useMutation({
+    mutationFn: ({ requesterId, accept }: { requesterId: string; accept: boolean }) =>
+      accept ? acceptFollowRequest(requesterId) : declineFollowRequest(userId!, requesterId),
+    onMutate: ({ requesterId }) => {
+      Haptics.selectionAsync();
+      client.setQueryData<{ requester: { id: string } }[]>(queryKeys.followRequests(userId), (list) =>
+        list?.filter((r) => r.requester.id !== requesterId),
+      );
+    },
+    onSettled: () => {
+      client.invalidateQueries({ queryKey: queryKeys.followRequests(userId) });
+      client.invalidateQueries({ queryKey: queryKeys.notifications(userId) });
+      client.invalidateQueries({ queryKey: queryKeys.unreadCount(userId) });
+      client.invalidateQueries({ queryKey: queryKeys.profile(userId) });
+    },
+    onError: (error) => toast(friendlyError(error, 'Couldn’t answer the request.')),
   });
 }
 

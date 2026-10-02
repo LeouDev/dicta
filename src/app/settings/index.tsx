@@ -1,7 +1,8 @@
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import type { ReactNode } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 
 import { Icon, type IconName } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
@@ -10,11 +11,15 @@ import { hitTarget, radius, spacing } from '@/constants/tokens';
 import { clearDraftPhotos } from '@/features/composer/photo';
 import { useComposer } from '@/features/composer/store';
 import { useMyProfile } from '@/hooks/use-my-profile';
+import { useFollowRequests } from '@/hooks/use-social';
 import { useTheme } from '@/hooks/use-theme';
 import { confirm } from '@/lib/action-sheet';
+import { queryKeys } from '@/lib/query-keys';
 import { deleteAccount } from '@/services/account';
 import { signOut } from '@/services/auth';
 import { friendlyError } from '@/services/errors';
+import { setPrivateAccount } from '@/services/profiles';
+import type { Profile } from '@/types/models';
 import { selectUserId, useAuth } from '@/store/auth';
 
 // The next person to sign in on this device shouldn't find your draft.
@@ -27,6 +32,25 @@ export default function SettingsScreen() {
   const theme = useTheme();
   const userId = useAuth(selectUserId);
   const { data: me } = useMyProfile();
+  const client = useQueryClient();
+  const requests = useFollowRequests(Boolean(me?.is_private));
+  const privacy = useMutation({
+    mutationFn: (isPrivate: boolean) => setPrivateAccount(userId!, isPrivate),
+    onMutate: (isPrivate) => {
+      Haptics.selectionAsync();
+      client.setQueryData<Profile | null>(queryKeys.profile(userId), (p) => (p ? { ...p, is_private: isPrivate } : p));
+    },
+    onSuccess: (profile) => client.setQueryData(queryKeys.profile(userId), profile),
+    onError: (e, isPrivate) => {
+      client.setQueryData<Profile | null>(queryKeys.profile(userId), (p) => (p ? { ...p, is_private: !isPrivate } : p));
+      Alert.alert('Couldn’t change your privacy', friendlyError(e));
+    },
+  });
+  // Going public lets everyone waiting in.
+  const setPrivate = (isPrivate: boolean) =>
+    isPrivate || !requests.data?.length
+      ? privacy.mutate(isPrivate)
+      : confirm('Make your account public?', 'Everyone waiting will start following you.', 'Make public', () => privacy.mutate(false));
   const remove = useMutation({
     mutationFn: () => deleteAccount(userId!),
     onSuccess: clearDraft,
@@ -74,7 +98,26 @@ export default function SettingsScreen() {
       <Group title="Account">
         <Row icon="pencil" label="Edit profile" onPress={() => router.push('/settings/edit-profile')} />
         <Row icon="bell" label="Notifications" onPress={() => router.push('/settings/notifications')} divider />
+        <Row icon="archive" label="Archive" onPress={() => router.push('/archive')} divider />
         <Row icon="blocked" label="Blocked accounts" onPress={() => router.push('/settings/blocked')} divider />
+      </Group>
+
+      <Group
+        title="Privacy"
+        footer={
+          me?.is_private
+            ? 'Only people you approve can see your quotes and stories. Your name, photo and bio stay visible.'
+            : 'Anyone can see your quotes and stories, and follow you.'
+        }>
+        <SwitchRow icon="lock" label="Private account" value={me?.is_private ?? false} onChange={setPrivate} />
+        {me?.is_private && (
+          <Row
+            icon="person.requests"
+            label={`Follow requests${requests.data?.length ? ` (${requests.data.length})` : ''}`}
+            onPress={() => router.push('/requests')}
+            divider
+          />
+        )}
       </Group>
 
       <Group>
@@ -103,6 +146,19 @@ function Group({ title, footer, children }: { title?: string; footer?: string; c
           {footer}
         </Text>
       )}
+    </View>
+  );
+}
+
+function SwitchRow({ label, value, onChange, icon }: { label: string; value: boolean; onChange: (value: boolean) => void; icon?: IconName }) {
+  const theme = useTheme();
+  return (
+    <View style={styles.row}>
+      {icon && <Icon name={icon} size={18} color={theme.textSecondary} />}
+      <Text variant="body" style={styles.rowLabel}>
+        {label}
+      </Text>
+      <Switch value={value} onValueChange={onChange} trackColor={{ true: theme.accent }} accessibilityLabel={label} />
     </View>
   );
 }

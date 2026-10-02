@@ -2,7 +2,9 @@ import { File } from 'expo-file-system';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 
 import { supabase } from '@/lib/supabase';
-import type { Profile, ProfileView } from '@/types/models';
+import type { FollowRequest, Profile, ProfileView } from '@/types/models';
+
+import { AUTHOR_SELECT, toAuthor } from './author';
 
 export async function fetchProfile(userId: string): Promise<Profile | null> {
   const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
@@ -10,11 +12,35 @@ export async function fetchProfile(userId: string): Promise<Profile | null> {
   return data;
 }
 
-/** Someone's profile by handle, with whether the viewer follows them. */
+/** Someone's profile by handle, with whether the viewer follows them (or asked to). */
 export async function fetchProfileByUsername(username: string): Promise<ProfileView | null> {
-  const { data, error } = await supabase.from('profiles').select('*, followed_by_me').eq('username', username.toLowerCase()).maybeSingle();
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*, followed_by_me, requested_by_me')
+    .eq('username', username.toLowerCase())
+    .maybeSingle();
   if (error) throw error;
   return data as ProfileView | null;
+}
+
+/** Makes your account private (only followers see your posts and stories) or public. */
+export async function setPrivateAccount(userId: string, isPrivate: boolean): Promise<Profile> {
+  const { data, error } = await supabase.from('profiles').update({ is_private: isPrivate }).eq('id', userId).select('*').single();
+  if (error) throw error;
+  return data;
+}
+
+/** People asking to follow your private account, newest first. */
+export async function fetchFollowRequests(userId: string): Promise<FollowRequest[]> {
+  const { data, error } = await supabase
+    .from('follow_requests')
+    .select(`created_at, requester:profiles!follow_requests_requester_id_fkey(${AUTHOR_SELECT})`)
+    .eq('target_id', userId)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return ((data ?? []) as unknown as { created_at: string; requester: Record<string, unknown> | null }[])
+    .filter((row) => row.requester)
+    .map((row) => ({ createdAt: row.created_at, requester: toAuthor(row.requester!) }));
 }
 
 export async function isUsernameAvailable(username: string): Promise<boolean> {

@@ -26,6 +26,9 @@ export const post = (overrides: Partial<FeedPost> = {}): FeedPost => ({
   savedByMe: false,
   author: author(),
   design: createDesign('editorial'),
+  cards: [],
+  pinnedAt: null,
+  status: 'published',
   ...overrides,
 });
 
@@ -50,12 +53,14 @@ export const profile = (overrides: Partial<ProfileView> = {}): ProfileView => ({
   avatar_url: null,
   cover_url: null,
   is_verified: false,
+  is_private: false,
   followers_count: 0,
   following_count: 0,
   posts_count: 0,
   created_at: '2026-09-25T09:00:00.000Z',
   updated_at: '2026-09-25T09:00:00.000Z',
   followed_by_me: false,
+  requested_by_me: false,
   ...overrides,
 });
 

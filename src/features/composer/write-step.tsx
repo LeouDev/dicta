@@ -19,6 +19,9 @@ export function WriteStep({ onNext, onClose }: { onNext: () => void; onClose: ()
   const text = useComposer((s) => s.text);
   const setText = useComposer((s) => s.setText);
   const verse = useComposer((s) => s.design.composition === 'verse');
+  const story = useComposer((s) => s.story);
+  // In a stack, which card these words are for.
+  const card = useComposer((s) => (s.cards.length > 1 ? `Card ${s.current + 1} of ${s.cards.length}` : null));
   const canContinue = text.trim().length > 0;
   const remaining = TEXT_MAX_LENGTH - text.length;
 
@@ -26,6 +29,27 @@ export function WriteStep({ onNext, onClose }: { onNext: () => void; onClose: ()
     <View style={[styles.root, { backgroundColor: theme.background, paddingTop: insets.top }]}>
       <View style={styles.header}>
         <BackButton icon="close" onPress={onClose} />
+        {card && !canContinue ? (
+          // A card added by mistake: the way back to Design without typing.
+          <Pressable
+            onPress={() => {
+              const composer = useComposer.getState();
+              composer.removeCard(composer.current);
+              onNext();
+            }}
+            accessibilityRole="button"
+            hitSlop={8}>
+            <Text variant="subhead" color="accent">
+              Remove card
+            </Text>
+          </Pressable>
+        ) : (
+          (card || story) && (
+            <Text variant="subhead" color="textSecondary">
+              {story ? 'Your story' : card}
+            </Text>
+          )
+        )}
         <Pressable
           onPress={onNext}
           disabled={!canContinue}
@@ -44,7 +68,7 @@ export function WriteStep({ onNext, onClose }: { onNext: () => void; onClose: ()
         <TextInput
           value={text}
           onChangeText={setText}
-          placeholder="What’s on your mind?"
+          placeholder={story ? 'What’s on your mind today?' : card ? 'The words for this card' : 'What’s on your mind?'}
           placeholderTextColor={theme.textTertiary}
           selectionColor={theme.accent}
           multiline
@@ -61,7 +85,7 @@ export function WriteStep({ onNext, onClose }: { onNext: () => void; onClose: ()
           </Text>
         )}
         <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, spacing.sm) }]}>
-          <TopicPill />
+          {story ? <View /> : <TopicPill />}
           <Text variant="caption" color={remaining < 40 ? 'accent' : 'textTertiary'} style={styles.count}>
             {text.length}/{TEXT_MAX_LENGTH}
           </Text>

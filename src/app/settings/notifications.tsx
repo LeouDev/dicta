@@ -21,10 +21,11 @@ import {
 import { selectUserId, useAuth } from '@/store/auth';
 
 const LABELS: Record<PushKind, string> = {
-  follows: 'New followers',
+  follows: 'New followers and follow requests',
   likes: 'Likes on your quotes',
   comments: 'Comments on your quotes',
   replies: 'Replies and mentions',
+  messages: 'Messages',
 };
 
 export default function NotificationSettingsScreen() {

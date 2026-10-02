@@ -3,7 +3,9 @@ import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-quer
 import { findPost } from '@/lib/cache';
 import { queryKeys } from '@/lib/query-keys';
 import {
+  fetchArchivedPosts,
   fetchHomeFeed,
+  fetchPinnedPosts,
   fetchPost,
   fetchRecentPosts,
   fetchSavedPosts,
@@ -46,6 +48,16 @@ export function useHomeFeed() {
 
 export function useUserPosts(userId: string | null) {
   return useCursorPosts(queryKeys.userPosts(userId), (c) => fetchUserPosts(userId!, c), userId !== null);
+}
+
+/** The posts pinned to the top of a profile. */
+export function usePinnedPosts(userId: string | null) {
+  return useQuery({ queryKey: queryKeys.pinnedPosts(userId), queryFn: () => fetchPinnedPosts(userId!), enabled: userId !== null });
+}
+
+export function useArchivedPosts() {
+  const userId = useAuth(selectUserId);
+  return useCursorPosts(queryKeys.archivedPosts(userId), (c) => fetchArchivedPosts(userId!, c), userId !== null);
 }
 
 export function useSavedPosts(enabled = true) {
