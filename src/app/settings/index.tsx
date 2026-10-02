@@ -2,9 +2,10 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import type { ReactNode } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Icon, type IconName } from '@/components/ui/icon';
+import { Switch } from '@/components/ui/switch';
 import { Text } from '@/components/ui/text';
 import { UserAvatar } from '@/components/user-avatar';
 import { hitTarget, radius, spacing } from '@/constants/tokens';
@@ -165,7 +166,7 @@ function SwitchRow({ label, value, onChange, icon }: { label: string; value: boo
       <Text variant="body" style={styles.rowLabel}>
         {label}
       </Text>
-      <Switch value={value} onValueChange={onChange} trackColor={{ true: theme.accent }} accessibilityLabel={label} />
+      <Switch value={value} onValueChange={onChange} accessibilityLabel={label} />
     </View>
   );
 }

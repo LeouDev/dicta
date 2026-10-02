@@ -1,9 +1,10 @@
 import Slider from '@react-native-community/slider';
 import * as Haptics from 'expo-haptics';
 import type { ReactNode } from 'react';
-import { Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Icon, type IconName } from '@/components/ui/icon';
+import { Switch } from '@/components/ui/switch';
 import { Text } from '@/components/ui/text';
 import { hitTarget, radius, spacing } from '@/constants/tokens';
 import { useTheme } from '@/hooks/use-theme';
@@ -145,7 +146,6 @@ export function SwatchRow({ colors, value, onChange, onCustom }: SwatchRowProps)
 }
 
 export function ToggleRow({ label, value, onChange }: { label: string; value: boolean; onChange: (value: boolean) => void }) {
-  const theme = useTheme();
   return (
     <View style={styles.toggleRow}>
       <Text variant="body">{label}</Text>
@@ -155,7 +155,6 @@ export function ToggleRow({ label, value, onChange }: { label: string; value: bo
           Haptics.selectionAsync();
           onChange(v);
         }}
-        trackColor={{ true: theme.accent }}
         accessibilityLabel={label}
       />
     </View>

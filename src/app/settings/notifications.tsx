@@ -1,8 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, AppState, Linking, ScrollView, StyleSheet, Switch, View } from 'react-native';
+import { Alert, AppState, Linking, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { Text } from '@/components/ui/text';
 import { hitTarget, radius, spacing } from '@/constants/tokens';
 import { useTheme } from '@/hooks/use-theme';
@@ -85,7 +86,6 @@ export default function NotificationSettingsScreen() {
               accessibilityLabel={LABELS[kind]}
               value={settings.data?.[kind] ?? true}
               disabled={!settings.data}
-              trackColor={{ true: theme.accent }}
               onValueChange={(on) => settings.data && save.mutate({ ...settings.data, [kind]: on })}
             />
           </View>
